@@ -1,10 +1,11 @@
 // Shared WordPress helpers for the Playwright suite. Every test that needs a
 // signed-in admin goes through here, so the credentials live in one place.
-const ADMIN_USER = process.env.WP_ADMIN_USER ?? 'admin';
-const ADMIN_PASS = process.env.WP_ADMIN_PASS ?? 'admin';
+const ADMIN_USER = process.env.WP_ADMIN_USER || 'admin';
+const ADMIN_PASS = process.env.WP_ADMIN_PASS || 'admin';
 // Enhance moves the login screen to /admin_login/. CI runs without the theme,
 // so the default stays WordPress's own.
-const LOGIN_PATH = process.env.WP_LOGIN_PATH ?? '/wp-login.php';
+// CI passes an empty value when the project has not moved it, hence ||.
+const LOGIN_PATH = process.env.WP_LOGIN_PATH || '/wp-login.php';
 
 export async function loginAsAdmin(page) {
   await page.goto(LOGIN_PATH);
