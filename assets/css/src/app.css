@@ -1,0 +1,32 @@
+@import "tailwindcss";
+
+/* Tailwind v4 scans for class names itself. The markup is PHP, outside the
+   default scan roots, so name them explicitly. Classes that only ever appear
+   as JS string literals are found through the JS source root. */
+@source "../../../templates";
+@source "../../../includes";
+@source "../../js/src";
+
+/* Design tokens. Placeholders until the Figma file's variables are brought
+   across — every colour and font in the templates should come from here. */
+:root {
+  --brodfest-background: #ffffff;
+  --brodfest-foreground: #111111;
+  --brodfest-font-display: ui-sans-serif, system-ui, sans-serif;
+  --brodfest-font-body: ui-sans-serif, system-ui, sans-serif;
+}
+
+@theme inline {
+  --color-background: var(--brodfest-background);
+  --color-foreground: var(--brodfest-foreground);
+  --font-display: var(--brodfest-font-display);
+  --font-body: var(--brodfest-font-body);
+}
+
+@layer base {
+  body {
+    background: var(--color-background);
+    color: var(--color-foreground);
+    font-family: var(--font-body);
+  }
+}

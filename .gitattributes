@@ -1,0 +1,25 @@
+# Line endings are normalised so a checkout on Windows and a checkout on Linux
+# hold byte-identical files. Without this, core.autocrlf=true rewrites every
+# PHP file to CRLF in the working copy while the committed blob stays LF, and
+# PHPCS then reports "End of line character is invalid" against a file that is
+# perfectly fine in the repository.
+#
+# `eol=lf` (not just `text=auto`) is what actually pins the working copy: with
+# `text=auto` alone the checkout still follows core.autocrlf, so the phantom
+# error survives. Nothing here rewrites committed content — the blobs are
+# already LF.
+* text=auto eol=lf
+
+# Binary assets must never be touched by end-of-line conversion. The screenshot
+# baselines in tests/baselines/ are irreplaceable, and a single byte of CRLF
+# mangling would destroy them.
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.woff binary
+*.woff2 binary
+*.ttf binary
+*.otf binary
+*.zip binary
