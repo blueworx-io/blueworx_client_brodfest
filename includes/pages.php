@@ -30,14 +30,56 @@ const BRODFEST_PAGE_META = '_brodfest_page';
  * `description` is stored as the page's excerpt on creation, where an SEO
  * plugin can read or override it, rather than printed as a meta tag here.
  *
- * @return array<string, array{title: string, template: string, description: string}>
+ * `sites` says which of the two sites a page belongs to — see includes/site.php.
+ *
+ * @return array<string, array{title: string, template: string, description: string, sites: string[]}>
  */
 function brodfest_pages() {
+	$both   = array( BRODFEST_SITE_STD, BRODFEST_SITE_INVITE );
+	$invite = array( BRODFEST_SITE_INVITE );
+
 	return array(
-		'home' => array(
+		'home'              => array(
 			'title'       => __( 'Home', 'blueworx-client-brodfest' ),
 			'template'    => 'pages/home.php',
 			'description' => '',
+			'sites'       => $both,
+		),
+		'celebrate'         => array(
+			'title'       => __( 'Celebrate', 'blueworx-client-brodfest' ),
+			'template'    => 'pages/celebrate.php',
+			'description' => '',
+			'sites'       => $both,
+		),
+		'can-sakhara-story' => array(
+			'title'       => __( 'Can Sakhara Story', 'blueworx-client-brodfest' ),
+			'template'    => 'pages/story.php',
+			'description' => '',
+			'sites'       => $invite,
+		),
+		'accommodation'     => array(
+			'title'       => __( 'Accommodation', 'blueworx-client-brodfest' ),
+			'template'    => 'pages/accommodation.php',
+			'description' => '',
+			'sites'       => $both,
+		),
+		'recommendations'   => array(
+			'title'       => __( 'Ibiza Recommendations', 'blueworx-client-brodfest' ),
+			'template'    => 'pages/recommendations.php',
+			'description' => '',
+			'sites'       => $invite,
+		),
+		'enquiries'         => array(
+			'title'       => __( 'Enquiries', 'blueworx-client-brodfest' ),
+			'template'    => 'pages/enquiries.php',
+			'description' => '',
+			'sites'       => $both,
+		),
+		'rsvp'              => array(
+			'title'       => __( 'RSVP', 'blueworx-client-brodfest' ),
+			'template'    => 'pages/rsvp.php',
+			'description' => '',
+			'sites'       => $both,
 		),
 	);
 }
@@ -108,15 +150,20 @@ function brodfest_page_url( $slug ) {
 	$ids  = (array) get_option( 'brodfest_page_ids', array() );
 	$id   = isset( $ids[ $slug ] ) ? (int) $ids[ $slug ] : 0;
 
-	if ( $id > 0 && brodfest_page_slug( $id ) === $slug ) {
-		$url = get_permalink( $id );
+	$url = '';
 
-		if ( is_string( $url ) && '' !== $url ) {
-			return $url;
-		}
+	if ( $id > 0 && brodfest_page_slug( $id ) === $slug ) {
+		$url = (string) get_permalink( $id );
 	}
 
-	return home_url( 'home' === $slug ? '/' : '/' . $slug . '/' );
+	if ( '' === $url ) {
+		$url = home_url( 'home' === $slug ? '/' : '/' . $slug . '/' );
+	}
+
+	// An editor previewing the other site stays in it as they click around.
+	$preview = brodfest_preview_site();
+
+	return '' !== $preview ? add_query_arg( BRODFEST_PREVIEW_ARG, $preview, $url ) : $url;
 }
 
 /**

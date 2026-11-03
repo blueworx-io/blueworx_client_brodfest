@@ -9,6 +9,9 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
+/** The client's Adobe Fonts kit id. */
+const BRODFEST_FONTS_KIT = 'vjw6kra';
+
 /**
  * Enqueues the built stylesheet and bundle on owned pages only.
  *
@@ -22,10 +25,20 @@ function brodfest_enqueue_assets() {
 		return;
 	}
 
+	// The client's Adobe Fonts kit: Futura PT and Aller. Adobe licenses them
+	// for the web only through its own host, so they are not shipped. No
+	// version on purpose — a ?ver= suffix breaks the kit's caching.
+	wp_enqueue_style(
+		'brodfest-fonts',
+		'https://use.typekit.net/' . BRODFEST_FONTS_KIT . '.css',
+		array(),
+		null // phpcs:ignore WordPress.WP.EnqueuedResourceParameters.MissingVersion
+	);
+
 	wp_enqueue_style(
 		'brodfest-public',
 		BRODFEST_URL . 'assets/css/public.css',
-		array(),
+		array( 'brodfest-fonts' ),
 		BRODFEST_VERSION
 	);
 
@@ -62,7 +75,7 @@ function brodfest_sweep_foreign_assets() {
 	 */
 	$keep = (array) apply_filters(
 		'brodfest_keep_styles',
-		array( 'brodfest-public', 'admin-bar', 'dashicons' )
+		array( 'brodfest-fonts', 'brodfest-public', 'admin-bar', 'dashicons' )
 	);
 
 	foreach ( wp_styles()->queue as $handle ) {

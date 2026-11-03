@@ -13,3 +13,9 @@ export async function loginAsAdmin(page) {
   await page.click('#wp-submit');
   await page.waitForURL(/wp-admin/);
 }
+
+// The home page's first-visit intro covers the page; most specs are not
+// about it, so they arrive as a returning visitor.
+export async function skipIntro(page) {
+  await page.addInitScript(() => window.localStorage.setItem('brodfest-intro-seen', '1'));
+}
