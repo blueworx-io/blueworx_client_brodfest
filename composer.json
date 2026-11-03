@@ -1,0 +1,14 @@
+{
+  "name": "blueworx/blueworx-client-brodfest",
+  "description": "The Brodfest website plugin.",
+  "license": "GPL-2.0-or-later",
+  "require-dev": {
+    "squizlabs/php_codesniffer": "^3.9",
+    "wp-coding-standards/wpcs": "^3.1"
+  },
+  "config": {
+    "allow-plugins": {
+      "dealerdirect/phpcodesniffer-composer-installer": true
+    }
+  }
+}

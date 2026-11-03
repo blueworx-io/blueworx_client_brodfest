@@ -1,0 +1,32 @@
+name: CI
+on: pull_request
+jobs:
+  guardrails:
+    uses: blueworx-io/bluegroup_core_foundation/.github/workflows/ci-wordpress.yml@v1
+    with:
+      plugin_slug: blueworx-client-brodfest
+      use_local_wordpress: true
+      foundation_ref: v1
+      # What the shared denylist does not know about this plugin. The release
+      # zip is staged through that list, so anything missing from it ships —
+      # `npm run build:zip` is a local convenience and is never what CI or the
+      # release workflow builds.
+      #
+      # Keep IDENTICAL to release.yml's input of the same name, or the tree
+      # checked on a pull request stops matching the tree a tag actually ships.
+      #
+      #   assets/*/src  Tailwind and JS build inputs. Only assets/css/public.css
+      #                 and assets/js/public.js are ever enqueued.
+      #   scripts       Node build tooling. Nothing under it runs on a site.
+      #   vendor        Composer dev tooling (PHPCS). The plugin never loads it,
+      #                 and its packages' composer.json files are forbidden.
+      #   dist/.wp-test Local build and test-harness scratch directories.
+      exclude_paths: |
+        /assets/js/src
+        /assets/css/src
+        /scripts
+        /vendor
+        /dist
+        /.wp-test
+        /.mcp.json
+    secrets: inherit

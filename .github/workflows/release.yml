@@ -1,0 +1,21 @@
+name: Release
+on:
+  push:
+    tags: ['v*']
+jobs:
+  release:
+    uses: blueworx-io/bluegroup_core_foundation/.github/workflows/release-wordpress.yml@v1
+    with:
+      plugin_slug: blueworx-client-brodfest
+      foundation_ref: v1
+      # Keep IDENTICAL to ci.yml's input of the same name — see the note there.
+      exclude_paths: |
+        /assets/js/src
+        /assets/css/src
+        /scripts
+        /vendor
+        /dist
+        /.wp-test
+        /.mcp.json
+    permissions:
+      contents: write

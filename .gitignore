@@ -1,0 +1,13 @@
+/node_modules
+/vendor/
+composer.lock
+.wp-test/
+test-results/
+playwright-report/
+dist/
+.superpowers/
+.playwright-mcp/
+/*.png
+.DS_Store
+.env*
+.claude/settings.local.json
