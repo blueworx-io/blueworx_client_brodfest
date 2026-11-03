@@ -1,8 +1,8 @@
 <?php
 /**
- * Site footer, on every page.
+ * Site footer: the mountain mark. Figma: Footer (Size).
  *
- * Placeholder until the Figma design is built.
+ * Mobile has no mountain, as Mark drew it — the CSS keeps the space only.
  *
  * @package Brodfest
  */
@@ -11,8 +11,6 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 ?>
-<footer class="brodfest-footer">
-	<div class="mx-auto max-w-screen-xl px-6 py-8 text-sm">
-		&copy; <?php echo esc_html( gmdate( 'Y' ) . ' ' . get_bloginfo( 'name' ) ); ?>
-	</div>
+<footer class="bf-footer">
+	<span class="bf-footer__mountain"><?php brodfest_inline_svg( 'mountain' ); ?></span>
 </footer>

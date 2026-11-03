@@ -85,13 +85,15 @@ add_filter( 'template_include', 'brodfest_template_include' );
  * Deliberately does not call get_header(). wp_head() and wp_footer() still run
  * so other plugins, the admin bar and SEO output keep working.
  *
- * @param array $args Optional. 'body_class' => string.
+ * @param array $args Optional. 'body_class' => string; 'close' => bool, to show
+ *                    the header's close button in place of the menu, as the
+ *                    RSVP page does.
  * @return void
  */
 function brodfest_document_open( $args = array() ) {
 	$body_class = isset( $args['body_class'] ) ? (string) $args['body_class'] : '';
 	$slug       = brodfest_page_slug( get_queried_object_id() );
-	$classes    = 'brodfest';
+	$classes    = 'brodfest brodfest-site-' . brodfest_site();
 
 	if ( '' !== $slug ) {
 		$classes .= ' brodfest-page-' . sanitize_html_class( $slug );
@@ -110,11 +112,17 @@ function brodfest_document_open( $args = array() ) {
 </head>
 <body <?php body_class( $classes ); ?>>
 	<?php wp_body_open(); ?>
-	<a class="sr-only focus:not-sr-only" href="#content"><?php echo esc_html__( 'Skip to the content', 'blueworx-client-brodfest' ); ?></a>
+	<a class="bf-skip" href="#content"><?php echo esc_html__( 'Skip to the content', 'blueworx-client-brodfest' ); ?></a>
 	<?php
-	brodfest_part( 'header' );
+	brodfest_part(
+		'header',
+		array(
+			'slug'  => $slug,
+			'close' => ! empty( $args['close'] ),
+		)
+	);
 	?>
-	<main id="content">
+	<main id="content" class="bf-main">
 	<?php
 }
 
@@ -164,4 +172,26 @@ function brodfest_part( $name, $args = array() ) { // phpcs:ignore Generic.CodeA
  */
 function brodfest_img( $file ) {
 	return BRODFEST_URL . 'assets/img/' . ltrim( (string) $file, '/' );
+}
+
+/**
+ * Prints one of the plugin's own SVGs inline, so CSS can animate its parts.
+ *
+ * Only ever reads files this plugin ships in assets/img/, by bare name.
+ *
+ * @param string $name File name without .svg.
+ * @param string $label Accessible name, or '' when the SVG is decorative.
+ * @return void
+ */
+function brodfest_inline_svg( $name, $label = '' ) {
+	$path = BRODFEST_DIR . 'assets/img/' . basename( (string) $name, '.svg' ) . '.svg';
+
+	if ( ! file_exists( $path ) ) {
+		return;
+	}
+
+	$attrs = '' === $label ? 'aria-hidden="true" focusable="false"' : 'role="img" aria-label="' . esc_attr( $label ) . '"';
+	$svg   = (string) file_get_contents( $path ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- A local file the plugin ships, not a remote request.
+
+	echo preg_replace( '/^<svg /', '<svg ' . $attrs . ' ', trim( $svg ), 1 ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- The plugin's own SVG file; the only interpolation is escaped above.
 }

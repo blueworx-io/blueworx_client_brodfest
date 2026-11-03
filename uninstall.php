@@ -15,3 +15,4 @@ if ( ! defined( 'WP_UNINSTALL_PLUGIN' ) ) {
 
 delete_option( 'brodfest_page_ids' );
 delete_option( 'brodfest_version' );
+delete_option( 'brodfest_settings' );
