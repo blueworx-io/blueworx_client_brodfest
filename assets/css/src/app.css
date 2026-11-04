@@ -40,8 +40,8 @@
   --track-pill: 0.12em;
   --track-body: 0.04em;
 
-  --gutter: calc(48 * var(--u));
-  --text-gutter: calc(96 * var(--u));
+  --bf-gutter: calc(48 * var(--u));
+  --bf-text-gutter: calc(96 * var(--u));
   --header-h: calc(207 * var(--u));
   --ease: cubic-bezier(0.22, 1, 0.36, 1);
 }
@@ -49,8 +49,8 @@
 @media (min-width: 1024px) {
   :root {
     --u: min(calc(100vw / 1920), 1.25px);
-    --gutter: calc(193 * var(--u));
-    --text-gutter: calc(178 * var(--u));
+    --bf-gutter: calc(193 * var(--u));
+    --bf-text-gutter: calc(178 * var(--u));
     --header-h: calc(270 * var(--u));
   }
 }
@@ -311,7 +311,7 @@ body.admin-bar .bf-header {
 
 .bf-header__toggle {
   position: absolute;
-  left: var(--gutter);
+  left: var(--bf-gutter);
   top: calc(87 * var(--u));
   width: calc(46 * var(--u));
   height: calc(34 * var(--u));
@@ -414,7 +414,7 @@ body.admin-bar .bf-menu {
 .bf-menu__items {
   list-style: none;
   margin: 0;
-  padding: calc(99 * var(--u)) 0 0 var(--gutter);
+  padding: calc(99 * var(--u)) 0 0 var(--bf-gutter);
 }
 
 .bf-menu__items li + li {
@@ -619,7 +619,7 @@ body.is-menu-open {
 
 .bf-home__note {
   margin-top: calc(46 * var(--u));
-  padding: 0 var(--text-gutter);
+  padding: 0 var(--bf-text-gutter);
   font-size: max(calc(20 * var(--u)), 15px);
   line-height: 1.85;
   letter-spacing: var(--track-body);
@@ -740,7 +740,7 @@ body.is-menu-open {
 /* ---- Text pages --------------------------------------------------------- */
 
 .bf-text {
-  padding: calc(48 * var(--u)) var(--text-gutter) 0;
+  padding: calc(48 * var(--u)) var(--bf-text-gutter) 0;
 }
 
 .bf-text .bf-title + .bf-body {
@@ -827,7 +827,7 @@ body.is-menu-open {
 }
 
 .bf-feature {
-  margin: calc(84 * var(--u)) var(--gutter) 0;
+  margin: calc(84 * var(--u)) var(--bf-gutter) 0;
   aspect-ratio: 1356 / 567;
 }
 
@@ -871,7 +871,7 @@ body.is-menu-open {
 }
 
 .bf-area__name {
-  padding-inline: var(--text-gutter);
+  padding-inline: var(--bf-text-gutter);
 }
 
 /* Banners run full-bleed on mobile, 2:1. */
@@ -882,7 +882,7 @@ body.is-menu-open {
 
 .bf-area__intro {
   margin-top: calc(62 * var(--u));
-  padding-inline: var(--text-gutter);
+  padding-inline: var(--bf-text-gutter);
 }
 
 .bf-cards {
@@ -897,12 +897,12 @@ body.is-menu-open {
 .bf-cards__track {
   list-style: none;
   margin: 0;
-  padding: 0 var(--gutter);
+  padding: 0 var(--bf-gutter);
   display: flex;
   gap: calc(24 * var(--u));
   overflow-x: auto;
   scroll-snap-type: x mandatory;
-  scroll-padding-inline: var(--gutter);
+  scroll-padding-inline: var(--bf-gutter);
   scrollbar-width: none;
 }
 
@@ -1056,7 +1056,7 @@ body.is-menu-open {
 
 /* The page slides down from under the header as it opens. */
 .bf-rsvp {
-  padding: calc(48 * var(--u)) var(--gutter) 0;
+  padding: calc(48 * var(--u)) var(--bf-gutter) 0;
   animation: bf-slide-down 0.9s var(--ease) both;
 }
 

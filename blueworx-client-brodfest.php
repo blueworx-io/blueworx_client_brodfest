@@ -75,6 +75,7 @@ require_once BRODFEST_DIR . 'includes/pages.php';
 require_once BRODFEST_DIR . 'includes/content.php';
 require_once BRODFEST_DIR . 'includes/render.php';
 require_once BRODFEST_DIR . 'includes/assets.php';
+require_once BRODFEST_DIR . 'includes/design.php';
 require_once BRODFEST_DIR . 'includes/enhance.php';
 require_once BRODFEST_DIR . 'includes/rsvp.php';
 require_once BRODFEST_DIR . 'includes/calendar.php';

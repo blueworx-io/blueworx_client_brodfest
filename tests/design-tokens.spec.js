@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { skipIntro } from './helpers/wp.js';
+import { loginAsAdmin, skipIntro } from './helpers/wp.js';
 
 // Brodfest's colours and fonts come from the theme's named styles
 // (BlueWorx › Design), with the Brodfest values as fallbacks for a site
@@ -74,4 +74,36 @@ test("the colours follow the theme's names", async ({ page }) => {
   await page.addStyleTag({ content: TEST_THEME });
   const field = await rgb(page, '.bf-field', 'backgroundColor');
   expect(near(field, [33, 12, 7], 6), `field colour ${field}`).toBe(false);
+});
+
+// The theme's names exist only where the Enhance theme is active; CI's test
+// site has no theme, so these skip there while the rest of the file runs.
+async function themeActive(page) {
+  await page.goto('/');
+  return (await page.locator('body').getAttribute('class')).includes('wp-theme-blueworx-labs-wordpress-theme');
+}
+
+test("the theme's design styles stay on Brodfest pages", async ({ page }) => {
+  test.skip(!(await themeActive(page)), 'Enhance theme not active');
+  await expect(page.locator('style#blueworx-design-inline-css')).toHaveCount(1);
+  const bg = await page.evaluate(() => getComputedStyle(document.documentElement).getPropertyValue('--color-bg').trim());
+  expect(bg).not.toBe('');
+  await expect(page.locator('link#blueworx-site-css')).toHaveCount(0);
+});
+
+test("Brodfest's fonts and preset are on the Design screen", async ({ page }) => {
+  test.skip(!(await themeActive(page)), 'Enhance theme not active');
+  await loginAsAdmin(page);
+  const response = await page.goto('/wp-admin/admin.php?page=blueworx-design');
+  expect(response.status()).toBe(200);
+  const text = await page.locator('#wpbody').innerText();
+  expect(text).toContain('Futura PT');
+  expect(text).toContain('Aller');
+  expect(text).toContain('Brodfest');
+});
+
+test('the desktop text gutter is not changed by the theme', async ({ page }) => {
+  await page.goto('/celebrate/');
+  const padding = await page.locator('.bf-text').first().evaluate((el) => parseFloat(getComputedStyle(el).paddingLeft));
+  expect(Math.round(padding)).toBe(178);
 });

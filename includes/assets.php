@@ -35,10 +35,20 @@ function brodfest_enqueue_assets() {
 		null // phpcs:ignore WordPress.WP.EnqueuedResourceParameters.MissingVersion
 	);
 
+	// The theme's named colours and fonts (BlueWorx › Design) come first when
+	// the Enhance theme is active. Only then: WordPress silently drops a
+	// stylesheet whose dependency is not registered, and without the theme the
+	// stylesheet falls back to the Brodfest values on its own.
+	$deps = array( 'brodfest-fonts' );
+
+	if ( wp_style_is( 'blueworx-design', 'registered' ) ) {
+		$deps[] = 'blueworx-design';
+	}
+
 	wp_enqueue_style(
 		'brodfest-public',
 		BRODFEST_URL . 'assets/css/public.css',
-		array( 'brodfest-fonts' ),
+		$deps,
 		BRODFEST_VERSION
 	);
 
@@ -56,7 +66,9 @@ add_action( 'wp_enqueue_scripts', 'brodfest_enqueue_assets', 20 );
  * Drops theme and third-party front-end styles on owned pages.
  *
  * The design is guaranteed only if nothing else can reach these pages. The
- * admin bar's own styles are kept, since a signed-in editor still needs it.
+ * admin bar's own styles are kept, since a signed-in editor still needs it,
+ * and so are the theme's named styles, which only define colours and fonts
+ * and style nothing. The theme's base site styles are dropped.
  *
  * @return void
  */
@@ -75,7 +87,7 @@ function brodfest_sweep_foreign_assets() {
 	 */
 	$keep = (array) apply_filters(
 		'brodfest_keep_styles',
-		array( 'brodfest-fonts', 'brodfest-public', 'admin-bar', 'dashicons' )
+		array( 'brodfest-fonts', 'brodfest-public', 'blueworx-design', 'admin-bar', 'dashicons' )
 	);
 
 	foreach ( wp_styles()->queue as $handle ) {
