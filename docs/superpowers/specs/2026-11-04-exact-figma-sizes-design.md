@@ -13,8 +13,11 @@ widths, and some text has a "readable floor" that breaks even that.
 ## Decisions (Luke's)
 
 1. **Desktop:** the 1920 design at Figma's exact sizes. On a narrower window
-   only the empty side margins shrink. Once the window is too narrow for the
-   widest component, the mobile design takes over.
+   only the empty side margins shrink, until the widest component no longer
+   fits. Below that, on laptops, the desktop design shrinks evenly as one
+   whole picture, like the Figma file zoomed to fit — chosen over showing
+   laptops the mobile design, which would leave a narrow column in the middle
+   of the screen.
 2. **Phones:** the 767 design, built at exactly 767px and zoomed by the phone
    to fit its screen, like a PDF.
 3. **Wider than 1920:** exact sizes, centred; backgrounds, video and artwork
@@ -32,11 +35,15 @@ widths, and some text has a "readable floor" that breaks even that.
   (109px from the right in Figma). It keeps at least 18px from the window
   edge, so between 1738 and 1600 wide it moves in on its own; at 1600 it
   sits at 1397–1582, well clear of the logo (585–1015). *(My call.)*
-- **Window below 1600: mobile design** at Figma's exact sizes, centred the same
-  way (positions plus half the difference between the window and 767).
+- **Window 1024 to 1599: the desktop design, shrunk evenly.** The page as it
+  looks at 1600 is scaled by window ÷ 1600 — every size, gap and position
+  alike — so its proportions are exactly Figma's (a 50px box is 45px at
+  1440, 32px at 1024). No minimum text sizes; nothing changes shape.
+- **Window below 1024: mobile design** at Figma's exact sizes, centred
+  (positions plus half the difference between the window and 767).
 - **Phones** (a screen narrower than 767): the page tells the phone its width
   is 767, so the phone shows the 767 design zoomed out to fit. Tablets and
-  anything 767 or wider get the mobile design at exact size, centred, with no
+  windows 767 to 1023 get the mobile design at exact size, centred, with no
   zoom. *(My call: set by a small script in the page head from the screen
   width; without it, a phone falls back to exact size and scrolls sideways.)*
 - **Full-width pieces** — what Figma draws edge to edge: the page background,
@@ -51,9 +58,9 @@ widths, and some text has a "readable floor" that breaks even that.
 - A phone turned sideways keeps the zoomed 767 design on iPhone (which
   reports its upright width); on Android it gets the unzoomed 767 column,
   centred. *(My call: acceptable.)*
-- The fluid unit, its caps (1.25 / 1.3px) and every readable floor go. Figma's
-  desktop line breaks show at every desktop width, since the text no longer
-  changes size.
+- The current fluid unit, its caps (1.25 / 1.3px) and every readable floor
+  go. Figma's desktop line breaks show at every desktop width, since text
+  only ever shrinks with everything around it.
 
 ## The review
 
@@ -67,8 +74,9 @@ widths, and some text has a "readable floor" that breaks even that.
 - Tolerance: **1px** for boxes (Figma stores fractions like 193.2); **2px** for
   text, whose letters the browser and Figma draw slightly differently.
 - Widths checked: 1920 and 767 exactly as Figma; 2560 and 1600 for the desktop
-  design shifted as above; 1599 and 1024 for the centred mobile design; a 390
-  phone for the zoomed 767 design.
+  design shifted as above; 1440 and 1024 for the shrunk desktop design
+  (Figma's boxes shifted and scaled the same way); 1023 for the centred mobile
+  design; a 390 phone for the zoomed 767 design.
 - Differences Luke already signed off stay pinned with their reason: the
   whole-number text sizes, corrected spellings, SEND in Futura, BlueWorx
   placeholders, artboards drawn taller than the page, and Figma's mobile text
@@ -86,11 +94,12 @@ widths, and some text has a "readable floor" that breaks even that.
 
 ## Known cost
 
-Most laptops (1440, 1512, 1536 wide) are below 1600, so they show the mobile
-design as a 767 column in the middle of the screen. That follows from rule 1.
+On laptops (1024–1599 wide) sizes are Figma's scaled down, not Figma's exact
+numbers: the card rows cannot fit at exact size. Exact numbers hold from 1600
+up and in the mobile design.
 
 ## Done when
 
 The geometry tests pass at every width above, the full suite passes with and
-without the Enhance theme, and nothing scrolls sideways at 390, 767, 1024,
-1599, 1600, 1920 or 2560.
+without the Enhance theme, and nothing scrolls sideways at 390, 767, 1023,
+1024, 1440, 1599, 1600, 1920 or 2560.
