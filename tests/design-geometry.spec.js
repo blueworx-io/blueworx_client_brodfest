@@ -32,7 +32,8 @@ const TOLERANCE = { box: 1, text: 2 };
 // that is the 1600-wide view shrunk evenly; the mobile design keeps Figma's
 // sizes, centred. Full-width pieces span the window. The RSVP pill keeps at
 // least 18px from the right edge, so below 1738 it moves in. A 390 phone is
-// told it is 767 wide, so it lays out the mobile design exactly as at 767.
+// told it is 767 wide, so it lays out the mobile design exactly as at 767
+// (834 tall, so the zoomed screen is the artboard's 1640).
 const PHONE = 390;
 const WIDTHS = { 1920: [1920, 2560, 1600, 1440, 1024], 767: [767, 1023, PHONE] };
 
@@ -58,9 +59,10 @@ for (const frame of frames) for (const V of WIDTHS[frame.endsWith('_767') ? 767 
   test(`${frame} matches the design at ${V === PHONE ? 'a 390 phone' : V}`, async ({ page: desktop, browser }) => {
     let page = desktop;
     if (V === PHONE) {
-      page = await (await browser.newContext({ baseURL: test.info().project.use.baseURL, viewport: { width: PHONE, height: 844 }, isMobile: true, hasTouch: true, deviceScaleFactor: 3 })).newPage();
+      page = await (await browser.newContext({ baseURL: test.info().project.use.baseURL, viewport: { width: PHONE, height: 834 }, isMobile: true, hasTouch: true, deviceScaleFactor: 3 })).newPage();
     } else {
-      await page.setViewportSize({ width: V, height: width === 1920 ? 2529 : 1640 });
+      // As tall as the artboard, scaled, so a short page's footer sits where Figma's does.
+      await page.setViewportSize({ width: V, height: width === 1920 ? Math.floor(2529 * Math.min(V / 1600, 1)) : 1640 });
     }
     await skipIntro(page);
     if (path.includes('brodfest-site=')) await loginAsAdmin(page);
@@ -204,13 +206,33 @@ test('no page scrolls sideways at any width', async ({ page }) => {
   expect(wide, wide.join('\n')).toEqual([]);
 });
 
-// Below 1536 the body text stops shrinking with the page (its readable
-// floor), so Figma's line breaks would land mid-line; there the copy wraps
-// on its own.
-test('placeholder line breaks give way on a laptop', async ({ page }) => {
+// A phone is told the page is 767 wide, so it shows the whole mobile design
+// zoomed to fit, and nothing scrolls sideways.
+test.describe('on a 390 phone', () => {
+  test.use({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true, deviceScaleFactor: 3 });
+
+  test('every page is laid out 767 wide and fits the screen', async ({ page }) => {
+    test.setTimeout(120000);
+    await skipIntro(page);
+    await loginAsAdmin(page);
+    const wrong = [];
+    for (const path of [...new Set(ROWS.map((r) => r.path))]) {
+      await page.goto(path);
+      const [layout, scroll] = await page.evaluate(() => [document.documentElement.clientWidth, document.documentElement.scrollWidth]);
+      if (layout !== 767 || scroll > 767) wrong.push(`${path}: laid out ${layout} wide, ${scroll} with overflow`);
+    }
+    expect(wrong, wrong.join('\n')).toEqual([]);
+  });
+});
+
+// The whole desktop design shrinks together on a laptop, so Figma's line
+// breaks still land at the ends of lines.
+test('placeholder line breaks hold on a laptop', async ({ page }) => {
   await skipIntro(page);
-  await page.setViewportSize({ width: 1440, height: 900 });
-  await page.goto('/accommodation/');
-  const text = await page.locator('.bf-card__text').first().innerText();
-  expect(text).not.toContain('adip-');
+  for (const width of [1440, 1024]) {
+    await page.setViewportSize({ width, height: 900 });
+    await page.goto('/accommodation/');
+    const text = await page.locator('.bf-card__text').first().innerText();
+    expect(text).toContain('adip-\niscing');
+  }
 });
