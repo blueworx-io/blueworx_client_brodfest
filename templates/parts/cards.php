@@ -31,7 +31,7 @@ $brodfest_label    = (string) ( $args['label'] ?? '' );
 					<?php endif; ?>
 				</div>
 				<h3 class="bf-card__name"><?php echo esc_html( $brodfest_card['name'] ); ?></h3>
-				<p class="bf-card__text"><?php echo esc_html( $brodfest_card['text'] ); ?></p>
+				<p class="bf-card__text"><?php echo brodfest_text( $brodfest_card['text'] ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Escaped by brodfest_text(). ?></p>
 				<a class="bf-button bf-button--card" href="<?php echo esc_url( $brodfest_card['url'] ); ?>">
 					<?php esc_html_e( 'BOOK', 'blueworx-client-brodfest' ); ?>
 					<span class="sr-only"><?php echo esc_html( $brodfest_card['name'] ); ?></span>

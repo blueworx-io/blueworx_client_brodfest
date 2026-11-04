@@ -175,6 +175,23 @@ function brodfest_img( $file ) {
 }
 
 /**
+ * Escapes copy for the page, keeping its desktop line breaks.
+ *
+ * A newline in the copy is a line break on desktop only, and "-" before a
+ * newline a hyphenated break; on a phone the text wraps on its own. This is
+ * how the placeholder copy carries the Figma file's line breaks.
+ *
+ * @param string $text Plain text.
+ * @return string HTML.
+ */
+function brodfest_text( $text ) {
+	$html = esc_html( (string) $text );
+	$html = str_replace( "-\n", '<span class="bf-hy">-<br /></span>', $html );
+
+	return str_replace( "\n", ' <br class="bf-br" />', $html );
+}
+
+/**
  * Prints one of the plugin's own SVGs inline, so CSS can animate its parts.
  *
  * Only ever reads files this plugin ships in assets/img/, by bare name.

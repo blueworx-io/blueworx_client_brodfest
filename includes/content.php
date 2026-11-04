@@ -73,7 +73,8 @@ function brodfest_placeholder_cards( $count, $name ) {
 	for ( $i = 0; $i < $count; $i++ ) {
 		$cards[] = array(
 			'name'  => $name,
-			'text'  => 'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo',
+			// The Figma card copy, with its desktop line breaks (see brodfest_text()).
+			'text'  => "Lorem ipsum dolor sit amet, consectetur adip-\niscing elit, sed do eiusmod tempor incididunt\nut labore et dolore magna aliqua. Ut enim ad\nminim veniam, quis nostrud exercitation ul-\nlamco laboris nisi ut aliquip ex ea commodo",
 			'url'   => '#',
 			'image' => '',
 		);
@@ -88,10 +89,11 @@ function brodfest_placeholder_cards( $count, $name ) {
  * @return array<int, array{name: string, image: string, image_label: string, intro: string, cards: array}>
  */
 function brodfest_accommodation_areas() {
+	// Name, short name, banner label and card count, as in the Figma file.
 	$areas = array(
-		array( 'PLAYA D’EN BOSSA', 'BOSSA', 3 ),
-		array( 'TALAMANCA', 'TALAMANCA', 3 ),
-		array( 'CALA LLONGA', 'CALA LLONGA', 2 ),
+		array( 'PLAYA D’EN BOSSA', 'BOSSA', 'BOSSA', 3 ),
+		array( 'TALAMANCA', 'TALAMANCA', 'TALAMANCA', 3 ),
+		array( 'CALA LLONGA', 'CALA LLONGA', 'CL', 2 ),
 	);
 
 	return array_map(
@@ -99,9 +101,9 @@ function brodfest_accommodation_areas() {
 			return array(
 				'name'        => $area[0],
 				'image'       => '',
-				'image_label' => 'PICTURE OF ' . $area[1],
-				'intro'       => 'INFO ON ' . $area[1] . ' AREA… ' . brodfest_lorem( 2 ),
-				'cards'       => brodfest_placeholder_cards( $area[2], 'HOTEL NAME' ),
+				'image_label' => 'PICTURE OF ' . $area[2],
+				'intro'       => 'INFO ON ' . $area[1] . " AREA... Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut\nlabore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea",
+				'cards'       => brodfest_placeholder_cards( $area[3], 'HOTEL NAME' ),
 			);
 		},
 		$areas

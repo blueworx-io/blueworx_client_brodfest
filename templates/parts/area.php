@@ -27,7 +27,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 			<span class="bf-placeholder-label"><?php echo esc_html( $args['image_label'] ); ?></span>
 		<?php endif; ?>
 	</div>
-	<p class="bf-body bf-area__intro"><?php echo esc_html( $args['intro'] ); ?></p>
+	<p class="bf-body bf-area__intro"><?php echo brodfest_text( $args['intro'] ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Escaped by brodfest_text(). ?></p>
 	<?php
 	brodfest_part(
 		'cards',

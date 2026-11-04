@@ -18,7 +18,8 @@ brodfest_part(
 	'text-section',
 	array(
 		'title'      => 'RECOMMENDATIONS',
-		'paragraphs' => array( 'INFO ON RECOMMENDATIONS… ' . brodfest_lorem( 2 ) ),
+		'paragraphs' => array( "INFO ON RECS..Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et
+dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea" ),
 	)
 );
 

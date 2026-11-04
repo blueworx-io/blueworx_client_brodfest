@@ -25,7 +25,7 @@ $brodfest_heading = isset( $args['heading'] ) && 'h2' === $args['heading'] ? 'h2
 		<<?php echo esc_html( $brodfest_heading ); ?> class="bf-title"><?php echo esc_html( $args['title'] ); ?></<?php echo esc_html( $brodfest_heading ); ?>>
 	<?php endif; ?>
 	<?php foreach ( (array) ( $args['paragraphs'] ?? array() ) as $brodfest_p ) : ?>
-		<p class="bf-body"><?php echo esc_html( $brodfest_p ); ?></p>
+		<p class="bf-body"><?php echo brodfest_text( $brodfest_p ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Escaped by brodfest_text(). ?></p>
 	<?php endforeach; ?>
 	<?php if ( ! empty( $args['email'] ) ) : ?>
 		<p class="bf-body">
