@@ -603,6 +603,8 @@ body.is-menu-open {
 
 .bf-home__lettering {
   margin-top: calc(66 * var(--u));
+  /* The lettering artwork draws in currentColor, so it follows the theme. */
+  color: var(--bf-orange);
 }
 
 .bf-home__lettering--std {
@@ -808,6 +810,11 @@ body.is-menu-open {
 
 .bf-story-banner {
   background: var(--bf-field);
+}
+
+/* The banner's backdrop shape; its peaks draw in currentColor. */
+.bf-fill-field {
+  fill: var(--bf-field);
 }
 
 .bf-feature,

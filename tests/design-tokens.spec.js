@@ -107,3 +107,30 @@ test('the desktop text gutter is not changed by the theme', async ({ page }) => 
   const padding = await page.locator('.bf-text').first().evaluate((el) => parseFloat(getComputedStyle(el).paddingLeft));
   expect(Math.round(padding)).toBe(178);
 });
+
+async function fill(page, selector) {
+  return page.locator(selector).first().evaluate((el) => {
+    const ctx = document.createElement('canvas').getContext('2d');
+    ctx.fillStyle = getComputedStyle(el).fill;
+    ctx.fillRect(0, 0, 1, 1);
+    return Array.from(ctx.getImageData(0, 0, 1, 1).data.slice(0, 3));
+  });
+}
+
+test('the artwork follows the theme', async ({ page }) => {
+  await page.goto('/');
+  await page.addStyleTag({ content: TEST_THEME });
+  for (const selector of ['.bf-header__logo svg path', '.bf-footer__mountain svg path', '.bf-home__date svg path', '.bf-header__icon--menu svg rect, .bf-header__icon--menu svg path']) {
+    expect(await fill(page, selector), selector).toEqual([0, 255, 0]);
+  }
+  expect(await fill(page, '.bf-home__lettering svg path')).toEqual([0, 0, 255]);
+  const close = await page.locator('.bf-header__icon--close svg path').first().evaluate((el) => getComputedStyle(el).stroke);
+  expect(close).toBe('rgb(0, 255, 0)');
+
+  await loginAsAdmin(page);
+  await page.goto('/can-sakhara-story/?brodfest-site=invite');
+  await page.addStyleTag({ content: TEST_THEME });
+  expect(await fill(page, '.bf-story-banner svg path')).toEqual([0, 255, 0]);
+  const field = await fill(page, '.bf-story-banner svg rect');
+  expect(near(field, [33, 12, 7], 6), `banner field ${field}`).toBe(false);
+});
