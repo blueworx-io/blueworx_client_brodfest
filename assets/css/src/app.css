@@ -140,6 +140,7 @@
 
 .bf-placeholder-label {
   font-size: calc(25 * var(--u));
+  line-height: 1;
   color: var(--bf-bg);
 }
 
@@ -160,8 +161,10 @@
   border-bottom-color: currentColor;
 }
 
-/* Desktop line breaks in the copy (brodfest_text()); a phone wraps on its own. */
-@media (max-width: 1023.98px) {
+/* The copy's own line breaks (brodfest_text()) hold only where the page is
+   drawn at Figma's scale: below 1536 the body text stops shrinking with the
+   page (its readable floor), so the breaks would land mid-line. */
+@media (max-width: 1535.98px) {
   .bf-br,
   .bf-hy {
     display: none;
@@ -824,6 +827,14 @@ body.is-menu-open {
   }
 }
 
+/* Copy with its own line breaks sets its width by its longest line. */
+@media (min-width: 1536px) {
+  .bf-text .bf-body:has(.bf-br),
+  .bf-area__intro:has(.bf-br) {
+    max-width: none;
+  }
+}
+
 /* ---- Media blocks ------------------------------------------------------- */
 
 .bf-strip img {
@@ -888,11 +899,6 @@ body.is-menu-open {
     font-size: calc(50 * var(--u));
   }
 
-  /* Copy with its own line breaks sets its width by its longest line. */
-  .bf-text .bf-body:has(.bf-br),
-  .bf-area__intro:has(.bf-br) {
-    max-width: none;
-  }
 
   .bf-map {
     width: calc(1564 * var(--u));

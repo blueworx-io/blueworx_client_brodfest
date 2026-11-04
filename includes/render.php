@@ -177,7 +177,7 @@ function brodfest_img( $file ) {
 /**
  * Escapes copy for the page, keeping its desktop line breaks.
  *
- * A newline in the copy is a line break on desktop only, and "-" before a
+ * A newline in the copy is a line break at full desktop size only, and "-" before a
  * newline a hyphenated break; on a phone the text wraps on its own. This is
  * how the placeholder copy carries the Figma file's line breaks.
  *

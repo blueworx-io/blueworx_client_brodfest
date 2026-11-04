@@ -10,6 +10,17 @@ import { loginAsAdmin, skipIntro } from './helpers/wp.js';
 // difference Luke signed off — a whole-number text size, a corrected spelling,
 // Figma not yet re-wrapped — and is held to the box in "expect", with the
 // reason in "why", so it still cannot drift.
+//
+// How the pinned rows were sorted: each row more than 2px from Figma was given
+// a "why" only if it fitted one narrow rule — its Figma font size is one of
+// the agreed whole-number changes; its Figma text carries a corrected
+// spelling; it is a BlueWorx placeholder rather than the designer's; it is the
+// footer of an artboard drawn taller than the page; on a 767 frame whose text
+// Figma has not re-wrapped to the 96 margins, it is off only up or down, and
+// the drift steps by exactly one line at each re-wrapped paragraph; or it is
+// SEND, set in Futura per the design comment. Anything else had to be fixed.
+// When Figma is re-wrapped (opened with the fonts), re-export the frames and
+// drop the "re-wrapped" pins.
 
 const ROWS = JSON.parse(readFileSync(new URL('./fixtures/design-geometry.json', import.meta.url), 'utf8'))
   .map((r) => ({ ...r, figma: r.expect || r.figma }));
@@ -74,7 +85,11 @@ for (const frame of frames) {
       // decide which of the two is meant.
       const worst = (a) => Math.max(Math.abs(a[0] - r.figma[0]), Math.abs(a[2] - r.figma[2]));
       let best = worst(box) < worst(text) ? box : text;
-      if (best[3] > r.figma[3] + 2) best = [best[0], f(best[1] + (best[3] - r.figma[3]) / 2), best[2], r.figma[3]];
+      // Only a label centred inside a taller control (a button, a pill) is
+      // compared by its centre; any other text keeps its own height, so a
+      // line that grows taller is caught on its own row.
+      const control = /flex|grid/.test(s.display) && (s.alignItems === 'center' || s.justifyContent === 'center');
+      if (control && best[3] > r.figma[3] + 2) best = [best[0], f(best[1] + (best[3] - r.figma[3]) / 2), best[2], r.figma[3]];
       return best;
     }), rows);
 
@@ -158,4 +173,15 @@ test('no page scrolls sideways at any width', async ({ page }) => {
     }
   }
   expect(wide, wide.join('\n')).toEqual([]);
+});
+
+// Below 1536 the body text stops shrinking with the page (its readable
+// floor), so Figma's line breaks would land mid-line; there the copy wraps
+// on its own.
+test('placeholder line breaks give way on a laptop', async ({ page }) => {
+  await skipIntro(page);
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.goto('/accommodation/');
+  const text = await page.locator('.bf-card__text').first().innerText();
+  expect(text).not.toContain('adip-');
 });
