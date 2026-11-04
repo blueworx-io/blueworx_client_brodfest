@@ -385,14 +385,13 @@ body.admin-bar .bf-header {
 
 /* ---- Menu --------------------------------------------------------------- */
 
-/* The page stays in view behind the menu, blurred, as the comments asked. */
+/* Solid page colour, as in the design: a see-through panel takes on the
+   colour of whatever plays behind it. */
 .bf-menu {
   position: fixed;
   inset: var(--header-h) 0 0 0;
   z-index: 40;
-  background: color-mix(in srgb, var(--bf-bg) 88%, transparent);
-  -webkit-backdrop-filter: blur(14px);
-  backdrop-filter: blur(14px);
+  background: var(--bf-bg);
   opacity: 0;
   transition: opacity 0.4s var(--ease);
 }
