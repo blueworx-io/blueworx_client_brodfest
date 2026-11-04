@@ -108,8 +108,8 @@ function brodfest_document_open( $args = array() ) {
 <head>
 	<meta charset="<?php bloginfo( 'charset' ); ?>" />
 	<meta name="viewport" content="width=device-width, initial-scale=1" />
-	<?php // A phone shows the 767-wide mobile design zoomed to fit, at Figma's sizes. ?>
-	<script>if ( screen.width < 767 ) { document.querySelector( 'meta[name="viewport"]' ).setAttribute( 'content', 'width=767' ); }</script>
+	<?php // A phone shows the 767-wide mobile design zoomed to fit, at Figma's sizes; every viewport tag, in case another plugin prints one. ?>
+	<script>if ( screen.width < 767 ) { document.querySelectorAll( 'meta[name="viewport"]' ).forEach( function ( m ) { m.setAttribute( 'content', 'width=767' ); } ); }</script>
 	<?php wp_head(); ?>
 </head>
 <body <?php body_class( $classes ); ?>>

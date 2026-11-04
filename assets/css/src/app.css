@@ -45,6 +45,7 @@
   --track-pill: 0.12em;
   --track-body: 0.04em;
 
+  /* The gutters carry --bf-shift, so they only hold on full-width elements. */
   --bf-gutter: calc(48 * var(--u) + var(--bf-shift));
   --bf-text-gutter: calc(96 * var(--u) + var(--bf-shift));
   --header-h: calc(207 * var(--u));

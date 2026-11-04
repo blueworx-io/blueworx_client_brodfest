@@ -55,9 +55,9 @@ widths, and some text has a "readable floor" that breaks even that.
   Figma size and its place relative to the centre; a card carousel on a wide
   window starts its first card at the column's left gutter and scrolls the
   full window width. *(My call.)*
-- A phone turned sideways keeps the zoomed 767 design on iPhone (which
-  reports its upright width); on Android it gets the unzoomed 767 column,
-  centred. *(My call: acceptable.)*
+- A phone turned sideways keeps the zoomed 767 design (the width is set once,
+  at load). An Android phone that loads a page already sideways gets the
+  unzoomed 767 column, centred. *(My call: acceptable.)*
 - The current fluid unit, its caps (1.25 / 1.3px) and every readable floor
   go. Figma's desktop line breaks show at every desktop width, since text
   only ever shrinks with everything around it.

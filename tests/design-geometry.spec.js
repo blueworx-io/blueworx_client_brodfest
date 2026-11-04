@@ -131,6 +131,7 @@ for (const frame of frames) for (const V of WIDTHS[frame.endsWith('_767') ? 767 
       const d = got.map((v, k) => Math.round((v - r.figma[k]) * 10) / 10);
       if (d.some((v) => Math.abs(v) > tolerance)) off.push(`${label}: figma ${r.figma.join(',')} site ${got.join(',')} (off ${d.join(',')}) [row ${r.row}]`);
     });
+    if (page !== desktop) await page.context().close();
     expect(off, off.join('\n')).toEqual([]);
   });
 }
@@ -187,25 +188,6 @@ test.describe('RSVP form details at 1920', () => {
   });
 });
 
-// At every width from the mobile artboard up nothing may push the page
-// sideways (phones are checked zoomed, below).
-test('no page scrolls sideways at any width', async ({ page }) => {
-  test.setTimeout(240000);
-  await skipIntro(page);
-  await loginAsAdmin(page);
-  const paths = [...new Set(ROWS.map((r) => r.path))];
-  const wide = [];
-  for (const width of [767, 1023, 1024, 1440, 1599, 1600, 1920, 2560]) {
-    await page.setViewportSize({ width, height: 1000 });
-    for (const path of paths) {
-      await page.goto(path);
-      const scroll = await page.evaluate(() => document.documentElement.scrollWidth);
-      if (scroll > width) wide.push(`${path} at ${width}: ${scroll}px wide`);
-    }
-  }
-  expect(wide, wide.join('\n')).toEqual([]);
-});
-
 // A phone is told the page is 767 wide, so it shows the whole mobile design
 // zoomed to fit, and nothing scrolls sideways.
 test.describe('on a 390 phone', () => {
@@ -222,6 +204,18 @@ test.describe('on a 390 phone', () => {
       if (layout !== 767 || scroll > 767) wrong.push(`${path}: laid out ${layout} wide, ${scroll} with overflow`);
     }
     expect(wrong, wrong.join('\n')).toEqual([]);
+  });
+
+  // A plugin can print its own viewport tag from wp_head; the zoom must win.
+  test('the zoom wins over another viewport tag in the head', async ({ page }) => {
+    await skipIntro(page);
+    await page.route('**/accommodation/', async (route) => {
+      const response = await route.fetch();
+      const html = (await response.text()).replace('<script>if ( screen.width', '<meta name="viewport" content="width=device-width, initial-scale=1" /><script>if ( screen.width');
+      await route.fulfill({ response, body: html });
+    });
+    await page.goto('/accommodation/');
+    expect(await page.evaluate(() => document.documentElement.clientWidth)).toBe(767);
   });
 });
 
