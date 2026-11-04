@@ -2,11 +2,13 @@ import { test, expect } from '@playwright/test';
 import { readFileSync } from 'node:fs';
 import { loginAsAdmin, skipIntro } from './helpers/wp.js';
 
-// Every page against the Figma file at its two artboard widths, 1920 and 767.
+// Every page against the Figma file: at its two artboard widths, 1920 and
+// 767, and at the widths where the design moves without changing size.
 //
 // fixtures/design-geometry.json holds, for each frame, the Figma box of every
-// text layer and known component, paired with the element on the page that
-// shows it. Each box must land within 2px. A row with "expect" is a
+// text layer, component and container, paired with the element on the page
+// that shows it. Boxes must land within 1px, text within 2px (the browser and
+// Figma draw letters slightly differently). A row with "expect" is a
 // difference Luke signed off — a whole-number text size, a corrected spelling,
 // Figma not yet re-wrapped — and is held to the box in "expect", with the
 // reason in "why", so it still cannot drift.
@@ -23,18 +25,43 @@ import { loginAsAdmin, skipIntro } from './helpers/wp.js';
 // drop the "re-wrapped" pins.
 
 const ROWS = JSON.parse(readFileSync(new URL('./fixtures/design-geometry.json', import.meta.url), 'utf8'))
-  .map((r) => ({ ...r, figma: r.expect || r.figma }));
-const TOLERANCE = 2;
+  .map((r, row) => ({ ...r, row, figma: r.expect || r.figma }));
+const TOLERANCE = { box: 1, text: 2 };
+
+// The desktop design keeps Figma's sizes from 1600 up, centred, and below
+// that is the 1600-wide view shrunk evenly; the mobile design keeps Figma's
+// sizes, centred. Full-width pieces span the window. The RSVP pill keeps at
+// least 18px from the right edge, so below 1738 it moves in. A 390 phone is
+// told it is 767 wide, so it lays out the mobile design exactly as at 767.
+const PHONE = 390;
+const WIDTHS = { 1920: [1920, 2560, 1600, 1440, 1024], 767: [767, 1023, PHONE] };
+
+function expected(r, width) {
+  const [x, y, w, h] = r.figma;
+  const V = width === PHONE ? 767 : width;
+  if (r.width === 767) {
+    return w >= 760 ? [0, y, V, h] : [x + Math.max(0, (V - 767) / 2), y, w, h];
+  }
+  const s = Math.min(V / 1600, 1);
+  if (w >= 1900) return [0, y * s, V, h * s];
+  const pill = x >= 1600 && y < 270 ? Math.max(0, Math.min(69, -91 - (V - 1920) / 2)) : 0;
+  return [(x - pill - 960) * s + V / 2, y * s, w * s, h * s];
+}
 const STILL = '#wpadminbar{display:none!important} html{margin-top:0!important} :root{--wp-admin--admin-bar--height:0px!important} *,*::before,*::after{transition:none!important;animation:none!important}';
 
 const frames = [...new Set(ROWS.map((r) => r.frame))];
 
-for (const frame of frames) {
-  const rows = ROWS.filter((r) => r.frame === frame);
+for (const frame of frames) for (const V of WIDTHS[frame.endsWith('_767') ? 767 : 1920]) {
+  const rows = ROWS.filter((r) => r.frame === frame).map((r) => ({ ...r, figma: expected(r, V).map((v) => Math.round(v * 10) / 10) }));
   const { path, width, mode } = rows[0];
 
-  test(`${frame} matches the design`, async ({ page }) => {
-    await page.setViewportSize({ width, height: width === 1920 ? 2529 : 1640 });
+  test(`${frame} matches the design at ${V === PHONE ? 'a 390 phone' : V}`, async ({ page: desktop, browser }) => {
+    let page = desktop;
+    if (V === PHONE) {
+      page = await (await browser.newContext({ baseURL: test.info().project.use.baseURL, viewport: { width: PHONE, height: 844 }, isMobile: true, hasTouch: true, deviceScaleFactor: 3 })).newPage();
+    } else {
+      await page.setViewportSize({ width: V, height: width === 1920 ? 2529 : 1640 });
+    }
     await skipIntro(page);
     if (path.includes('brodfest-site=')) await loginAsAdmin(page);
     await page.goto(path, { waitUntil: 'networkidle' });
@@ -95,11 +122,12 @@ for (const frame of frames) {
 
     const off = [];
     rows.forEach((r, i) => {
+      const tolerance = TOLERANCE[r.kind] ?? TOLERANCE.box;
       const got = measured[i];
       const label = `${r.node}${r.text ? ` "${r.text}"` : ''}`;
       if (!got) return off.push(`${label}: not on the page (${r.sel})`);
       const d = got.map((v, k) => Math.round((v - r.figma[k]) * 10) / 10);
-      if (d.some((v) => Math.abs(v) > TOLERANCE)) off.push(`${label}: figma ${r.figma.join(',')} site ${got.join(',')} (off ${d.join(',')}) [row ${ROWS.indexOf(r)}]`);
+      if (d.some((v) => Math.abs(v) > tolerance)) off.push(`${label}: figma ${r.figma.join(',')} site ${got.join(',')} (off ${d.join(',')}) [row ${r.row}]`);
     });
     expect(off, off.join('\n')).toEqual([]);
   });
@@ -157,14 +185,15 @@ test.describe('RSVP form details at 1920', () => {
   });
 });
 
-// Between and beyond the two artboards nothing may push the page sideways.
+// At every width from the mobile artboard up nothing may push the page
+// sideways (phones are checked zoomed, below).
 test('no page scrolls sideways at any width', async ({ page }) => {
   test.setTimeout(240000);
   await skipIntro(page);
   await loginAsAdmin(page);
   const paths = [...new Set(ROWS.map((r) => r.path))];
   const wide = [];
-  for (const width of [375, 1024, 1440, 2560]) {
+  for (const width of [767, 1023, 1024, 1440, 1599, 1600, 1920, 2560]) {
     await page.setViewportSize({ width, height: 1000 });
     for (const path of paths) {
       await page.goto(path);
