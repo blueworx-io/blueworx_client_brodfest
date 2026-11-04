@@ -206,12 +206,14 @@ test.describe('on a 390 phone', () => {
     expect(wrong, wrong.join('\n')).toEqual([]);
   });
 
-  // A plugin can print its own viewport tag from wp_head; the zoom must win.
+  // WordPress (for a block theme) or another plugin can print its own
+  // viewport tag from wp_head, here beside the plugin's stylesheet; the zoom
+  // must win.
   test('the zoom wins over another viewport tag in the head', async ({ page }) => {
     await skipIntro(page);
     await page.route('**/accommodation/', async (route) => {
       const response = await route.fetch();
-      const html = (await response.text()).replace('<script>if ( screen.width', '<meta name="viewport" content="width=device-width, initial-scale=1" /><script>if ( screen.width');
+      const html = (await response.text()).replace("<link rel='stylesheet' id='brodfest-public-css'", `<meta name="viewport" content="width=device-width, initial-scale=1" /><link rel='stylesheet' id='brodfest-public-css'`);
       await route.fulfill({ response, body: html });
     });
     await page.goto('/accommodation/');
