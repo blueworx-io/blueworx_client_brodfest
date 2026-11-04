@@ -3,7 +3,7 @@ Contributors: blueworx
 Requires at least: 6.4
 Tested up to: 7.0
 Requires PHP: 8.1
-Stable tag: 0.3.0
+Stable tag: 0.4.0
 License: GPL-2.0-or-later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -25,6 +25,9 @@ renders them itself, so the design is exact whatever else is installed.
    page videos, and set where RSVP replies are emailed.
 
 == Changelog ==
+
+= 0.4.0 =
+* Every page shows Figma's exact sizes on screens 1600px and wider, and in the mobile design. Laptops show the desktop design shrunk evenly; phones show the mobile design zoomed to fit.
 
 = 0.3.0 =
 * Colours and fonts come from BlueWorx › Design, with a Brodfest preset. Apply it after updating.

@@ -5,6 +5,16 @@ All notable changes to this project are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.0] - 2026-11-04
+
+### Changed
+
+- Every page now shows Figma's exact sizes: a 50px box is 50px. This holds on
+  screens 1600px and wider (the design stays centred) and in the mobile design.
+- Laptops narrower than 1600px show the desktop design shrunk evenly, like the
+  Figma file zoomed to fit, since the card rows don't fit at full size.
+- Phones show the mobile design zoomed to fit the screen.
+
 ## [0.3.0] - 2026-11-04
 
 ### Changed
