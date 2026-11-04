@@ -5,6 +5,24 @@ All notable changes to this project are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.0] - 2026-11-04
+
+### Changed
+
+- Colours and fonts now come from BlueWorx › Design in the Enhance theme, so
+  they can be changed there. A Brodfest preset sets them to the design in one
+  click. **After updating, apply the Brodfest preset on BlueWorx › Design, or
+  the site shows the theme's default colours.**
+- The logo, icons and lettering follow those colours too.
+- Every page now matches the Figma design at desktop and mobile size: spacing,
+  line heights, the RSVP form's radios, arrows and accessibility line, and the
+  placeholder copy.
+
+### Fixed
+
+- The open menu has the page colour behind it, instead of taking on the colour
+  of the video underneath.
+
 ## [0.2.0] - 2026-11-03
 
 ### Added
