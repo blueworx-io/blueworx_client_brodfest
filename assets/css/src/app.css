@@ -15,17 +15,25 @@
    copy has a floor so it stays readable on a phone.
    ------------------------------------------------------------------------ */
 :root {
-  --bf-bg: #0b0301;
-  --bf-gold: #d1954e;
-  --bf-orange: #a24300;
-  --bf-rust: #632800;
-  --bf-field: #210c07;
+  /* Colours and fonts come from the theme's named styles (BlueWorx ›
+     Design); the Brodfest preset sets them to the design. The fallbacks are
+     the same values, for a site without the theme. Rust and field have no
+     slot there, so they are mixed from the others: with the preset, rust is
+     #632800 and field lands within a few steps of #210c07. */
+  --bf-bg: var(--color-bg, #0b0301);
+  --bf-gold: var(--color-text, #d1954e);
+  --bf-primary: var(--color-primary, #d1954e);
+  /* The accent itself, not --color-accent-text: the theme lightens that
+     one for readability, and the titles must stay the design's orange. */
+  --bf-orange: var(--color-accent, #a24300);
+  --bf-rust: color-mix(in srgb, var(--bf-orange) 58.3%, var(--bf-bg));
+  --bf-field: color-mix(in srgb, var(--bf-bg) 86%, color-mix(in srgb, var(--bf-orange) 71.4%, var(--bf-gold)));
   --bf-white: #ffffff;
   --bf-ph-std: #d800ba;
   --bf-ph-invite: #009ad6;
 
-  --bf-display: "futura-pt", "Jost", "Futura", sans-serif;
-  --bf-sans: "aller", "Lato", sans-serif;
+  --bf-display: var(--font-heading, "futura-pt", "Jost", "Futura", sans-serif);
+  --bf-sans: var(--font-body, "aller", "Lato", sans-serif);
 
   --u: min(calc(100vw / 767), 1.3px);
   --track-wide: 0.54em;
@@ -193,7 +201,7 @@
 .bf-pill {
   width: calc(117 * var(--u));
   height: calc(51 * var(--u));
-  background: var(--bf-gold);
+  background: var(--bf-primary);
   color: var(--bf-bg) !important;
   font-family: var(--bf-display);
   font-weight: 400;
@@ -243,7 +251,7 @@
 .bf-button--send {
   width: calc(188 * var(--u));
   height: calc(67 * var(--u));
-  background: var(--bf-gold);
+  background: var(--bf-primary);
   color: var(--bf-bg);
   font-family: var(--bf-display);
   font-weight: 400;
@@ -382,7 +390,7 @@ body.admin-bar .bf-header {
   position: fixed;
   inset: var(--header-h) 0 0 0;
   z-index: 40;
-  background: rgb(11 3 1 / 0.88);
+  background: color-mix(in srgb, var(--bf-bg) 88%, transparent);
   -webkit-backdrop-filter: blur(14px);
   backdrop-filter: blur(14px);
   opacity: 0;
@@ -558,7 +566,7 @@ body.is-menu-open {
   height: calc(120 * var(--u));
   border-radius: 999px;
   border: 1.5px solid var(--bf-gold);
-  background: rgb(11 3 1 / 0.45);
+  background: color-mix(in srgb, var(--bf-bg) 45%, transparent);
   transform: translate(-50%, -50%);
   cursor: pointer;
   transition: transform 0.4s var(--ease), background-color 0.3s;
@@ -577,7 +585,7 @@ body.is-menu-open {
 
 .bf-hero__play:hover {
   transform: translate(-50%, -50%) scale(1.06);
-  background: rgb(11 3 1 / 0.7);
+  background: color-mix(in srgb, var(--bf-bg) 70%, transparent);
 }
 
 .bf-home {
