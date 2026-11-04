@@ -1,0 +1,96 @@
+# Brodfest: exact Figma sizes
+
+Date: 2026-11-04. Branch `exact-sizes`, stacked on `theme-design-system` (PR #3).
+
+## Why
+
+The client does not want a responsive site. If Figma draws something 50 × 50,
+the page shows it 50 × 50 — text, components and the containers around them,
+widths and heights alike. Today every size scales with the window (a fluid
+unit of window ÷ 1920 or ÷ 767), so the site is exact only at those two
+widths, and some text has a "readable floor" that breaks even that.
+
+## Decisions (Luke's)
+
+1. **Desktop:** the 1920 design at Figma's exact sizes. On a narrower window
+   only the empty side margins shrink. Once the window is too narrow for the
+   widest component, the mobile design takes over.
+2. **Phones:** the 767 design, built at exactly 767px and zoomed by the phone
+   to fit its screen, like a PDF.
+3. **Wider than 1920:** exact sizes, centred; backgrounds, video and artwork
+   run to the edges.
+
+## How it behaves
+
+- **Window 1600 and wider: desktop design.** Every element keeps Figma's
+  size. The design stays centred, so each element sits at its Figma position
+  plus half the difference between the window and 1920 (−160 at 1600, +320
+  at 2560). 1600 is the switch because the widest component — the card rows,
+  the map and the area headers, 1564 wide — then has 18px either side. *(My
+  call: 18px.)*
+- **The RSVP pill** is the one element nearer the edge than the card rows
+  (109px from the right in Figma). It keeps at least 18px from the window
+  edge, so between 1738 and 1600 wide it moves in on its own; at 1600 it
+  sits at 1397–1582, well clear of the logo (585–1015). *(My call.)*
+- **Window below 1600: mobile design** at Figma's exact sizes, centred the same
+  way (positions plus half the difference between the window and 767).
+- **Phones** (a screen narrower than 767): the page tells the phone its width
+  is 767, so the phone shows the 767 design zoomed out to fit. Tablets and
+  anything 767 or wider get the mobile design at exact size, centred, with no
+  zoom. *(My call: set by a small script in the page head from the screen
+  width; without it, a phone falls back to exact size and scrolls sideways.)*
+- **Full-width pieces** — what Figma draws edge to edge: the page background,
+  header bar, hero video, gold rule under it, photo strip, story banner,
+  footer and open menu panel; in the mobile design also the banners, the map,
+  the area headers and the card carousels. They span the whole window at
+  every width, at Figma's height. Photos and video crop to fill, never
+  stretch. What sits inside them (logo, lettering, mountain, cards) keeps its
+  Figma size and its place relative to the centre; a card carousel on a wide
+  window starts its first card at the column's left gutter and scrolls the
+  full window width. *(My call.)*
+- A phone turned sideways keeps the zoomed 767 design on iPhone (which
+  reports its upright width); on Android it gets the unzoomed 767 column,
+  centred. *(My call: acceptable.)*
+- The fluid unit, its caps (1.25 / 1.3px) and every readable floor go. Figma's
+  desktop line breaks show at every desktop width, since the text no longer
+  changes size.
+
+## The review
+
+- Re-export every Figma frame (13 pages × 2 designs) so the check runs against
+  the file as it is today.
+- Extend the check from text and named components to **containers**: card
+  images, card rows, carousel viewports and dot rows, area headers, banner
+  frames, the map, the menu panel and its item list, the RSVP form, field
+  group, radio groups, radio circles, checkbox row, and each page's total
+  height. Spacer frames are covered by the position of what follows them.
+- Tolerance: **1px** for boxes (Figma stores fractions like 193.2); **2px** for
+  text, whose letters the browser and Figma draw slightly differently.
+- Widths checked: 1920 and 767 exactly as Figma; 2560 and 1600 for the desktop
+  design shifted as above; 1599 and 1024 for the centred mobile design; a 390
+  phone for the zoomed 767 design.
+- Differences Luke already signed off stay pinned with their reason: the
+  whole-number text sizes, corrected spellings, SEND in Futura, BlueWorx
+  placeholders, artboards drawn taller than the page, and Figma's mobile text
+  that has not re-wrapped. Each pin is re-checked against the new sizes by
+  the same narrow rules; anything a rule does not cover is fixed in the site,
+  never newly pinned.
+- The same fixture must pass with and without the Enhance theme.
+- Figma re-exported 2026-11-04 with the scratch export script: identical to
+  the export the current fixture was built from.
+
+## Non-goals
+
+- No Figma edits; no colour, font, content or copy changes.
+- No new layouts for tablets or laptops beyond the two designs.
+
+## Known cost
+
+Most laptops (1440, 1512, 1536 wide) are below 1600, so they show the mobile
+design as a 767 column in the middle of the screen. That follows from rule 1.
+
+## Done when
+
+The geometry tests pass at every width above, the full suite passes with and
+without the Enhance theme, and nothing scrolls sideways at 390, 767, 1024,
+1599, 1600, 1920 or 2560.
