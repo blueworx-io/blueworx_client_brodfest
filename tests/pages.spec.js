@@ -91,19 +91,23 @@ test('Accommodation shows each area with its hotels and the discount code', asyn
   await expect(page.locator('.bf-card__code').first()).toHaveText('BRODFEST');
 });
 
-test('on a phone the hotels swipe, the dots follow, and nothing scrolls sideways', async ({ page }) => {
-  await page.setViewportSize({ width: 390, height: 844 });
-  await page.goto('/accommodation/');
+// A phone lays the page out 767 wide (the mobile design) and zooms it to fit.
+test.describe('on a phone', () => {
+  test.use({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true });
 
-  const carousel = page.locator('[data-bf-carousel]').first();
-  const dots = carousel.locator('.bf-cards__dot');
-  await expect(dots.first()).toHaveClass(/is-active/);
+  test('the hotels swipe, the dots follow, and nothing scrolls sideways', async ({ page }) => {
+    await page.goto('/accommodation/');
 
-  await carousel.locator('[data-bf-track]').evaluate((track) => track.scrollTo({ left: track.scrollWidth }));
-  await expect(dots.last()).toHaveClass(/is-active/);
+    const carousel = page.locator('[data-bf-carousel]').first();
+    const dots = carousel.locator('.bf-cards__dot');
+    await expect(dots.first()).toHaveClass(/is-active/);
 
-  const width = await page.evaluate(() => document.documentElement.scrollWidth);
-  expect(width).toBeLessThanOrEqual(390);
+    await carousel.locator('[data-bf-track]').evaluate((track) => track.scrollTo({ left: track.scrollWidth }));
+    await expect(dots.last()).toHaveClass(/is-active/);
+
+    const width = await page.evaluate(() => document.documentElement.scrollWidth);
+    expect(width).toBeLessThanOrEqual(767);
+  });
 });
 
 test('Add to Calendar downloads the event as an all-day calendar entry', async ({ page }) => {
