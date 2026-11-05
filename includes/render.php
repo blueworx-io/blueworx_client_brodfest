@@ -87,7 +87,8 @@ add_filter( 'template_include', 'brodfest_template_include' );
  *
  * @param array $args Optional. 'body_class' => string; 'close' => bool, to show
  *                    the header's close button in place of the menu, as the
- *                    RSVP page does.
+ *                    RSVP page does; 'opening' => bool, for the home page's
+ *                    first-visit opening, where the logo draws itself.
  * @return void
  */
 function brodfest_document_open( $args = array() ) {
@@ -115,9 +116,30 @@ function brodfest_document_open( $args = array() ) {
 	// block theme) or another plugin may print one of its own there.
 	?>
 	<script>if ( screen.width < 767 ) { document.querySelectorAll( 'meta[name="viewport"]' ).forEach( function ( m ) { m.setAttribute( 'content', 'width=767' ); } ); }</script>
+	<?php if ( ! empty( $args['opening'] ) ) : ?>
+		<?php
+		// Decided before the page first paints, so a first-time visitor sees
+		// black, never a flash of the page; a returning one, or anyone who asks
+		// for less motion, never sees it.
+		?>
+	<script>try { if ( localStorage.getItem( 'brodfest-intro-seen' ) !== '1' && ! matchMedia( '(prefers-reduced-motion: reduce)' ).matches ) { document.documentElement.classList.add( 'bf-is-opening' ); } } catch ( e ) { document.documentElement.classList.add( 'bf-is-opening' ); }</script>
+	<?php endif; ?>
 </head>
 <body <?php body_class( $classes ); ?>>
 	<?php wp_body_open(); ?>
+	<?php if ( ! empty( $args['opening'] ) ) : ?>
+	<div class="bf-opening" aria-hidden="true" data-bf-opening>
+		<span class="bf-opening__logo">
+			<?php
+			// Each letter's outline is measured as 1, so the drawing runs the
+			// same length whatever the letter's size.
+			ob_start();
+			brodfest_inline_svg( 'logo' );
+			echo str_replace( '<path ', '<path pathLength="1" ', (string) ob_get_clean() ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- The plugin's own SVG, from brodfest_inline_svg().
+			?>
+		</span>
+	</div>
+	<?php endif; ?>
 	<a class="bf-skip" href="#content"><?php echo esc_html__( 'Skip to the content', 'blueworx-client-brodfest' ); ?></a>
 	<?php
 	brodfest_part(

@@ -15,8 +15,13 @@ export async function loginAsAdmin(page) {
   await page.waitForURL(/wp-admin/);
 }
 
-// The home page's first-visit intro covers the page; most specs are not
-// about it, so they arrive as a returning visitor.
+// The home page's first-visit opening, and the video that then fills the
+// window, cover the page; most specs are not about them, so they arrive as a
+// returning visitor whose browser does not play video by itself (as Low Power
+// Mode on an iPhone does), which leaves the page in view.
 export async function skipIntro(page) {
-  await page.addInitScript(() => window.localStorage.setItem('brodfest-intro-seen', '1'));
+  await page.addInitScript(() => {
+    window.localStorage.setItem('brodfest-intro-seen', '1');
+    HTMLMediaElement.prototype.play = () => Promise.reject(new DOMException('Autoplay refused', 'NotAllowedError'));
+  });
 }

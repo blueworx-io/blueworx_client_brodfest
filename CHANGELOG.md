@@ -5,6 +5,31 @@ All notable changes to this project are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.6.0] - 2026-11-05
+
+### Added
+
+- The home page opens on black as the Brodfest logo draws itself, then fades
+  to the page, on a visitor's first arrival. It replaces the Enter screen.
+- The home video plays by itself, muted, filling the window over the menu, with
+  a sound button. Scrolling, tapping or pressing Esc brings the page back, and
+  the video plays on in its place. Anyone who asks for less motion gets the
+  page and a play button instead.
+
+### Fixed
+
+- The menu button and RSVP sit level with the logo, centred in the header.
+- RSVP: the country code, the dietary choice and the phone placeholder sit in
+  the middle of their fields.
+- Each row of hotels has its BOOK buttons in line, and the AMA Ibiza link
+  works.
+
+### Changed
+
+- The home page, and the calendar entry's note, say "Your invitation and the
+  full Brodfest Ibiza website will land before Christmas.", as in the copy
+  document.
+
 ## [0.5.0] - 2026-11-05
 
 ### Added

@@ -15,7 +15,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 $brodfest_invite = brodfest_is_invite();
 $brodfest_event  = brodfest_event();
 
-brodfest_document_open( array( 'body_class' => 'bf-has-intro' ) );
+brodfest_document_open( array( 'opening' => true ) );
 
 brodfest_part( 'hero', array( 'videos' => brodfest_hero_videos() ) );
 ?>
@@ -40,7 +40,7 @@ brodfest_part( 'hero', array( 'videos' => brodfest_hero_videos() ) );
 		echo esc_html(
 			$brodfest_invite
 				? __( 'Please RSVP to confirm attendance', 'blueworx-client-brodfest' )
-				: __( 'Full invitation and information coming soon', 'blueworx-client-brodfest' )
+				: brodfest_std_copy( 'invitation' )
 		);
 		?>
 	</p>

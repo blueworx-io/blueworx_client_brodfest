@@ -28,6 +28,19 @@ test('the header keeps at least the mobile 48px from either edge', async ({ page
   }
 });
 
+test('the menu button and RSVP sit level with the logo, centred in the 170 header', async ({ page }) => {
+  for (const width of [1920, 1280, 1024, 900, 768]) {
+    await page.setViewportSize({ width, height: 900 });
+    await page.goto('/celebrate/');
+    const header = await page.locator('.bf-header').boundingBox();
+    const middle = header.y + header.height / 2;
+    for (const selector of ['.bf-header__toggle', '.bf-header .bf-pill', '.bf-header__logo']) {
+      const box = await page.locator(selector).boundingBox();
+      expect(Math.abs(box.y + box.height / 2 - middle), `${selector} at ${width}`).toBeLessThanOrEqual(1);
+    }
+  }
+});
+
 test('the open menu blurs the page behind it and has no mountain', async ({ page }) => {
   await page.setViewportSize({ width: 1920, height: 1080 });
   await page.goto('/');
@@ -48,28 +61,6 @@ test('a menu item turns white on rollover, without going bold', async ({ page })
   expect(await item.evaluate((el) => getComputedStyle(el).fontWeight)).toBe(before);
 });
 
-test.describe('the opening screen', () => {
-  test.beforeEach(async ({ page }) => {
-    await page.addInitScript(() => window.localStorage.removeItem('brodfest-intro-seen'));
-  });
-
-  test('has no line under the logo and no ring around Enter', async ({ page }) => {
-    await page.goto('/');
-    const enter = page.locator('[data-bf-enter]');
-    await expect(enter).toBeVisible();
-    await expect(page.locator('.bf-intro__line')).toHaveCount(0);
-    await expect(enter).toBeFocused();
-    expect(await enter.evaluate((el) => getComputedStyle(el).outlineStyle)).toBe('none');
-  });
-
-  test('still shows the focus ring to someone using the keyboard', async ({ page }) => {
-    await page.goto('/');
-    await expect(page.locator('[data-bf-enter]')).toBeVisible();
-    await page.keyboard.press('Shift');
-    expect(await page.locator('[data-bf-enter]').evaluate((el) => getComputedStyle(el).outlineStyle)).toBe('solid');
-  });
-});
-
 test('the home page plays the Save the Date video, wide on desktop and square on phones', async ({ page }) => {
   await page.goto('/');
   const sources = page.locator('.bf-hero__video source');
@@ -79,6 +70,15 @@ test('the home page plays the Save the Date video, wide on desktop and square on
   await expect(sources.last()).toHaveAttribute('src', /BF_SAVE_THE_DATE_1080X1080/);
   const ok = await page.request.get(await sources.first().getAttribute('src'));
   expect(ok.status()).toBe(200);
+});
+
+test('the home page and calendar entry use the copy document line about the invitation', async ({ page }) => {
+  await page.goto('/');
+  await expect(page.locator('.bf-home__note')).toHaveText('Your invitation and the full Brodfest Ibiza website will land before Christmas.');
+  const href = await page.locator('.bf-home .bf-button--primary').getAttribute('href');
+  const body = await (await page.request.get(href)).text();
+  // A calendar file folds long lines with a line break and a space.
+  expect(body.replace(/\r\n[ \t]/g, '')).toContain('DESCRIPTION:Your invitation and the full Brodfest Ibiza website will land before Christmas.');
 });
 
 test('Celebration has the new copy, the dress code and transport', async ({ page }) => {
@@ -107,6 +107,16 @@ test('Information is Where to Stay, with the real hotels and only Cala Llonga di
   await expect(discounts.first()).toHaveText('For up to 25% discount on bookings made before 15/02/2027, quote BRODFEST');
   await expect(page.locator('.bf-area').last().locator('.bf-card__discount')).toHaveCount(2);
   await expect(page.getByText('GETTING HERE')).toHaveCount(0);
+});
+
+test('each row of hotels has its BOOK buttons in line, whatever the length of the copy', async ({ page }) => {
+  await page.setViewportSize({ width: 1920, height: 1080 });
+  await page.goto('/accommodation/');
+  await expect(page.locator('.bf-card a[href*="amaibiza"]')).toHaveAttribute('href', 'https://www.amaibiza.com/');
+  for (const area of await page.locator('.bf-area').all()) {
+    const tops = await area.locator('.bf-button--card').evaluateAll((els) => els.map((el) => Math.round(el.getBoundingClientRect().top)));
+    expect(new Set(tops).size, tops.join()).toBe(1);
+  }
 });
 
 test('the map is the client\'s, 782 by 600 on desktop, in the same-height slot', async ({ page }) => {
@@ -143,6 +153,59 @@ test.describe('RSVP', () => {
     expect(await code.evaluate((el) => el.tagName)).toBe('SELECT');
     await code.selectOption('+34');
     await expect(code).toHaveValue('+34');
+  });
+
+  test('the country code and dietary choice sit in the middle of their fields', async ({ page }) => {
+    for (const width of [1920, 767]) {
+      await page.setViewportSize({ width, height: 1080 });
+      await page.goto('/rsvp/');
+      for (const [selector, from, to] of [['#bf-phone_prefix', 0, 1], ['#bf-dietary', 0.15, 0.8]]) {
+        const field = page.locator(selector);
+        await field.scrollIntoViewIfNeeded();
+        const box = await field.boundingBox();
+        const clip = { x: box.x + box.width * from, y: box.y, width: box.width * (to - from), height: box.height };
+        const png = (await page.screenshot({ clip })).toString('base64');
+        // The middle of the gold lettering, as a share of the field's height.
+        const middle = await page.evaluate(async (data) => {
+          const img = new Image();
+          img.src = `data:image/png;base64,${data}`;
+          await img.decode();
+          const canvas = document.createElement('canvas');
+          canvas.width = img.width;
+          canvas.height = img.height;
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(img, 0, 0);
+          const { data: px } = ctx.getImageData(0, 0, img.width, img.height);
+          const rows = [];
+          for (let y = 0; y < img.height; y++) {
+            for (let x = 0; x < img.width; x++) {
+              if (px[(y * img.width + x) * 4] > 120) {
+                rows.push(y);
+                break;
+              }
+            }
+          }
+          return (rows[0] + rows[rows.length - 1]) / 2 / img.height;
+        }, png);
+        expect(Math.abs(middle - 0.5), `${selector} at ${width}`).toBeLessThanOrEqual(0.06);
+      }
+    }
+  });
+
+  test('the phone number placeholder sits in the middle of its field', async ({ page }) => {
+    for (const width of [1920, 767]) {
+      await page.setViewportSize({ width, height: 1080 });
+      await page.goto('/rsvp/');
+      const off = await page.evaluate(() => {
+        const input = document.querySelector('#bf-phone');
+        const field = input.closest('.bf-field').getBoundingClientRect();
+        const box = input.getBoundingClientRect();
+        const s = getComputedStyle(input);
+        const middle = (box.left + parseFloat(s.paddingLeft) + box.right - parseFloat(s.paddingRight)) / 2;
+        return middle - (field.left + field.width / 2);
+      });
+      expect(Math.abs(off), `at ${width}`).toBeLessThanOrEqual(1);
+    }
   });
 
   test('the dietary list ends with Dairy Free and opens dark with gold brand lettering', async ({ page }) => {

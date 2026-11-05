@@ -53,6 +53,9 @@ function tablet(r, [x, y, w, h]) {
   if (r.node === 'Page') return [x, y, w, fits ? h : h - d];
   if (r.node === 'Header') return [x, y, w, 170];
   if (r.node === 'Brand/Logo' && /bf-header/.test(r.sel)) return [252.7, 53.4, 261.6, 63.2];
+  // The button and pill sit centred in the 170, as the logo does.
+  if (y < 207 && /bf-header__toggle/.test(r.sel)) return [x, y - 19, w, h];
+  if (y < 207 && /bf-pill/.test(r.sel)) return [x, y - 18.5, w, h];
   if (y < 207) return [x, y - 33.5, w, h];
   if (r.node === 'Menu/Panel') return [x, y - d, w, h + d];
   if (fits && /bf-footer/.test(r.sel)) return [x, y, w, h];

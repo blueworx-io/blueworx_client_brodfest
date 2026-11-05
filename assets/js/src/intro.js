@@ -1,85 +1,149 @@
-// The home page's first-visit intro and its video.
+// The home page's opening and its video.
 //
-// First visit: the intro plays and ends on Enter. That click is what lets the
-// browser play the video with sound, so the video starts then, once. After it
-// ends, and on every later visit, a play button offers a replay instead — the
-// video never starts by itself again.
+// A first-time visitor arrives on black while the logo draws itself, and it
+// fades to the page (the head script in render.php decides, before the page
+// paints). The video then plays by itself, muted, filling the window over the
+// menu, until it ends or the visitor scrolls, taps or presses Esc; it plays on
+// in its place. Anyone who asks for less motion gets neither: the page, with a
+// play button.
 
 const SEEN_KEY = 'brodfest-intro-seen';
-
-function seen() {
-	try {
-		return window.localStorage.getItem(SEEN_KEY) === '1';
-	} catch {
-		return false;
-	}
-}
 
 function markSeen() {
 	try {
 		window.localStorage.setItem(SEEN_KEY, '1');
 	} catch {
-		// Private browsing can refuse storage; the intro simply shows again.
+		// Private browsing can refuse storage; the opening simply shows again.
 	}
 }
 
-export function initIntro() {
-	const hero = document.querySelector('[data-bf-hero]');
-	if (!hero) {
-		return;
-	}
+// Keys that only move focus leave the full-window video be.
+const FOCUS_KEYS = ['Tab', 'Shift'];
 
+function initVideo(hero) {
 	const video = hero.querySelector('[data-bf-video]');
 	const play = hero.querySelector('[data-bf-play]');
+	const sound = hero.querySelector('[data-bf-sound]');
+
+	if (!video) {
+		return () => {};
+	}
+
+	const leaveCinema = () => {
+		document.body.classList.remove('is-cinema');
+		window.removeEventListener('wheel', leaveCinema);
+		window.removeEventListener('touchmove', leaveCinema);
+		window.removeEventListener('scroll', leaveCinema);
+		document.removeEventListener('pointerdown', onPointer);
+		document.removeEventListener('keydown', onKey);
+	};
+
+	function onPointer(event) {
+		if (!event.target.closest('[data-bf-sound]')) {
+			leaveCinema();
+		}
+	}
+
+	function onKey(event) {
+		const onSound = event.target.closest?.('[data-bf-sound]') && ['Enter', ' '].includes(event.key);
+		if (!FOCUS_KEYS.includes(event.key) && !onSound) {
+			leaveCinema();
+		}
+	}
+
+	const enterCinema = () => {
+		document.body.classList.add('is-cinema');
+		window.addEventListener('wheel', leaveCinema, { passive: true });
+		window.addEventListener('touchmove', leaveCinema, { passive: true });
+		window.addEventListener('scroll', leaveCinema, { passive: true });
+		document.addEventListener('pointerdown', onPointer);
+		document.addEventListener('keydown', onKey);
+	};
+
+	const setSound = (on) => {
+		video.muted = !on;
+		sound?.setAttribute('aria-pressed', on ? 'true' : 'false');
+	};
 
 	const showPlay = () => {
 		if (play) {
 			play.hidden = false;
 		}
+		if (sound) {
+			sound.hidden = true;
+		}
 	};
 
-	const playWithSound = () => {
-		if (!video) {
-			return;
-		}
-		video.muted = false;
-		video.currentTime = 0;
+	video.addEventListener('play', () => {
 		if (play) {
 			play.hidden = true;
 		}
+		if (sound) {
+			sound.hidden = false;
+		}
+		enterCinema();
+	});
+
+	video.addEventListener('ended', () => {
+		leaveCinema();
+		showPlay();
+	});
+
+	sound?.addEventListener('click', () => setSound(video.muted));
+
+	play?.addEventListener('click', () => {
+		setSound(true);
+		video.currentTime = 0;
+		video.play().catch(showPlay);
+	});
+
+	// Starts the video by itself, muted, as browsers allow.
+	return () => {
+		if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+			showPlay();
+			return;
+		}
+		setSound(false);
 		video.play().catch(showPlay);
 	};
+}
 
-	video?.addEventListener('ended', showPlay);
-	play?.addEventListener('click', playWithSound);
+export function initIntro() {
+	const hero = document.querySelector('[data-bf-hero]');
+	const opening = document.querySelector('[data-bf-opening]');
+	const start = hero ? initVideo(hero) : () => {};
 
-	if (seen()) {
-		showPlay();
+	if (!opening || !document.documentElement.classList.contains('bf-is-opening')) {
+		opening?.remove();
+		start();
 		return;
 	}
 
-	const template = document.querySelector('template[data-bf-intro]');
-	if (!template) {
-		showPlay();
-		return;
-	}
+	markSeen();
+	let started = false;
+	const begin = () => {
+		if (!started) {
+			started = true;
+			start();
+		}
+	};
+	const done = () => {
+		begin();
+		document.documentElement.classList.remove('bf-is-opening');
+		opening.remove();
+	};
 
-	document.body.append(template.content.cloneNode(true));
-	const intro = document.body.lastElementChild;
-	const enter = intro.querySelector('[data-bf-enter]');
-	document.documentElement.style.overflow = 'hidden';
-	enter.focus({ preventScroll: true });
-	// Focus lands on Enter by itself; its ring shows once a key is pressed.
-	intro.addEventListener('keydown', () => intro.setAttribute('data-bf-keys', ''), { once: true });
-
-	enter.addEventListener('click', () => {
-		markSeen();
-		playWithSound();
-		intro.classList.add('is-leaving');
-		document.documentElement.style.overflow = '';
-		const done = () => intro.remove();
-		intro.addEventListener('transitionend', done, { once: true });
-		// Reduced motion has no transition to end.
-		setTimeout(done, 1500);
+	// The video starts as the opening begins to fade, so the fade reveals it.
+	opening.addEventListener('animationstart', (event) => {
+		if (event.target === opening) {
+			begin();
+		}
 	});
+	opening.addEventListener('animationend', (event) => {
+		if (event.target === opening) {
+			done();
+		}
+	});
+	// In case the browser runs no animations at all.
+	setTimeout(done, 3000);
 }

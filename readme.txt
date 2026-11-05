@@ -3,7 +3,7 @@ Contributors: blueworx
 Requires at least: 6.4
 Tested up to: 7.0
 Requires PHP: 8.1
-Stable tag: 0.5.0
+Stable tag: 0.6.0
 License: GPL-2.0-or-later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -25,6 +25,12 @@ renders them itself, so the design is exact whatever else is installed.
    page videos, and set where RSVP replies are emailed.
 
 == Changelog ==
+
+= 0.6.0 =
+* The home page opens on black as the Brodfest logo draws itself, then fades to the page, on a first visit. It replaces the Enter screen.
+* The home video plays by itself, muted, filling the window over the menu, with a sound button. Scrolling, tapping or pressing Esc brings the page back.
+* The menu button and RSVP sit level with the logo in the header. On RSVP the country code and dietary choice sit in the middle of their fields. Each row of hotels has its BOOK buttons in line, and the AMA Ibiza link works.
+* The home page says your invitation and the full website will land before Christmas, as in the copy document.
 
 = 0.5.0 =
 * The Save the Date has the client's real copy: Celebration with the dress code and transport, Where to Stay with all eight hotels, and the new enquiry addresses. The home page plays the Save the Date video, and Add to Calendar books 7pm Ibiza time.
