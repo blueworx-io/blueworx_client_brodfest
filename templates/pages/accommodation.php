@@ -23,8 +23,10 @@ brodfest_part(
 	$brodfest_invite
 		? array(
 			'title'      => 'ACCOMMODATION',
-			'paragraphs' => array( "INFO ON ACCOM..Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et
-dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea" ),
+			'paragraphs' => array(
+				'INFO ON ACCOM..Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et
+dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea',
+			),
 		)
 		: array(
 			'title'      => 'WHERE TO STAY',
