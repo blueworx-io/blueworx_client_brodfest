@@ -69,6 +69,8 @@ export function initIntro() {
 	const enter = intro.querySelector('[data-bf-enter]');
 	document.documentElement.style.overflow = 'hidden';
 	enter.focus({ preventScroll: true });
+	// Focus lands on Enter by itself; its ring shows once a key is pressed.
+	intro.addEventListener('keydown', () => intro.setAttribute('data-bf-keys', ''), { once: true });
 
 	enter.addEventListener('click', () => {
 		markSeen();

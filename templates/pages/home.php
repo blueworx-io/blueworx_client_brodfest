@@ -17,7 +17,7 @@ $brodfest_event  = brodfest_event();
 
 brodfest_document_open( array( 'body_class' => 'bf-has-intro' ) );
 
-brodfest_part( 'hero', array( 'video' => brodfest_hero_video() ) );
+brodfest_part( 'hero', array( 'videos' => brodfest_hero_videos() ) );
 ?>
 <section class="bf-home">
 	<h1 class="bf-home__date">

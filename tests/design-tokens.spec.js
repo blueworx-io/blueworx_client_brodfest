@@ -135,7 +135,7 @@ test('the artwork follows the theme', async ({ page }) => {
   expect(near(field, [33, 12, 7], 6), `banner field ${field}`).toBe(false);
 });
 
-test('the open menu is the page colour over the video', async ({ page }) => {
+test('the open menu is mostly the page colour, so the video only tints it', async ({ page }) => {
   await page.goto('/');
   await page.click('.bf-header__toggle');
   await expect(page.locator('body')).toHaveClass(/is-menu-open/);
@@ -144,18 +144,7 @@ test('the open menu is the page colour over the video', async ({ page }) => {
     const s = getComputedStyle(el);
     return { bg: s.backgroundColor, blur: s.backdropFilter };
   });
-  expect(style.blur).toBe('none');
-  expect(await rgb(page, '.bf-menu', 'backgroundColor')).toEqual(await rgb(page, 'body', 'backgroundColor'));
-
-  // Over the video placeholder: what a visitor sees is still the page colour.
-  const shot = await page.screenshot({ clip: { x: 1500, y: 600, width: 1, height: 1 } });
-  const pixel = await page.evaluate(async (b64) => {
-    const img = new Image();
-    img.src = 'data:image/png;base64,' + b64;
-    await img.decode();
-    const ctx = document.createElement('canvas').getContext('2d');
-    ctx.drawImage(img, 0, 0);
-    return Array.from(ctx.getImageData(0, 0, 1, 1).data.slice(0, 3));
-  }, shot.toString('base64'));
-  expect(pixel).toEqual(await rgb(page, 'body', 'backgroundColor'));
+  expect(style.blur).toContain('blur');
+  // The page colour at 80%, over whatever plays behind.
+  expect(style.bg).toMatch(/^(color\(srgb .* \/ 0\.8\)|rgba\(11, 3, 1, 0\.8\))$/);
 });

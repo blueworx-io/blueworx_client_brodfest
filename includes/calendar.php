@@ -21,8 +21,9 @@ function brodfest_calendar_url() {
 }
 
 /**
- * The event as an iCalendar file. All day, since the time is not set yet.
- * Pure.
+ * The event as an iCalendar file, starting at its local time. The start is
+ * written in UTC so every calendar app places it right without a time-zone
+ * table. No end time has been set, so none is given. Pure.
  *
  * @param array  $event From brodfest_event().
  * @param string $uid_host Host for the event's unique id.
@@ -32,8 +33,8 @@ function brodfest_calendar_ics( $event, $uid_host ) {
 	$escape = static function ( $text ) {
 		return str_replace( array( '\\', ';', ',', "\n" ), array( '\\\\', '\;', '\,', '\n' ), (string) $text );
 	};
-	$start  = gmdate( 'Ymd', strtotime( $event['date'] . ' 00:00:00 UTC' ) );
-	$end    = gmdate( 'Ymd', strtotime( $event['date'] . ' 00:00:00 UTC +1 day' ) );
+	$local  = new DateTimeImmutable( $event['date'] . ' ' . $event['time'], new DateTimeZone( $event['timezone'] ) );
+	$start  = $local->setTimezone( new DateTimeZone( 'UTC' ) )->format( 'Ymd\THis\Z' );
 
 	return implode(
 		"\r\n",
@@ -43,10 +44,9 @@ function brodfest_calendar_ics( $event, $uid_host ) {
 			'PRODID:-//BlueWorx//Brodfest//EN',
 			'CALSCALE:GREGORIAN',
 			'BEGIN:VEVENT',
-			'UID:brodfest-' . $start . '@' . $uid_host,
+			'UID:brodfest-' . $local->format( 'Ymd' ) . '@' . $uid_host,
 			'DTSTAMP:' . gmdate( 'Ymd\THis\Z' ),
-			'DTSTART;VALUE=DATE:' . $start,
-			'DTEND;VALUE=DATE:' . $end,
+			'DTSTART:' . $start,
 			'SUMMARY:' . $escape( $event['title'] ),
 			'LOCATION:' . $escape( $event['location'] ),
 			'DESCRIPTION:' . $escape( $event['description'] ),

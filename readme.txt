@@ -3,7 +3,7 @@ Contributors: blueworx
 Requires at least: 6.4
 Tested up to: 7.0
 Requires PHP: 8.1
-Stable tag: 0.4.1
+Stable tag: 0.5.0
 License: GPL-2.0-or-later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -25,6 +25,11 @@ renders them itself, so the design is exact whatever else is installed.
    page videos, and set where RSVP replies are emailed.
 
 == Changelog ==
+
+= 0.5.0 =
+* The Save the Date has the client's real copy: Celebration with the dress code and transport, Where to Stay with all eight hotels, and the new enquiry addresses. The home page plays the Save the Date video, and Add to Calendar books 7pm Ibiza time.
+* The header is 170px tall on tablets and desktop. The menu blurs the page behind it, and its items turn white on rollover.
+* RSVP: the country code can be changed, the dietary list has Dairy Free and opens dark with gold lettering, and a sent reply shows a thank-you with a Close button.
 
 = 0.4.1 =
 * On laptops (1024–1599px wide) every height and text size now stays exactly as in Figma. Only widths narrow, within 1564px; the hotel cards keep their size and swipe.

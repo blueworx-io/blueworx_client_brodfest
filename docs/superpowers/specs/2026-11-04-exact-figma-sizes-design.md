@@ -36,6 +36,11 @@ widths, and some text has a "readable floor" that breaks even that.
   (109px from the right in Figma). It keeps at least 18px from the window
   edge, so between 1738 and 1600 wide it moves in on its own; at 1600 it
   sits at 1397–1582, well clear of the logo (585–1015). *(My call.)*
+  *Revised 2026-11-05, from the client's review:* the header is 170 tall from
+  tablets up (phones keep 207), its logo a fifth smaller and centred in it.
+  The menu button and the pill keep at least 48px from either edge — the
+  mobile header's margin — so the pill moves in below 1820 and the button
+  below 1630. Figma's header component was changed to match.
 - **Window 1024 to 1599: the desktop design at Figma's heights.** Every
   height, gap and text size stays Figma's. The side margins stop at 18px
   *(my call: the same 18px as at 1600)*, so the content column is the window

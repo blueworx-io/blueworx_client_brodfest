@@ -30,24 +30,46 @@ const TOLERANCE = { box: 1, text: 2 };
 
 // The desktop design keeps Figma's sizes from 1600 up, centred; the mobile
 // design keeps Figma's sizes, centred. Full-width pieces span the window. The
-// RSVP pill keeps at least 18px from the right edge, so below 1738 it moves
-// in. A 390 phone is told it is 767 wide, so it lays out the mobile design
-// exactly as at 767 (834 tall, so the zoomed screen is the artboard's 1640).
-// Laptops (1024 to 1599) keep Figma's heights but not its widths; they are
-// checked further down.
+// menu button and RSVP pill keep at least 48px from the edges (the mobile
+// header's margin), so below 1820 the pill moves in, and below 1630 the
+// button and the menu's items do too. A 390 phone is told it is 767 wide, so
+// it lays out the mobile design exactly as at 767 (834 tall, so the zoomed
+// screen is the artboard's 1640). Laptops (1024 to 1599) keep Figma's
+// heights but not its widths; they are checked further down.
 const PHONE = 390;
 const WIDTHS = { 1920: [1920, 2560, 1600], 767: [767, 1023, PHONE] };
 const LAPTOPS = [1440, 1024];
+const PAGE_H = Object.fromEntries(ROWS.filter((r) => r.node === 'Page').map((r) => [r.frame, r.figma[3]]));
+
+// From tablets up the header is 170 tall, not the mobile design's 207 (the
+// client asked, 5 Nov): on the 767 design at a tablet width the logo is a
+// fifth smaller and centred in it, the header's other contents rise 33.5,
+// and everything under it the whole 37 — except the footer of a page that
+// fits the screen, which stays at the bottom, and the open menu's panel,
+// which grows to fill.
+function tablet(r, [x, y, w, h]) {
+  const d = 37;
+  const fits = (PAGE_H[r.frame] ?? 1640) <= 1640;
+  if (r.node === 'Page') return [x, y, w, fits ? h : h - d];
+  if (r.node === 'Header') return [x, y, w, 170];
+  if (r.node === 'Brand/Logo' && /bf-header/.test(r.sel)) return [252.7, 53.4, 261.6, 63.2];
+  if (y < 207) return [x, y - 33.5, w, h];
+  if (r.node === 'Menu/Panel') return [x, y - d, w, h + d];
+  if (fits && /bf-footer/.test(r.sel)) return [x, y, w, h];
+  return [x, y - d, w, h];
+}
 
 function expected(r, width) {
-  const [x, y, w, h] = r.figma;
   const V = width === PHONE ? 767 : width;
   if (r.width === 767) {
+    const [x, y, w, h] = V >= 768 ? tablet(r, r.figma) : r.figma;
     return w >= 760 ? [0, y, V, h] : [x + Math.max(0, (V - 767) / 2), y, w, h];
   }
+  const [x, y, w, h] = r.figma;
   if (w >= 1900) return [0, y, V, h];
-  const pill = x >= 1600 && y < 270 ? Math.max(0, Math.min(69, -91 - (V - 1920) / 2)) : 0;
-  return [x - pill - 960 + V / 2, y, w, h];
+  const pill = x >= 1600 && y < 170 ? Math.max(0, Math.min(99, -61 - (V - 1920) / 2)) : 0;
+  const left = x < 300 && (y < 170 || r.mode === 'menu') ? Math.max(0, 48 - (193 - 960 + V / 2)) : 0;
+  return [x - pill + left - 960 + V / 2, y, w, h];
 }
 const STILL = '#wpadminbar{display:none!important} html{margin-top:0!important} :root{--wp-admin--admin-bar--height:0px!important} *,*::before,*::after{transition:none!important;animation:none!important}';
 
@@ -183,11 +205,13 @@ for (const frame of frames.filter((f) => f.endsWith('_1920'))) for (const V of L
 }
 
 // Placeholder copy carries Figma's desktop line breaks; on a phone the text
-// wraps on its own, so the breaks and their hyphens must not show.
+// wraps on its own, so the breaks and their hyphens must not show. The
+// Invite still has placeholder hotels.
 test('placeholder line breaks show on desktop only', async ({ page }) => {
   await skipIntro(page);
+  await loginAsAdmin(page);
   await page.setViewportSize({ width: 1920, height: 1080 });
-  await page.goto('/accommodation/');
+  await page.goto('/accommodation/?brodfest-site=invite');
   const desktop = await page.locator('.bf-card__text').first().innerText();
   expect(desktop).toContain('adip-\niscing');
 
@@ -271,9 +295,10 @@ test.describe('on a 390 phone', () => {
 // other text is narrower than Figma's and wraps on its own.
 test('on a laptop only the hotel cards keep Figma\'s line breaks', async ({ page }) => {
   await skipIntro(page);
+  await loginAsAdmin(page);
   for (const width of LAPTOPS) {
     await page.setViewportSize({ width, height: 900 });
-    await page.goto('/accommodation/');
+    await page.goto('/accommodation/?brodfest-site=invite');
     expect(await page.locator('.bf-card__text').first().innerText()).toContain('adip-\niscing');
     expect(await page.locator('.bf-area__intro').first().innerText()).not.toContain('\n');
   }

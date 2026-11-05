@@ -41,7 +41,7 @@ test('a reply is saved and listed under RSVPs in the admin', async ({ page }) =>
   await page.locator('#bf-guest_email').fill('plusone@example.com');
   await page.getByRole('button', { name: 'SEND' }).click();
 
-  await expect(page.getByRole('status')).toContainText('your RSVP has been received');
+  await expect(page.getByRole('status')).toContainText('Thank you for your RSVP');
 
   await loginAsAdmin(page);
   await page.goto('/wp-admin/edit.php?post_type=brodfest_rsvp&post_status=private');

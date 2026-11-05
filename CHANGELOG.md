@@ -5,6 +5,32 @@ All notable changes to this project are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.0] - 2026-11-05
+
+### Added
+
+- The Save the Date site has the client's copy: Celebration (with Dress Code
+  and Transport), Where to Stay with its three areas and eight hotels, and
+  Enquiries with the brodfestibiza.net addresses. Only the Cala Llonga hotels
+  show a discount, with the 25% offer.
+- The home page plays the Save the Date video: the wide cut on desktop, the
+  square one on phones.
+- RSVP: a sent reply shows "Thank you for your RSVP" and a Close button. The
+  dietary list has Dairy Free.
+
+### Changed
+
+- The header is 170px tall on tablets and desktop (phones keep 207px), and
+  never sits nearer the edge than 48px.
+- The menu is renamed Celebration and Information on the Save the Date. When
+  open it blurs the page behind, has no mountain, and its items turn white on
+  rollover instead of bold.
+- The opening screen has no line under the logo and no ring around Enter, which
+  sits a little lower and smaller.
+- Add to Calendar books 7pm Ibiza time instead of all day.
+- The RSVP country code is a list to choose from, still showing +44 first. The
+  dietary list opens dark with gold lettering.
+
 ## [0.4.1] - 2026-11-05
 
 ### Changed

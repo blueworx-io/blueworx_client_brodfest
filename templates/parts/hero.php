@@ -10,7 +10,8 @@
  * @package Brodfest
  *
  * @var array $args {
- *     @type string $video Video URL, or '' while it is still to come.
+ *     @type array $videos Sources from brodfest_hero_videos(), or none while
+ *                         the video is still to come.
  * }
  */
 
@@ -18,11 +19,15 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-$brodfest_video = isset( $args['video'] ) ? (string) $args['video'] : '';
+$brodfest_videos = isset( $args['videos'] ) ? (array) $args['videos'] : array();
 ?>
 <section class="bf-hero" data-bf-hero>
-	<?php if ( '' !== $brodfest_video ) : ?>
-		<video class="bf-hero__video" src="<?php echo esc_url( $brodfest_video ); ?>" playsinline preload="auto" data-bf-video></video>
+	<?php if ( array() !== $brodfest_videos ) : ?>
+		<video class="bf-hero__video" playsinline preload="auto" data-bf-video>
+			<?php foreach ( $brodfest_videos as $brodfest_video ) : ?>
+				<source src="<?php echo esc_url( $brodfest_video['src'] ); ?>" type="video/mp4"<?php echo '' !== $brodfest_video['media'] ? ' media="' . esc_attr( $brodfest_video['media'] ) . '"' : ''; ?> />
+			<?php endforeach; ?>
+		</video>
 		<button class="bf-hero__play" type="button" hidden data-bf-play>
 			<span class="sr-only"><?php esc_html_e( 'Play the video', 'blueworx-client-brodfest' ); ?></span>
 		</button>
@@ -36,7 +41,6 @@ $brodfest_video = isset( $args['video'] ) ? (string) $args['video'] : '';
 		<div class="bf-intro__mark">
 			<span class="bf-intro__mountain"><?php brodfest_inline_svg( 'mountain' ); ?></span>
 			<span class="bf-intro__logo"><?php brodfest_inline_svg( 'logo', 'Brodfest Ibiza' ); ?></span>
-			<span class="bf-intro__line" aria-hidden="true"></span>
 		</div>
 		<button class="bf-intro__enter bf-pill" type="button" data-bf-enter><?php esc_html_e( 'ENTER', 'blueworx-client-brodfest' ); ?></button>
 	</div>
