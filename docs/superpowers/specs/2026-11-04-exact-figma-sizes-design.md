@@ -14,10 +14,11 @@ widths, and some text has a "readable floor" that breaks even that.
 
 1. **Desktop:** the 1920 design at Figma's exact sizes. On a narrower window
    only the empty side margins shrink, until the widest component no longer
-   fits. Below that, on laptops, the desktop design shrinks evenly as one
-   whole picture, like the Figma file zoomed to fit — chosen over showing
-   laptops the mobile design, which would leave a narrow column in the middle
-   of the screen.
+   fits. *Revised 2026-11-05, at the client's request:* heights never change
+   with the window. Content stays within 1564px. On laptops widths give way,
+   heights and text sizes do not (this replaces shrinking the whole design
+   evenly). Edge-to-edge video and banners stay edge to edge; the hotel cards
+   keep their size and swipe.
 2. **Phones:** the 767 design, built at exactly 767px and zoomed by the phone
    to fit its screen, like a PDF.
 3. **Wider than 1920:** exact sizes, centred; backgrounds, video and artwork
@@ -35,10 +36,13 @@ widths, and some text has a "readable floor" that breaks even that.
   (109px from the right in Figma). It keeps at least 18px from the window
   edge, so between 1738 and 1600 wide it moves in on its own; at 1600 it
   sits at 1397–1582, well clear of the logo (585–1015). *(My call.)*
-- **Window 1024 to 1599: the desktop design, shrunk evenly.** The page as it
-  looks at 1600 is scaled by window ÷ 1600 — every size, gap and position
-  alike — so its proportions are exactly Figma's (a 50px box is 45px at
-  1440, 32px at 1024). No minimum text sizes; nothing changes shape.
+- **Window 1024 to 1599: the desktop design at Figma's heights.** Every
+  height, gap and text size stays Figma's. The side margins stop at 18px
+  *(my call: the same 18px as at 1600)*, so the content column is the window
+  less 36px, and only widths give way: the map, the feature image and the area
+  headers narrow to the column, their images cropping; text wraps to the
+  column. The hotel cards keep Figma's size in one row that swipes, with the
+  mobile dots under it *(my call)*.
 - **Window below 1024: mobile design** at Figma's exact sizes, centred
   (positions plus half the difference between the window and 767).
 - **Phones** (a screen narrower than 767): the page tells the phone its width
@@ -59,8 +63,9 @@ widths, and some text has a "readable floor" that breaks even that.
   at load). An Android phone that loads a page already sideways gets the
   unzoomed 767 column, centred. *(My call: acceptable.)*
 - The current fluid unit, its caps (1.25 / 1.3px) and every readable floor
-  go. Figma's desktop line breaks show at every desktop width, since text
-  only ever shrinks with everything around it.
+  go. Figma's desktop line breaks show from 1600 up, where text has Figma's
+  width, and inside the hotel cards at every desktop width, since the cards
+  keep their size. Elsewhere on a laptop the text wraps on its own.
 
 ## The review
 
@@ -74,8 +79,8 @@ widths, and some text has a "readable floor" that breaks even that.
 - Tolerance: **1px** for boxes (Figma stores fractions like 193.2); **2px** for
   text, whose letters the browser and Figma draw slightly differently.
 - Widths checked: 1920 and 767 exactly as Figma; 2560 and 1600 for the desktop
-  design shifted as above; 1440 and 1024 for the shrunk desktop design
-  (Figma's boxes shifted and scaled the same way); 1023 for the centred mobile
+  design shifted as above; at 1440 and 1024 every box keeps Figma's height
+  and nothing is wider than the window or than 1564; 1023 for the centred mobile
   design; a 390 phone for the zoomed 767 design.
 - Differences Luke already signed off stay pinned with their reason: the
   whole-number text sizes, corrected spellings, SEND in Futura, BlueWorx
@@ -94,9 +99,10 @@ widths, and some text has a "readable floor" that breaks even that.
 
 ## Known cost
 
-On laptops (1024–1599 wide) sizes are Figma's scaled down, not Figma's exact
-numbers: the card rows cannot fit at exact size. Exact numbers hold from 1600
-up and in the mobile design.
+On laptops (1024–1599 wide) widths are narrower than Figma's: the map,
+feature image and area banners crop at the sides, text can wrap onto an extra
+line, and the third hotel card is partly off screen until swiped. Heights and
+text sizes are Figma's at every width.
 
 ## Done when
 

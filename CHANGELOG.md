@@ -5,6 +5,16 @@ All notable changes to this project are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.1] - 2026-11-05
+
+### Changed
+
+- Laptops (1024–1599px wide) now keep every height and text size from Figma,
+  at the client's request. Instead of the whole design shrinking, only widths
+  narrow: content stays within 1564px with an 18px margin, the map and
+  banners crop at the sides, and text can wrap onto an extra line. Hotel
+  cards keep their size and swipe, with dots under them.
+
 ## [0.4.0] - 2026-11-04
 
 ### Changed

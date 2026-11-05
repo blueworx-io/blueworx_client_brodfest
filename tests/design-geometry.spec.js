@@ -28,14 +28,16 @@ const ROWS = JSON.parse(readFileSync(new URL('./fixtures/design-geometry.json', 
   .map((r, row) => ({ ...r, row, figma: r.expect || r.figma }));
 const TOLERANCE = { box: 1, text: 2 };
 
-// The desktop design keeps Figma's sizes from 1600 up, centred, and below
-// that is the 1600-wide view shrunk evenly; the mobile design keeps Figma's
-// sizes, centred. Full-width pieces span the window. The RSVP pill keeps at
-// least 18px from the right edge, so below 1738 it moves in. A 390 phone is
-// told it is 767 wide, so it lays out the mobile design exactly as at 767
-// (834 tall, so the zoomed screen is the artboard's 1640).
+// The desktop design keeps Figma's sizes from 1600 up, centred; the mobile
+// design keeps Figma's sizes, centred. Full-width pieces span the window. The
+// RSVP pill keeps at least 18px from the right edge, so below 1738 it moves
+// in. A 390 phone is told it is 767 wide, so it lays out the mobile design
+// exactly as at 767 (834 tall, so the zoomed screen is the artboard's 1640).
+// Laptops (1024 to 1599) keep Figma's heights but not its widths; they are
+// checked further down.
 const PHONE = 390;
-const WIDTHS = { 1920: [1920, 2560, 1600, 1440, 1024], 767: [767, 1023, PHONE] };
+const WIDTHS = { 1920: [1920, 2560, 1600], 767: [767, 1023, PHONE] };
+const LAPTOPS = [1440, 1024];
 
 function expected(r, width) {
   const [x, y, w, h] = r.figma;
@@ -43,14 +45,29 @@ function expected(r, width) {
   if (r.width === 767) {
     return w >= 760 ? [0, y, V, h] : [x + Math.max(0, (V - 767) / 2), y, w, h];
   }
-  const s = Math.min(V / 1600, 1);
-  if (w >= 1900) return [0, y * s, V, h * s];
+  if (w >= 1900) return [0, y, V, h];
   const pill = x >= 1600 && y < 270 ? Math.max(0, Math.min(69, -91 - (V - 1920) / 2)) : 0;
-  return [(x - pill - 960) * s + V / 2, y * s, w * s, h * s];
+  return [x - pill - 960 + V / 2, y, w, h];
 }
 const STILL = '#wpadminbar{display:none!important} html{margin-top:0!important} :root{--wp-admin--admin-bar--height:0px!important} *,*::before,*::after{transition:none!important;animation:none!important}';
 
 const frames = [...new Set(ROWS.map((r) => r.frame))];
+
+// Loads a frame's page as Figma draws it: still, fonts in, the menu open or
+// the RSVP guest fields showing where the frame has them.
+async function open(page, frame, path, mode) {
+  await skipIntro(page);
+  if (path.includes('brodfest-site=')) await loginAsAdmin(page);
+  await page.goto(path, { waitUntil: 'networkidle' });
+  await page.addStyleTag({ content: STILL });
+  await page.evaluate(() => document.fonts.ready);
+  if (mode === 'menu') {
+    await page.click('.bf-header__toggle');
+    await expect(page.locator('body')).toHaveClass(/is-menu-open/);
+    await page.evaluate(() => new Promise((done) => requestAnimationFrame(() => requestAnimationFrame(done))));
+  }
+  if (frame.includes('rsvp')) await page.locator('input[name="with_guest"][value="yes"]').check();
+}
 
 for (const frame of frames) for (const V of WIDTHS[frame.endsWith('_767') ? 767 : 1920]) {
   const rows = ROWS.filter((r) => r.frame === frame).map((r) => ({ ...r, figma: expected(r, V).map((v) => Math.round(v * 10) / 10) }));
@@ -61,20 +78,10 @@ for (const frame of frames) for (const V of WIDTHS[frame.endsWith('_767') ? 767 
     if (V === PHONE) {
       page = await (await browser.newContext({ baseURL: test.info().project.use.baseURL, viewport: { width: PHONE, height: 834 }, isMobile: true, hasTouch: true, deviceScaleFactor: 3 })).newPage();
     } else {
-      // As tall as the artboard, scaled, so a short page's footer sits where Figma's does.
-      await page.setViewportSize({ width: V, height: width === 1920 ? Math.floor(2529 * Math.min(V / 1600, 1)) : 1640 });
+      // As tall as the artboard, so a short page's footer sits where Figma's does.
+      await page.setViewportSize({ width: V, height: width === 1920 ? 2529 : 1640 });
     }
-    await skipIntro(page);
-    if (path.includes('brodfest-site=')) await loginAsAdmin(page);
-    await page.goto(path, { waitUntil: 'networkidle' });
-    await page.addStyleTag({ content: STILL });
-    await page.evaluate(() => document.fonts.ready);
-    if (mode === 'menu') {
-      await page.click('.bf-header__toggle');
-      await expect(page.locator('body')).toHaveClass(/is-menu-open/);
-      await page.evaluate(() => new Promise((done) => requestAnimationFrame(() => requestAnimationFrame(done))));
-    }
-    if (frame.includes('rsvp')) await page.locator('input[name="with_guest"][value="yes"]').check();
+    await open(page, frame, path, mode);
 
     const measured = await page.evaluate((rows) => rows.map((r) => {
       const el = document.querySelector(r.sel);
@@ -132,6 +139,45 @@ for (const frame of frames) for (const V of WIDTHS[frame.endsWith('_767') ? 767 
       if (d.some((v) => Math.abs(v) > tolerance)) off.push(`${label}: figma ${r.figma.join(',')} site ${got.join(',')} (off ${d.join(',')}) [row ${r.row}]`);
     });
     if (page !== desktop) await page.context().close();
+    expect(off, off.join('\n')).toEqual([]);
+  });
+}
+
+// On a laptop the desktop design keeps Figma's heights and gives way only in
+// width: every component is exactly Figma's height, a container (whose text
+// may wrap onto another line) at least that, full-width pieces span the
+// window, and nothing else is wider than 1564 or reaches past the window,
+// except the hotel cards waiting to be swiped into view.
+for (const frame of frames.filter((f) => f.endsWith('_1920'))) for (const V of LAPTOPS) {
+  const rows = ROWS.filter((r) => r.frame === frame);
+  const { path, mode } = rows[0];
+
+  test(`${frame} keeps Figma's heights at ${V}`, async ({ page }) => {
+    await page.setViewportSize({ width: V, height: 2529 });
+    await open(page, frame, path, mode);
+
+    const measured = await page.evaluate((rows) => rows.map((r) => {
+      const el = document.querySelector(r.sel);
+      if (!el) return null;
+      const e = el.getBoundingClientRect();
+      return { x: e.x, w: e.width, h: e.height, swiped: !!el.parentElement?.closest('[data-bf-track]') };
+    }), rows);
+
+    const off = [];
+    rows.forEach((r, i) => {
+      const got = measured[i];
+      const label = `${r.node}${r.text ? ` "${r.text}"` : ''} [row ${r.row}]`;
+      if (!got) return off.push(`${label}: not on the page (${r.sel})`);
+      const [, , fw, fh] = r.figma;
+      if (r.kind !== 'text') {
+        if (r.container ? got.h < fh - 1 : Math.abs(got.h - fh) > 1) off.push(`${label}: ${Math.round(got.h)} tall, Figma ${fh}`);
+      }
+      if (fw >= 1900) {
+        if (Math.abs(got.w - V) > 1) off.push(`${label}: ${Math.round(got.w)} wide in a ${V} window`);
+      } else if (!got.swiped && (got.x < -1 || got.x + got.w > V + 1 || got.w > 1565)) {
+        off.push(`${label}: spans ${Math.round(got.x)} to ${Math.round(got.x + got.w)} in a ${V} window`);
+      }
+    });
     expect(off, off.join('\n')).toEqual([]);
   });
 }
@@ -221,14 +267,14 @@ test.describe('on a 390 phone', () => {
   });
 });
 
-// The whole desktop design shrinks together on a laptop, so Figma's line
-// breaks still land at the ends of lines.
-test('placeholder line breaks hold on a laptop', async ({ page }) => {
+// On a laptop the hotel cards keep Figma's width, so their line breaks hold;
+// other text is narrower than Figma's and wraps on its own.
+test('on a laptop only the hotel cards keep Figma\'s line breaks', async ({ page }) => {
   await skipIntro(page);
-  for (const width of [1440, 1024]) {
+  for (const width of LAPTOPS) {
     await page.setViewportSize({ width, height: 900 });
     await page.goto('/accommodation/');
-    const text = await page.locator('.bf-card__text').first().innerText();
-    expect(text).toContain('adip-\niscing');
+    expect(await page.locator('.bf-card__text').first().innerText()).toContain('adip-\niscing');
+    expect(await page.locator('.bf-area__intro').first().innerText()).not.toContain('\n');
   }
 });

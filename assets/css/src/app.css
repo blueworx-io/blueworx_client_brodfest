@@ -12,11 +12,11 @@
    Sizes are written in --u, one Figma pixel, and are Figma's exact numbers.
    Below 1024px the layout is the 767-wide mobile artboard, at Figma's size
    (a phone is told it is 767 wide and zooms it to fit). At 1024px and up it
-   is the 1920-wide desktop artboard: Figma's size from 1600 up, and below
-   that the 1600-wide view shrunk evenly, since the card rows (1564) no
-   longer fit. --bf-shift centres the artboard in the window; it is written
-   with 100% so it measures each element's own container, not a viewport
-   that may include a scrollbar.
+   is the 1920-wide desktop artboard at Figma's size. Heights never change:
+   below 1600, where the widest pieces (1564) stop fitting, the side margins
+   hold at 18px and only widths give way. --bf-shift centres the artboard in
+   the window; it is written with 100% so it measures each element's own
+   container, not a viewport that may include a scrollbar.
    ------------------------------------------------------------------------ */
 :root {
   /* Colours and fonts come from the theme's named styles (BlueWorx ›
@@ -54,8 +54,10 @@
 
 @media (min-width: 1024px) {
   :root {
-    --u: min(calc(100vw / 1600), 1px);
-    --bf-shift: calc((100% - 1920 * var(--u)) / 2);
+    /* Stops at -160, the 1600 window, where the margins reach 18px. */
+    --bf-shift: max(calc(-160 * var(--u)), calc((100% - 1920 * var(--u)) / 2));
+    /* The 1564 column, or the window less those margins when narrower. */
+    --bf-column: min(calc(1564 * var(--u)), calc(100% - 36 * var(--u)));
     --bf-gutter: calc(193 * var(--u) + var(--bf-shift));
     --bf-text-gutter: calc(178 * var(--u) + var(--bf-shift));
     --header-h: calc(270 * var(--u));
@@ -175,6 +177,14 @@
 @media (max-width: 1023.98px) {
   .bf-br,
   .bf-hy {
+    display: none;
+  }
+}
+
+/* On a laptop the text is narrower than Figma's, so it wraps on its own too;
+   only the hotel cards, which keep their size, keep the breaks. */
+@media (min-width: 1024px) and (max-width: 1599.98px) {
+  :not(.bf-card__text) > :is(.bf-br, .bf-hy) {
     display: none;
   }
 }
@@ -842,7 +852,7 @@ body.is-menu-open {
 }
 
 /* Copy with its own line breaks sets its width by its longest line. */
-@media (min-width: 1024px) {
+@media (min-width: 1600px) {
   .bf-text .bf-body:has(.bf-br),
   .bf-area__intro:has(.bf-br) {
     max-width: none;
@@ -920,7 +930,9 @@ body.brodfest .bf-story-banner svg {
   }
 
   .bf-feature {
-    width: calc(1356 * var(--u));
+    width: min(calc(1356 * var(--u)), var(--bf-column));
+    height: calc(567 * var(--u));
+    aspect-ratio: auto;
     margin: calc(175 * var(--u)) auto 0;
   }
 
@@ -931,7 +943,7 @@ body.brodfest .bf-story-banner svg {
 
 
   .bf-map {
-    width: calc(1564 * var(--u));
+    width: var(--bf-column);
     height: calc(782 * var(--u));
     margin: calc(79 * var(--u)) auto 0;
   }
@@ -1074,12 +1086,12 @@ body.brodfest .bf-story-banner svg {
 
   /* Figma's Section/Area Header: name, banner and intro on the banner's width. */
   .bf-area__header {
-    width: calc(1564 * var(--u));
+    width: var(--bf-column);
     margin-inline: auto;
   }
 
   .bf-banner {
-    width: calc(1564 * var(--u));
+    width: 100%;
     height: calc(323 * var(--u));
     margin: calc(39 * var(--u)) auto 0;
   }
@@ -1139,6 +1151,34 @@ body.brodfest .bf-story-banner svg {
 
   .bf-cards__dots {
     display: none;
+  }
+}
+
+/* Laptop: the cards keep Figma's size in one row that swipes, from the 18px
+   margin. A row that fits stays centred (the auto margins give way once it
+   overflows). A row of three always overflows here, so it gets the dots. */
+@media (min-width: 1024px) and (max-width: 1599.98px) {
+  .bf-cards__track {
+    width: auto;
+    max-width: none;
+    margin: 0;
+    padding: 0 calc(18 * var(--u));
+    flex-wrap: nowrap;
+    justify-content: flex-start;
+    overflow-x: auto;
+    scroll-padding-inline: calc(18 * var(--u));
+  }
+
+  .bf-card:first-child {
+    margin-left: auto;
+  }
+
+  .bf-card:last-child {
+    margin-right: auto;
+  }
+
+  .bf-cards:has(.bf-card:nth-child(3)) .bf-cards__dots {
+    display: flex;
   }
 }
 
