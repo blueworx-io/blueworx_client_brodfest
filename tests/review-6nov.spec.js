@@ -183,14 +183,14 @@ test('each area banner shows its photo, the desktop cut on desktop and the mobil
   }
 });
 
-test('each hotel card shows its photo, but for AMA, still to come', async ({ page }) => {
+test('each hotel card shows its photo', async ({ page }) => {
   await page.goto('/accommodation/');
   const photos = await page.locator('.bf-card').evaluateAll((cards) => cards.map((card) => {
     const img = card.querySelector('.bf-card__image img');
     return [card.querySelector('.bf-card__name').textContent.trim(), img ? img.getAttribute('src').split('/').pop() : null];
   }));
   expect(photos).toEqual([
-    ['BLESS IBIZA', 'bless.jpg'], ['HOTEL TORRE DEL MAR', 'torre-del-mar.jpg'], ['AMA IBIZA SUITES', null],
+    ['BLESS IBIZA', 'bless.jpg'], ['HOTEL TORRE DEL MAR', 'torre-del-mar.jpg'], ['AMA IBIZA SUITES', 'ama.jpg'],
     ['NOBU HOTEL', 'nobu.jpg'], ['HOTEL SIMBAD', 'simbad.jpg'], ['HOTEL LUX ISLA', 'lux-isla.jpg'],
     ['HYDE IBIZA', 'hyde.jpg'], ['MONDRIAN', 'mondrian.jpg'],
   ]);

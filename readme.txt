@@ -3,7 +3,7 @@ Contributors: blueworx
 Requires at least: 6.4
 Tested up to: 7.0
 Requires PHP: 8.1
-Stable tag: 0.8.0
+Stable tag: 0.8.1
 License: GPL-2.0-or-later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -25,6 +25,9 @@ renders them itself, so the design is exact whatever else is installed.
    page videos, and set where RSVP replies are emailed.
 
 == Changelog ==
+
+= 0.8.1 =
+* The AMA Ibiza Suites photo, so every hotel now has its picture.
 
 = 0.8.0 =
 * RSVP lowers over the page you are on and goes back up when you close it or have replied; the RSVP button closes it too.

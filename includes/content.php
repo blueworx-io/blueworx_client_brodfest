@@ -127,10 +127,11 @@ function brodfest_placeholder_cards( $count, $name ) {
  */
 function brodfest_std_copy( $key ) {
 	$discount = 'For up to 25% discount on bookings made before 15/02/2027, quote BRODFEST';
-	// The client's photos (6 Nov 2026), by hotel; AMA's is still to come.
+	// The client's photos (6 Nov 2026), by hotel.
 	$photos = array(
 		'BLESS IBIZA'          => 'bless',
 		'HOTEL TORRE DEL MAR'  => 'torre-del-mar',
+		'AMA IBIZA SUITES'     => 'ama',
 		'NOBU HOTEL'           => 'nobu',
 		'HOTEL SIMBAD'         => 'simbad',
 		'HOTEL LUX ISLA'       => 'lux-isla',
