@@ -845,24 +845,16 @@ body.is-menu-open {
   margin-top: calc(63 * var(--u));
 }
 
-/* Add to Calendar's choices: a row under the button, over the line below it
-   (client, 6 Nov 2026). Not in Figma. */
-.bf-calendar {
-  position: relative;
-}
-
+/* Add to Calendar's choices: a row under the button (client, 6 Nov 2026), in
+   the page's flow, so the line below moves down for it rather than being
+   covered (Luke, 6 Nov 2026). Not in Figma. */
 .bf-calendar__menu {
-  position: absolute;
-  top: 100%;
-  left: 50%;
-  z-index: 5;
   display: flex;
+  justify-content: center;
   gap: calc(12 * var(--u));
   margin: calc(16 * var(--u)) 0 0;
-  padding: calc(8 * var(--u));
+  padding: 0;
   list-style: none;
-  background: var(--bf-bg);
-  transform: translateX(-50%);
   animation: bf-enter-in 0.3s ease both;
 }
 
@@ -899,7 +891,9 @@ body.is-menu-open {
 }
 
 @media (min-width: 1024px) {
+  /* 20% smaller than the rest of the desktop page (Luke, 6 Nov 2026). */
   .bf-home {
+    --u: calc(0.75px * 0.8);
     padding-top: calc(103 * var(--u));
   }
 

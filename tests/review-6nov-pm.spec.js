@@ -102,3 +102,15 @@ test('body copy is 30% bigger on mobile, and unchanged on desktop', async ({ pag
   expect(await size(1023)).toBe('26px');
   expect(await size(1920)).toBe('15px');
 });
+
+// Luke, 6 Nov 2026: the choices sat over the line below the button.
+test('the calendar choices never cover the line below, on desktop or phone', async ({ page }) => {
+  for (const width of [1440, 767]) {
+    await page.setViewportSize({ width, height: 900 });
+    await page.goto('/');
+    await page.locator('[data-bf-calendar-toggle]').click();
+    const menu = await page.locator('[data-bf-calendar-menu]').boundingBox();
+    const note = await page.locator('.bf-home__note').boundingBox();
+    expect(menu.y + menu.height, `at ${width}`).toBeLessThanOrEqual(note.y);
+  }
+});
