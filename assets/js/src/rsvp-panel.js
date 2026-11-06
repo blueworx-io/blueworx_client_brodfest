@@ -77,6 +77,8 @@ export function initRsvpPanel() {
 		}
 		panel.replaceChildren(document.importNode(form, true));
 		initRsvp(panel);
+		// animations.js brings the fields in.
+		panel.dispatchEvent(new CustomEvent('bf:rsvp-shown', { bubbles: true }));
 		panel.querySelector('[data-bf-rsvp]')?.addEventListener('submit', send);
 		panel.querySelector('.bf-rsvp__close a')?.addEventListener('click', (event) => {
 			if (isPlainClick(event)) {

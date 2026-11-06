@@ -5,6 +5,22 @@ All notable changes to this project are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.9.0] - 2026-11-06
+
+### Added
+
+- Animation across the site, slow and soft, playing once as each section
+  scrolls into view: titles' letters close up into place, copy rises in line
+  by line, area photos open like a curtain and drift gently on desktop, hotel
+  cards rise in one after another, the map's island settles, the menu's links
+  and the RSVP fields come in in turn, and the footer mountain builds up.
+- All of it tuned to stay smooth while scrolling, phones included.
+- The opening's logo catches a passing light once drawn, and on Enter the
+  black lifts away like a curtain. The home video settles from a slight zoom.
+- Gold light across the pills, BOOK filling with gold, and a slow photo zoom
+  on hover; a soft pulse on a chosen RSVP answer.
+- Visitors who ask for less motion get the page still, as before.
+
 ## [0.8.1] - 2026-11-06
 
 ### Added

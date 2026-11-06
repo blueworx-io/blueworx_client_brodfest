@@ -313,6 +313,85 @@
   background: var(--bf-gold);
 }
 
+/* ---- Motion (Luke, 6 Nov 2026; animations.js) ----------------------------- */
+
+/* The content waits, hidden, until animations.js has set every section's
+   starting point, then fades in; the head script shows it after 3 seconds
+   should that never happen. */
+html.bf-motion:not(.bf-motion-ready) .bf-main {
+  opacity: 0;
+}
+
+html.bf-motion .bf-main {
+  transition: opacity 0.6s ease;
+}
+
+/* A title's letters, split apart to move (animations.js), would each take
+   the title's indent and spread the title wider than it is, then snap narrow
+   when put back. Only the title itself is indented. */
+.bf-word,
+.bf-char {
+  text-indent: 0;
+}
+
+/* The desktop area photos drift the whole time they are on screen, so they
+   keep their own layer rather than being re-made at every scroll. */
+@media (min-width: 1024px) {
+  html.bf-motion .bf-area .bf-banner img {
+    will-change: transform;
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  /* A light passes across every button on hover, as on RSVP (Luke, 6 Nov
+     2026), while its colour changes. */
+  .bf-pill,
+  .bf-button {
+    position: relative;
+    overflow: hidden;
+  }
+
+  .bf-pill::after,
+  .bf-button::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(105deg, transparent 35%, rgb(255 255 255 / 0.35) 50%, transparent 65%);
+    transform: translateX(-110%);
+    transition: transform 0.9s var(--ease);
+    pointer-events: none;
+  }
+
+  .bf-pill:hover::after,
+  .bf-button:hover::after {
+    transform: translateX(110%);
+  }
+
+  /* A card's photo slowly closes in on hover. */
+  .bf-card__image {
+    overflow: hidden;
+  }
+
+  .bf-card__image img {
+    transition: transform 1.4s var(--ease);
+  }
+
+  .bf-card:hover .bf-card__image img {
+    transform: scale(1.05);
+  }
+
+  /* A chosen answer fills with a soft gold pulse. */
+  .bf-radios input:checked,
+  .bf-check input:checked {
+    animation: bf-pulse 0.7s ease-out;
+  }
+
+  @keyframes bf-pulse {
+    from { box-shadow: 0 0 0 0 color-mix(in srgb, var(--bf-gold) 60%, transparent); }
+    to { box-shadow: 0 0 0 calc(14 * var(--u)) transparent; }
+  }
+}
+
 /* SEND takes the RSVP pill's Futura, per the design comment. */
 .bf-button--send {
   width: calc(188 * var(--u));
@@ -365,6 +444,9 @@
   height: var(--header-h);
   background: var(--bf-bg);
   transition: transform 0.5s var(--ease);
+  /* Its own layer: without it, a fast scroll up drew a gold line along its
+     bottom edge while it slid back in. */
+  will-change: transform;
 }
 
 body.admin-bar .bf-header {
@@ -880,7 +962,7 @@ html.bf-is-opening .bf-opening {
 }
 
 html.bf-is-opening .bf-opening.is-leaving {
-  animation: bf-opening-out 0.6s ease forwards;
+  animation: bf-opening-out 0.9s cubic-bezier(0.76, 0, 0.24, 1) 0.15s forwards;
 }
 
 /* A little lower and smaller than the RSVP pill, as the client asked. The
@@ -918,17 +1000,23 @@ html.bf-is-opening .bf-opening.is-leaving {
   fill-opacity: 0;
   animation:
     bf-draw 1.2s ease-in-out both,
-    bf-fill 0.5s ease 1.2s forwards;
+    bf-fill 0.5s ease 1.2s forwards,
+    bf-shine 0.6s ease 1.85s;
 }
 
-.bf-opening__logo path:nth-child(2) { animation-delay: 0.07s, 1.27s; }
-.bf-opening__logo path:nth-child(3) { animation-delay: 0.14s, 1.34s; }
-.bf-opening__logo path:nth-child(4) { animation-delay: 0.21s, 1.41s; }
-.bf-opening__logo path:nth-child(5) { animation-delay: 0.28s, 1.48s; }
-.bf-opening__logo path:nth-child(6) { animation-delay: 0.35s, 1.55s; }
-.bf-opening__logo path:nth-child(7) { animation-delay: 0.42s, 1.62s; }
-.bf-opening__logo path:nth-child(8) { animation-delay: 0.49s, 1.69s; }
-.bf-opening__logo path:nth-child(n + 9) { animation-delay: 0.56s, 1.76s; }
+.bf-opening__logo path:nth-child(2) { animation-delay: 0.07s, 1.27s, 1.9s; }
+.bf-opening__logo path:nth-child(3) { animation-delay: 0.14s, 1.34s, 1.95s; }
+.bf-opening__logo path:nth-child(4) { animation-delay: 0.21s, 1.41s, 2s; }
+.bf-opening__logo path:nth-child(5) { animation-delay: 0.28s, 1.48s, 2.05s; }
+.bf-opening__logo path:nth-child(6) { animation-delay: 0.35s, 1.55s, 2.1s; }
+.bf-opening__logo path:nth-child(7) { animation-delay: 0.42s, 1.62s, 2.15s; }
+.bf-opening__logo path:nth-child(8) { animation-delay: 0.49s, 1.69s, 2.2s; }
+.bf-opening__logo path:nth-child(n + 9) { animation-delay: 0.56s, 1.76s, 2.25s; }
+
+/* A light passes across the letters once they have filled (Luke, 6 Nov). */
+@keyframes bf-shine {
+  50% { fill: #f6dcae; }
+}
 
 @keyframes bf-draw {
   from { stroke-dashoffset: 1; }
@@ -943,8 +1031,18 @@ html.bf-is-opening .bf-opening.is-leaving {
   from { opacity: 0; }
 }
 
+/* On Enter the logo lifts away and the black rises like a curtain. */
 @keyframes bf-opening-out {
-  to { opacity: 0; visibility: hidden; }
+  to { transform: translateY(-100%); }
+}
+
+.bf-opening.is-leaving .bf-opening__logo,
+.bf-opening.is-leaving .bf-opening__enter {
+  animation: bf-lift 0.5s ease forwards;
+}
+
+@keyframes bf-lift {
+  to { opacity: 0; transform: translateY(calc(-40 * var(--u))); }
 }
 
 /* ---- Text pages --------------------------------------------------------- */
@@ -1070,10 +1168,13 @@ body.brodfest .bf-story-banner svg {
   overflow: hidden;
 }
 
+/* Clips its photo, so it can be the curtain that slides down over it
+   (animations.js). */
 .bf-banner picture {
   display: block;
   width: 100%;
   height: 100%;
+  overflow: hidden;
 }
 
 .bf-banner img,

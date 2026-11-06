@@ -8,6 +8,7 @@ import { initCarousels } from './carousel.js';
 import { initCalendar } from './calendar.js';
 import { initRsvp } from './rsvp.js';
 import { initRsvpPanel } from './rsvp-panel.js';
+import { initAnimations } from './animations.js';
 
 document.documentElement.classList.add('brodfest-js');
 
@@ -21,3 +22,4 @@ initCarousels();
 initCalendar();
 initRsvp();
 initRsvpPanel();
+initAnimations();

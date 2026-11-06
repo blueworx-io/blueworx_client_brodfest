@@ -15,11 +15,13 @@ export async function loginAsAdmin(page) {
   await page.waitForURL(/wp-admin/);
 }
 
-// The home page's first-visit opening, and the video that then fills the
-// window, cover the page; most specs are not about them, so they arrive as a
+// The home page's first-visit opening covers the page, and the animations
+// move what they reveal; most specs are not about them, so they arrive as a
 // returning visitor whose browser does not play video by itself (as Low Power
-// Mode on an iPhone does), which leaves the page in view.
+// Mode on an iPhone does) and who asks for less motion, which leaves every
+// element still and in place. animations.spec.js covers the motion.
 export async function skipIntro(page) {
+  await page.emulateMedia({ reducedMotion: 'reduce' });
   await page.addInitScript(() => {
     window.localStorage.setItem('brodfest-entered', '1');
     HTMLMediaElement.prototype.play = () => Promise.reject(new DOMException('Autoplay refused', 'NotAllowedError'));

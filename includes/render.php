@@ -111,6 +111,12 @@ function brodfest_document_open( $args = array() ) {
 	<meta charset="<?php bloginfo( 'charset' ); ?>" />
 	<meta name="viewport" content="width=device-width, initial-scale=1" />
 	<meta name="theme-color" content="#0b0603" />
+	<?php
+	// Motion (animations.js) only for visitors who have not asked for less. The
+	// content waits, hidden, until the script has set every section's starting
+	// point, and shows anyway after 3 seconds should the script never run.
+	?>
+	<script>try { if ( ! matchMedia( '(prefers-reduced-motion: reduce)' ).matches ) { document.documentElement.classList.add( 'bf-motion' ); setTimeout( function () { document.documentElement.classList.add( 'bf-motion-ready' ); }, 3000 ); } } catch ( e ) {}</script>
 	<?php wp_head(); ?>
 	<?php
 	// A phone shows the 767-wide mobile design zoomed to fit, at Figma's

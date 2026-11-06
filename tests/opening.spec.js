@@ -11,14 +11,15 @@ async function videoState(page) {
   return page.locator('[data-bf-video]').evaluate((v) => ({ playing: !v.paused && !v.ended, muted: v.muted }));
 }
 
-// The video stays in its place: under the header, which stays on top.
+// The video stays in its place: in its box under the header, which stays on
+// top. The box, as the video itself settles from a slight zoom inside it.
 async function inPlace(page) {
   return page.evaluate(() => {
-    const video = document.querySelector('[data-bf-video]').getBoundingClientRect();
+    const video = document.querySelector('.bf-hero').getBoundingClientRect();
     const header = document.querySelector('.bf-header').getBoundingClientRect();
     const toggle = document.querySelector('.bf-header__toggle').getBoundingClientRect();
     const hit = document.elementFromPoint(toggle.x + toggle.width / 2, toggle.y + toggle.height / 2);
-    return !document.body.classList.contains('is-cinema')
+    return getComputedStyle(document.querySelector('[data-bf-video]')).position !== 'fixed'
       && Math.round(video.top) >= Math.round(header.bottom)
       && !!hit.closest('.bf-header');
   });
