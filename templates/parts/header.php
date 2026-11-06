@@ -19,7 +19,6 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 $brodfest_slug  = isset( $args['slug'] ) ? (string) $args['slug'] : '';
 $brodfest_close = ! empty( $args['close'] );
-$brodfest_pages = brodfest_pages();
 ?>
 <header class="bf-header" data-bf-header>
 	<?php if ( $brodfest_close ) : ?>
@@ -49,11 +48,10 @@ $brodfest_pages = brodfest_pages();
 		<?php foreach ( brodfest_menu() as $brodfest_i => $brodfest_item ) : ?>
 			<li style="--i: <?php echo (int) $brodfest_i; ?>">
 				<a href="<?php echo esc_url( brodfest_page_url( $brodfest_item ) ); ?>"<?php echo $brodfest_item === $brodfest_slug ? ' aria-current="page"' : ''; ?>>
-					<?php echo esc_html( strtoupper( $brodfest_pages[ $brodfest_item ]['title'] ) ); ?>
+					<?php echo esc_html( strtoupper( brodfest_menu_label( $brodfest_item ) ) ); ?>
 				</a>
 			</li>
 		<?php endforeach; ?>
 	</ul>
-	<span class="bf-menu__mountain"><?php brodfest_inline_svg( 'mountain' ); ?></span>
 </nav>
 <?php endif; ?>

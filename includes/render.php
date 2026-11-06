@@ -87,7 +87,9 @@ add_filter( 'template_include', 'brodfest_template_include' );
  *
  * @param array $args Optional. 'body_class' => string; 'close' => bool, to show
  *                    the header's close button in place of the menu, as the
- *                    RSVP page does.
+ *                    RSVP page does; 'opening' => bool, for the home page's
+ *                    first-visit opening, where the logo draws itself and Enter
+ *                    starts the video with sound.
  * @return void
  */
 function brodfest_document_open( $args = array() ) {
@@ -108,6 +110,13 @@ function brodfest_document_open( $args = array() ) {
 <head>
 	<meta charset="<?php bloginfo( 'charset' ); ?>" />
 	<meta name="viewport" content="width=device-width, initial-scale=1" />
+	<meta name="theme-color" content="#0b0603" />
+	<?php
+	// Motion (animations.js) only for visitors who have not asked for less. The
+	// content waits, hidden, until the script has set every section's starting
+	// point, and shows anyway after 3 seconds should the script never run.
+	?>
+	<script>try { if ( ! matchMedia( '(prefers-reduced-motion: reduce)' ).matches ) { document.documentElement.classList.add( 'bf-motion' ); setTimeout( function () { document.documentElement.classList.add( 'bf-motion-ready' ); }, 3000 ); } } catch ( e ) {}</script>
 	<?php wp_head(); ?>
 	<?php
 	// A phone shows the 767-wide mobile design zoomed to fit, at Figma's
@@ -115,9 +124,31 @@ function brodfest_document_open( $args = array() ) {
 	// block theme) or another plugin may print one of its own there.
 	?>
 	<script>if ( screen.width < 767 ) { document.querySelectorAll( 'meta[name="viewport"]' ).forEach( function ( m ) { m.setAttribute( 'content', 'width=767' ); } ); }</script>
+	<?php if ( ! empty( $args['opening'] ) ) : ?>
+		<?php
+		// Decided before the page first paints, so a first-time visitor sees
+		// black, never a flash of the page; a returning one, or anyone who asks
+		// for less motion, never sees it.
+		?>
+	<script>try { if ( localStorage.getItem( 'brodfest-entered' ) !== '1' && ! matchMedia( '(prefers-reduced-motion: reduce)' ).matches ) { document.documentElement.classList.add( 'bf-is-opening' ); } } catch ( e ) { document.documentElement.classList.add( 'bf-is-opening' ); }</script>
+	<?php endif; ?>
 </head>
 <body <?php body_class( $classes ); ?>>
 	<?php wp_body_open(); ?>
+	<?php if ( ! empty( $args['opening'] ) ) : ?>
+	<div class="bf-opening" role="dialog" aria-modal="true" aria-label="<?php esc_attr_e( 'Welcome to Brodfest', 'blueworx-client-brodfest' ); ?>" data-bf-opening>
+		<span class="bf-opening__logo">
+			<?php
+			// Each letter's outline is measured as 1, so the drawing runs the
+			// same length whatever the letter's size.
+			ob_start();
+			brodfest_inline_svg( 'logo', 'Brodfest Ibiza' );
+			echo str_replace( '<path ', '<path pathLength="1" ', (string) ob_get_clean() ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- The plugin's own SVG, from brodfest_inline_svg().
+			?>
+		</span>
+		<button class="bf-opening__enter bf-pill" type="button" data-bf-enter><?php esc_html_e( 'ENTER', 'blueworx-client-brodfest' ); ?></button>
+	</div>
+	<?php endif; ?>
 	<a class="bf-skip" href="#content"><?php echo esc_html__( 'Skip to the content', 'blueworx-client-brodfest' ); ?></a>
 	<?php
 	brodfest_part(
@@ -195,6 +226,23 @@ function brodfest_text( $text ) {
 	$html = str_replace( "-\n", '<span class="bf-hy">-<br /></span>', $html );
 
 	return str_replace( "\n", ' <br class="bf-br" />', $html );
+}
+
+/**
+ * Turns each email address in escaped copy into a bold mailto link (client,
+ * 6 Nov 2026).
+ *
+ * @param string $html Copy already escaped by brodfest_text().
+ * @return string
+ */
+function brodfest_link_emails( $html ) {
+	return (string) preg_replace_callback(
+		'/[A-Za-z0-9._%+-]+@[A-Za-z0-9-]+(?:\.[A-Za-z0-9-]+)*\.[A-Za-z]{2,}/',
+		static function ( $m ) {
+			return '<a class="bf-email" href="' . esc_url( 'mailto:' . $m[0] ) . '">' . $m[0] . '</a>';
+		},
+		$html
+	);
 }
 
 /**

@@ -23,7 +23,10 @@ brodfest_document_open( array( 'close' => true ) );
 	<h1 class="bf-title">RSVP</h1>
 
 	<?php if ( 'sent' === $brodfest_status ) : ?>
-		<p class="bf-body bf-rsvp__message" role="status"><?php esc_html_e( 'Thank you — your RSVP has been received.', 'blueworx-client-brodfest' ); ?></p>
+		<p class="bf-body bf-rsvp__message" role="status"><?php esc_html_e( 'Thank you for your RSVP', 'blueworx-client-brodfest' ); ?></p>
+		<p class="bf-rsvp__close">
+			<a class="bf-button bf-button--send" href="<?php echo esc_url( brodfest_page_url( 'home' ) ); ?>"><?php esc_html_e( 'CLOSE', 'blueworx-client-brodfest' ); ?></a>
+		</p>
 	<?php else : ?>
 		<?php if ( 'expired' === $brodfest_status ) : ?>
 			<p class="bf-body bf-rsvp__message" role="alert"><?php esc_html_e( 'Sorry, that took too long to send. Please fill the form in again.', 'blueworx-client-brodfest' ); ?></p>

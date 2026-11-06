@@ -21,8 +21,9 @@ function brodfest_calendar_url() {
 }
 
 /**
- * The event as an iCalendar file. All day, since the time is not set yet.
- * Pure.
+ * The event as an iCalendar file, starting at its local time. The start is
+ * written in UTC so every calendar app places it right without a time-zone
+ * table. No end time has been set, so none is given. Pure.
  *
  * @param array  $event From brodfest_event().
  * @param string $uid_host Host for the event's unique id.
@@ -32,8 +33,8 @@ function brodfest_calendar_ics( $event, $uid_host ) {
 	$escape = static function ( $text ) {
 		return str_replace( array( '\\', ';', ',', "\n" ), array( '\\\\', '\;', '\,', '\n' ), (string) $text );
 	};
-	$start  = gmdate( 'Ymd', strtotime( $event['date'] . ' 00:00:00 UTC' ) );
-	$end    = gmdate( 'Ymd', strtotime( $event['date'] . ' 00:00:00 UTC +1 day' ) );
+	$local  = new DateTimeImmutable( $event['date'] . ' ' . $event['time'], new DateTimeZone( $event['timezone'] ) );
+	$start  = $local->setTimezone( new DateTimeZone( 'UTC' ) )->format( 'Ymd\THis\Z' );
 
 	return implode(
 		"\r\n",
@@ -43,10 +44,9 @@ function brodfest_calendar_ics( $event, $uid_host ) {
 			'PRODID:-//BlueWorx//Brodfest//EN',
 			'CALSCALE:GREGORIAN',
 			'BEGIN:VEVENT',
-			'UID:brodfest-' . $start . '@' . $uid_host,
+			'UID:brodfest-' . $local->format( 'Ymd' ) . '@' . $uid_host,
 			'DTSTAMP:' . gmdate( 'Ymd\THis\Z' ),
-			'DTSTART;VALUE=DATE:' . $start,
-			'DTEND;VALUE=DATE:' . $end,
+			'DTSTART:' . $start,
 			'SUMMARY:' . $escape( $event['title'] ),
 			'LOCATION:' . $escape( $event['location'] ),
 			'DESCRIPTION:' . $escape( $event['description'] ),
@@ -54,6 +54,63 @@ function brodfest_calendar_ics( $event, $uid_host ) {
 			'END:VCALENDAR',
 			'',
 		)
+	);
+}
+
+/**
+ * The event's start, in UTC. Pure.
+ *
+ * @param array $event From brodfest_event().
+ * @return DateTimeImmutable
+ */
+function brodfest_calendar_start( $event ) {
+	$local = new DateTimeImmutable( $event['date'] . ' ' . $event['time'], new DateTimeZone( $event['timezone'] ) );
+
+	return $local->setTimezone( new DateTimeZone( 'UTC' ) );
+}
+
+/**
+ * The calendars Add to Calendar offers (client, 6 Nov 2026): Apple, the file,
+ * which opens Calendar; Google and Outlook, which open in the browser with the
+ * event filled in. A desktop browser only saves the file, so it alone would
+ * not open a calendar there. No end time has been set, so Google's ends as it
+ * starts and Outlook's is left to Outlook. Pure.
+ *
+ * @param array  $event From brodfest_event().
+ * @param string $file  The calendar file's URL.
+ * @return array<string, string> Calendar name => URL.
+ */
+function brodfest_calendar_links( $event, $file ) {
+	$start = brodfest_calendar_start( $event );
+	$stamp = $start->format( 'Ymd\THis\Z' );
+
+	return array(
+		'Apple'   => $file,
+		'Google'  => 'https://calendar.google.com/calendar/render?' . http_build_query(
+			array(
+				'action'   => 'TEMPLATE',
+				'text'     => $event['title'],
+				'dates'    => $stamp . '/' . $stamp,
+				'details'  => $event['description'],
+				'location' => $event['location'],
+			),
+			'',
+			'&',
+			PHP_QUERY_RFC3986
+		),
+		'Outlook' => 'https://outlook.live.com/calendar/0/deeplink/compose?' . http_build_query(
+			array(
+				'path'     => '/calendar/action/compose',
+				'rru'      => 'addevent',
+				'subject'  => $event['title'],
+				'startdt'  => $start->format( 'Y-m-d\TH:i:s\Z' ),
+				'body'     => $event['description'],
+				'location' => $event['location'],
+			),
+			'',
+			'&',
+			PHP_QUERY_RFC3986
+		),
 	);
 }
 
