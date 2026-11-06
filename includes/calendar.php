@@ -58,6 +58,63 @@ function brodfest_calendar_ics( $event, $uid_host ) {
 }
 
 /**
+ * The event's start, in UTC. Pure.
+ *
+ * @param array $event From brodfest_event().
+ * @return DateTimeImmutable
+ */
+function brodfest_calendar_start( $event ) {
+	$local = new DateTimeImmutable( $event['date'] . ' ' . $event['time'], new DateTimeZone( $event['timezone'] ) );
+
+	return $local->setTimezone( new DateTimeZone( 'UTC' ) );
+}
+
+/**
+ * The calendars Add to Calendar offers (client, 6 Nov 2026): Apple, the file,
+ * which opens Calendar; Google and Outlook, which open in the browser with the
+ * event filled in. A desktop browser only saves the file, so it alone would
+ * not open a calendar there. No end time has been set, so Google's ends as it
+ * starts and Outlook's is left to Outlook. Pure.
+ *
+ * @param array  $event From brodfest_event().
+ * @param string $file  The calendar file's URL.
+ * @return array<string, string> Calendar name => URL.
+ */
+function brodfest_calendar_links( $event, $file ) {
+	$start = brodfest_calendar_start( $event );
+	$stamp = $start->format( 'Ymd\THis\Z' );
+
+	return array(
+		'Apple'   => $file,
+		'Google'  => 'https://calendar.google.com/calendar/render?' . http_build_query(
+			array(
+				'action'   => 'TEMPLATE',
+				'text'     => $event['title'],
+				'dates'    => $stamp . '/' . $stamp,
+				'details'  => $event['description'],
+				'location' => $event['location'],
+			),
+			'',
+			'&',
+			PHP_QUERY_RFC3986
+		),
+		'Outlook' => 'https://outlook.live.com/calendar/0/deeplink/compose?' . http_build_query(
+			array(
+				'path'     => '/calendar/action/compose',
+				'rru'      => 'addevent',
+				'subject'  => $event['title'],
+				'startdt'  => $start->format( 'Y-m-d\TH:i:s\Z' ),
+				'body'     => $event['description'],
+				'location' => $event['location'],
+			),
+			'',
+			'&',
+			PHP_QUERY_RFC3986
+		),
+	);
+}
+
+/**
  * Serves the calendar file at ?brodfest-calendar=1.
  *
  * @return void

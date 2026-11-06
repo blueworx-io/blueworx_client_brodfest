@@ -1,0 +1,104 @@
+import { test, expect } from '@playwright/test';
+import { skipIntro } from './helpers/wp.js';
+
+// Mark's third pass over the Save the Date site (Pastel, afternoon of 6 Nov
+// 2026).
+
+test.beforeEach(async ({ page }) => {
+  await skipIntro(page);
+});
+
+test('Enquiries: one ENQUIRIES title, Private Concierge as a subtitle, emails in the copy as bold links', async ({ page }) => {
+  await page.goto('/enquiries/');
+  await expect(page.locator('h1')).toHaveText('ENQUIRIES');
+  await expect(page.locator('h1')).toHaveClass(/bf-title/);
+  await expect(page.locator('h2')).toHaveText(['PRIVATE CONCIERGE']);
+  await expect(page.locator('h2')).toHaveClass(/bf-area__name/);
+  await expect(page.locator('main')).not.toContainText('GENERAL');
+  await expect(page.locator('main')).not.toContainText('Email :');
+  const links = page.locator('main .bf-body a[href^="mailto:"]');
+  await expect(links).toHaveText(['info@brodfestibiza.net', 'concierge@brodfestibiza.net']);
+  await expect(links.first()).toHaveAttribute('href', 'mailto:info@brodfestibiza.net');
+  expect(Number(await links.first().evaluate((a) => getComputedStyle(a).fontWeight))).toBeGreaterThanOrEqual(600);
+});
+
+test('Nobu and Mondrian are named without "Ibiza Bay" and "Ibiza"', async ({ page }) => {
+  await page.goto('/accommodation/');
+  await expect(page.locator('.bf-card__name').nth(3)).toHaveText('NOBU HOTEL');
+  await expect(page.locator('.bf-card__name').nth(7)).toHaveText('MONDRIAN');
+});
+
+test('the calendar entry is "Brodfest Ibiza", with the line about Can Sakhara', async ({ page }) => {
+  const ics = await (await page.request.get('/?brodfest-calendar=1')).text();
+  expect(ics).toContain('SUMMARY:Brodfest Ibiza');
+  expect(ics.replace(/\r\n /g, '')).toContain('DESCRIPTION:To celebrate Peter’s birthday in 2027\\, Brodfest arrives at Can Sakhara\\, his home on the iconic island of Ibiza.');
+});
+
+test('on Celebration the "A" never sits alone at the end of a line', async ({ page }) => {
+  await page.goto('/celebrate/');
+  // A no-break space ties it to the next word.
+  expect(await page.locator('main').evaluate((el) => el.textContent.includes('Ibiza. A stunningly'))).toBe(true);
+});
+
+test('the home note breaks after "Ibiza", across two lines', async ({ page }) => {
+  await page.setViewportSize({ width: 1920, height: 1080 });
+  await page.goto('/');
+  const note = page.locator('.bf-home__note');
+  await expect(note.locator('br')).toHaveCount(1);
+  const lines = await note.evaluate((el) => {
+    const range = document.createRange();
+    range.selectNodeContents(el);
+    return new Set([...range.getClientRects()].map((r) => Math.round(r.top))).size;
+  });
+  expect(lines).toBe(2);
+  expect(await note.innerText()).toMatch(/Brodfest Ibiza\nwebsite will land/);
+});
+
+// A downloaded file does not open a calendar on most desktop browsers, so the
+// button offers Apple (the file, which opens Calendar), Google and Outlook,
+// which open in the browser with the event filled in (client, 6 Nov 2026).
+test('Add to Calendar offers Apple, Google and Outlook', async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.goto('/');
+  const button = page.locator('[data-bf-calendar-toggle]');
+  const menu = page.locator('[data-bf-calendar-menu]');
+  await expect(menu).toBeHidden();
+  await button.click();
+  await expect(button).toHaveAttribute('aria-expanded', 'true');
+  const links = menu.locator('a');
+  await expect(links).toHaveText(['Apple', 'Google', 'Outlook']);
+
+  const apple = await links.nth(0).getAttribute('href');
+  expect(apple).toContain('brodfest-calendar=1');
+  await expect(links.nth(0)).toHaveAttribute('download', 'brodfest.ics');
+
+  const google = new URL(await links.nth(1).getAttribute('href'));
+  expect(google.origin + google.pathname).toBe('https://calendar.google.com/calendar/render');
+  expect(google.searchParams.get('action')).toBe('TEMPLATE');
+  expect(google.searchParams.get('text')).toBe('Brodfest Ibiza');
+  expect(google.searchParams.get('dates')).toMatch(/^20270605T170000Z\//);
+  expect(google.searchParams.get('details')).toContain('Can Sakhara');
+
+  const outlook = new URL(await links.nth(2).getAttribute('href'));
+  expect(outlook.origin + outlook.pathname).toBe('https://outlook.live.com/calendar/0/deeplink/compose');
+  expect(outlook.searchParams.get('subject')).toBe('Brodfest Ibiza');
+  expect(outlook.searchParams.get('startdt')).toBe('2027-06-05T17:00:00Z');
+  for (const i of [1, 2]) await expect(links.nth(i)).toHaveAttribute('target', '_blank');
+
+  await page.keyboard.press('Escape');
+  await expect(menu).toBeHidden();
+  await expect(button).toBeFocused();
+});
+
+// The main body copy is 30% bigger on the mobile design (client, 6 Nov 2026):
+// 26 in place of Figma's 20. Desktop keeps its size.
+test('body copy is 30% bigger on mobile, and unchanged on desktop', async ({ page }) => {
+  const size = async (width) => {
+    await page.setViewportSize({ width, height: 900 });
+    await page.goto('/celebrate/');
+    return page.locator('.bf-text .bf-body').first().evaluate((el) => getComputedStyle(el).fontSize);
+  };
+  expect(await size(767)).toBe('26px');
+  expect(await size(1023)).toBe('26px');
+  expect(await size(1920)).toBe('15px');
+});

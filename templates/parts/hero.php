@@ -2,10 +2,11 @@
 /**
  * Home hero: the video, its sound button and the replay button.
  *
- * Figma: Media/Hero Video (Site × Size). The video plays by itself, muted (no
- * browser allows sound without a click), filling the window until it ends or
- * the visitor scrolls, taps or presses Esc (intro.js). The sound button turns
- * the sound on; once it ends, a play button offers a replay with sound.
+ * Figma: Media/Hero Video (Site × Size). On a first visit the opening's Enter
+ * button starts it with sound (no browser allows sound without a click); on
+ * later visits it plays by itself, muted. Either way it plays here, in its
+ * place on the page (intro.js). The sound button turns the sound on or off;
+ * once it ends, a play button offers a replay with sound.
  *
  * @package Brodfest
  *

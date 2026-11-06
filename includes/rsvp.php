@@ -28,8 +28,8 @@ function brodfest_rsvp_dietary_options() {
 		'vegan'       => __( 'Vegan', 'blueworx-client-brodfest' ),
 		'pescatarian' => __( 'Pescatarian', 'blueworx-client-brodfest' ),
 		'gluten-free' => __( 'Gluten free', 'blueworx-client-brodfest' ),
-		'other'       => __( 'Other (tell us under allergies)', 'blueworx-client-brodfest' ),
 		'dairy-free'  => __( 'Dairy Free', 'blueworx-client-brodfest' ),
+		'other'       => __( 'Other (tell us under allergies)', 'blueworx-client-brodfest' ),
 	);
 }
 

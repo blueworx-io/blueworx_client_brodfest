@@ -21,7 +21,7 @@ export async function loginAsAdmin(page) {
 // Mode on an iPhone does), which leaves the page in view.
 export async function skipIntro(page) {
   await page.addInitScript(() => {
-    window.localStorage.setItem('brodfest-intro-seen', '1');
+    window.localStorage.setItem('brodfest-entered', '1');
     HTMLMediaElement.prototype.play = () => Promise.reject(new DOMException('Autoplay refused', 'NotAllowedError'));
   });
 }

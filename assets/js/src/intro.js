@@ -1,13 +1,16 @@
 // The home page's opening and its video.
 //
-// A first-time visitor arrives on black while the logo draws itself, and it
-// fades to the page (the head script in render.php decides, before the page
-// paints). The video then plays by itself, muted, filling the window over the
-// menu, until it ends or the visitor scrolls, taps or presses Esc; it plays on
-// in its place. Anyone who asks for less motion gets neither: the page, with a
-// play button.
+// A first-time visitor arrives on black while the logo draws itself, then an
+// Enter button appears (the head script in render.php decides, before the page
+// paints). Enter is the tap that lets the browser play the video with sound,
+// so the video starts then. On later visits it plays by itself, with sound
+// where the browser allows it (client, 6 Nov 2026); where it does not, muted
+// until the visitor's first tap, click or key, unless they chose silence with
+// the sound button. Either way it plays in its place, with the page and header as
+// normal (Luke, 6 Nov 2026). Anyone who asks for less motion gets neither: the
+// page, with a play button.
 
-const SEEN_KEY = 'brodfest-intro-seen';
+const SEEN_KEY = 'brodfest-entered';
 
 function markSeen() {
 	try {
@@ -17,48 +20,14 @@ function markSeen() {
 	}
 }
 
-// Keys that only move focus leave the full-window video be.
-const FOCUS_KEYS = ['Tab', 'Shift'];
-
 function initVideo(hero) {
 	const video = hero.querySelector('[data-bf-video]');
 	const play = hero.querySelector('[data-bf-play]');
 	const sound = hero.querySelector('[data-bf-sound]');
 
 	if (!video) {
-		return () => {};
+		return null;
 	}
-
-	const leaveCinema = () => {
-		document.body.classList.remove('is-cinema');
-		window.removeEventListener('wheel', leaveCinema);
-		window.removeEventListener('touchmove', leaveCinema);
-		window.removeEventListener('scroll', leaveCinema);
-		document.removeEventListener('pointerdown', onPointer);
-		document.removeEventListener('keydown', onKey);
-	};
-
-	function onPointer(event) {
-		if (!event.target.closest('[data-bf-sound]')) {
-			leaveCinema();
-		}
-	}
-
-	function onKey(event) {
-		const onSound = event.target.closest?.('[data-bf-sound]') && ['Enter', ' '].includes(event.key);
-		if (!FOCUS_KEYS.includes(event.key) && !onSound) {
-			leaveCinema();
-		}
-	}
-
-	const enterCinema = () => {
-		document.body.classList.add('is-cinema');
-		window.addEventListener('wheel', leaveCinema, { passive: true });
-		window.addEventListener('touchmove', leaveCinema, { passive: true });
-		window.addEventListener('scroll', leaveCinema, { passive: true });
-		document.addEventListener('pointerdown', onPointer);
-		document.addEventListener('keydown', onKey);
-	};
 
 	const setSound = (on) => {
 		video.muted = !on;
@@ -81,69 +50,92 @@ function initVideo(hero) {
 		if (sound) {
 			sound.hidden = false;
 		}
-		enterCinema();
 	});
 
-	video.addEventListener('ended', () => {
-		leaveCinema();
-		showPlay();
+	video.addEventListener('ended', showPlay);
+
+	// Set once the visitor uses the sound button: their choice then stands.
+	let chosen = false;
+	sound?.addEventListener('click', () => {
+		chosen = true;
+		setSound(video.muted);
 	});
 
-	sound?.addEventListener('click', () => setSound(video.muted));
+	// The first tap, click or key lets the browser play sound.
+	const soundOnFirstTouch = () => {
+		const wake = (event) => {
+			if (event.target.closest?.('[data-bf-sound]')) {
+				return;
+			}
+			document.removeEventListener('pointerdown', wake, true);
+			document.removeEventListener('keydown', wake, true);
+			if (!chosen && !video.paused) {
+				setSound(true);
+			}
+		};
+		document.addEventListener('pointerdown', wake, true);
+		document.addEventListener('keydown', wake, true);
+	};
 
-	play?.addEventListener('click', () => {
+	// Only after a tap or click: browsers refuse sound before one.
+	const playWithSound = () => {
 		setSound(true);
 		video.currentTime = 0;
 		video.play().catch(showPlay);
-	});
+	};
 
-	// Starts the video by itself, muted, as browsers allow.
-	return () => {
-		if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
-			showPlay();
-			return;
-		}
-		setSound(false);
-		video.play().catch(showPlay);
+	play?.addEventListener('click', playWithSound);
+
+	return {
+		playWithSound,
+		// Starts the video by itself, with sound if the browser allows it, or
+		// else muted until the visitor's first tap, click or key.
+		autoplay() {
+			if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+				showPlay();
+				return;
+			}
+			setSound(true);
+			video.play().catch(() => {
+				setSound(false);
+				video.play().then(soundOnFirstTouch, showPlay);
+			});
+		},
 	};
 }
 
 export function initIntro() {
 	const hero = document.querySelector('[data-bf-hero]');
 	const opening = document.querySelector('[data-bf-opening]');
-	const start = hero ? initVideo(hero) : () => {};
+	const video = hero ? initVideo(hero) : null;
 
 	if (!opening || !document.documentElement.classList.contains('bf-is-opening')) {
 		opening?.remove();
-		start();
+		video?.autoplay();
 		return;
 	}
 
-	markSeen();
-	let started = false;
-	const begin = () => {
-		if (!started) {
-			started = true;
-			start();
-		}
-	};
-	const done = () => {
-		begin();
-		document.documentElement.classList.remove('bf-is-opening');
-		opening.remove();
-	};
+	const enter = opening.querySelector('[data-bf-enter]');
+	enter.focus({ preventScroll: true });
 
-	// The video starts as the opening begins to fade, so the fade reveals it.
-	opening.addEventListener('animationstart', (event) => {
-		if (event.target === opening) {
-			begin();
-		}
-	});
-	opening.addEventListener('animationend', (event) => {
-		if (event.target === opening) {
-			done();
-		}
-	});
-	// In case the browser runs no animations at all.
-	setTimeout(done, 3000);
+	enter.addEventListener(
+		'click',
+		() => {
+			markSeen();
+			video?.playWithSound();
+			opening.classList.add('is-leaving');
+			const done = () => {
+				document.documentElement.classList.remove('bf-is-opening');
+				opening.remove();
+			};
+			opening.addEventListener('animationend', (event) => {
+				if (event.target === opening) {
+					done();
+				}
+			});
+			// In case the browser runs no animations at all.
+			setTimeout(done, 1000);
+		},
+		{ once: true },
+	);
 }

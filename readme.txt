@@ -3,7 +3,7 @@ Contributors: blueworx
 Requires at least: 6.4
 Tested up to: 7.0
 Requires PHP: 8.1
-Stable tag: 0.6.0
+Stable tag: 0.8.0
 License: GPL-2.0-or-later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -25,6 +25,33 @@ renders them itself, so the design is exact whatever else is installed.
    page videos, and set where RSVP replies are emailed.
 
 == Changelog ==
+
+= 0.8.0 =
+* RSVP lowers over the page you are on and goes back up when you close it or have replied; the RSVP button closes it too.
+* Add to Calendar offers Apple, Google and Outlook. The entry is "Brodfest Ibiza".
+* The home video starts with sound where the browser allows it, or at the first tap or click.
+* Enquiries has one title, Private Concierge as a subtitle, and the emails as bold links in the copy.
+* "Nobu Hotel" and "Mondrian"; the home note breaks after "Ibiza". Body copy is 30% bigger on phones and tablets.
+
+= 0.7.3 =
+* The client's photos for each area and seven of the eight hotels.
+* Tablets show the desktop video at the desktop size, so it only changes where phones take over.
+
+= 0.7.2 =
+* Tablets and desktop share one header, so it only changes where the phone layout takes over.
+
+= 0.7.1 =
+* On phones the map fills the width of the screen.
+
+= 0.7.0 =
+* Everything on desktop is a quarter smaller; phones and tablets are unchanged.
+* After Enter the home video plays in its place on the page, with the header as normal.
+* Information opens with the transport details, then Where to Stay, then the map. Each area shows how far away it is, and Bless Ibiza has lost "The Site".
+* The site background is #0b0603, with no pink flash while the video loads. Desktop shows the wide map, mobile the squarer one.
+* Hotel rows swipe as soon as they no longer fit. Links show no box after a tap. "Other" is the last dietary choice.
+
+= 0.6.1 =
+* The Enter screen is back: the logo draws itself on black, then Enter appears. Pressing it plays the home video with sound, filling the window. Later visits still play it by itself, muted.
 
 = 0.6.0 =
 * The home page opens on black as the Brodfest logo draws itself, then fades to the page, on a first visit. It replaces the Enter screen.

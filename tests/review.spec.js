@@ -8,8 +8,10 @@ test.beforeEach(async ({ page }) => {
   await skipIntro(page);
 });
 
-test('the header is 170 tall from tablets up, and phones keep the mobile 207', async ({ page }) => {
-  for (const [width, height] of [[1920, 170], [1280, 170], [1024, 170], [900, 170], [768, 170], [767, 207]]) {
+// Desktop is drawn at three-quarters of Figma's size (Luke, 6 Nov 2026), so
+// its 170 header is 127.5 there, and tablets share it.
+test('the header is 127.5 tall from tablets up, and phones keep the mobile 207', async ({ page }) => {
+  for (const [width, height] of [[1920, 127.5], [1280, 127.5], [1024, 127.5], [900, 127.5], [768, 127.5], [767, 207]]) {
     await page.setViewportSize({ width, height: 900 });
     await page.goto('/celebrate/');
     const box = await page.locator('.bf-header').boundingBox();
@@ -17,18 +19,18 @@ test('the header is 170 tall from tablets up, and phones keep the mobile 207', a
   }
 });
 
-test('the header keeps at least the mobile 48px from either edge', async ({ page }) => {
-  for (const width of [1024, 1280, 1599]) {
+test('the header keeps at least the mobile 48 (36 on desktop) from either edge', async ({ page }) => {
+  for (const width of [768, 900, 1023, 1024, 1280, 1199]) {
     await page.setViewportSize({ width, height: 900 });
     await page.goto('/celebrate/');
     const toggle = await page.locator('.bf-header__toggle').boundingBox();
     const pill = await page.locator('.bf-header .bf-pill').boundingBox();
-    expect(Math.round(toggle.x), `menu button at ${width}`).toBeGreaterThanOrEqual(48);
-    expect(Math.round(width - pill.x - pill.width), `RSVP at ${width}`).toBeGreaterThanOrEqual(48);
+    expect(Math.round(toggle.x), `menu button at ${width}`).toBeGreaterThanOrEqual(36);
+    expect(Math.round(width - pill.x - pill.width), `RSVP at ${width}`).toBeGreaterThanOrEqual(36);
   }
 });
 
-test('the menu button and RSVP sit level with the logo, centred in the 170 header', async ({ page }) => {
+test('the menu button and RSVP sit level with the logo, centred in the header', async ({ page }) => {
   for (const width of [1920, 1280, 1024, 900, 768]) {
     await page.setViewportSize({ width, height: 900 });
     await page.goto('/celebrate/');
@@ -61,45 +63,43 @@ test('a menu item turns white on rollover, without going bold', async ({ page })
   expect(await item.evaluate((el) => getComputedStyle(el).fontWeight)).toBe(before);
 });
 
-test('the home page plays the Save the Date video, wide on desktop and square on phones', async ({ page }) => {
+test('the home page plays the Save the Date video, wide from tablets up and square on phones', async ({ page }) => {
   await page.goto('/');
   const sources = page.locator('.bf-hero__video source');
   await expect(sources).toHaveCount(2);
   await expect(sources.first()).toHaveAttribute('src', /BF_SAVE_THE_DATE_1920X840/);
-  await expect(sources.first()).toHaveAttribute('media', '(min-width: 1024px)');
+  await expect(sources.first()).toHaveAttribute('media', '(min-width: 768px)');
   await expect(sources.last()).toHaveAttribute('src', /BF_SAVE_THE_DATE_1080X1080/);
   const ok = await page.request.get(await sources.first().getAttribute('src'));
   expect(ok.status()).toBe(200);
 });
 
-test('the home page and calendar entry use the copy document line about the invitation', async ({ page }) => {
+// The calendar entry has its own line since 6 Nov (review-6nov-pm.spec.js).
+test('the home page uses the copy document line about the invitation', async ({ page }) => {
   await page.goto('/');
-  await expect(page.locator('.bf-home__note')).toHaveText('Your invitation and the full Brodfest Ibiza website will land before Christmas.');
-  const href = await page.locator('.bf-home .bf-button--primary').getAttribute('href');
-  const body = await (await page.request.get(href)).text();
-  // A calendar file folds long lines with a line break and a space.
-  expect(body.replace(/\r\n[ \t]/g, '')).toContain('DESCRIPTION:Your invitation and the full Brodfest Ibiza website will land before Christmas.');
+  // On two lines, breaking after "Ibiza" (review-6nov-pm.spec.js).
+  await expect(page.locator('.bf-home__note')).toHaveText(/Your invitation and the full Brodfest Ibiza\s*website will land before Christmas\./);
 });
 
-test('Celebration has the new copy, the dress code and transport', async ({ page }) => {
+test('Celebration has the new copy and the dress code; transport has moved to Information', async ({ page }) => {
   await page.goto('/celebrate/');
   await expect(page.locator('h1')).toHaveText('CELEBRATION');
   await expect(page.locator('.bf-body').first()).toContainText('Ibiza is calling.');
-  await expect(page.locator('h2')).toHaveText(['DRESS CODE', 'TRANSPORT FOR BRODFEST IBIZA']);
+  await expect(page.locator('h2')).toHaveText(['DRESS CODE']);
   await expect(page.locator('main')).toContainText('Black, Gold & Ibiza Bold');
   await expect(page.locator('main')).toContainText('will land before Christmas.');
   // The subtitles take the area-header style (as TALAMANCA).
   await expect(page.locator('h2').first()).toHaveClass(/bf-area__name/);
 });
 
-test('Information is Where to Stay, with the real hotels and only Cala Llonga discounted', async ({ page }) => {
+test('Information has the real hotels, with only Cala Llonga discounted', async ({ page }) => {
   await page.goto('/accommodation/');
-  await expect(page.locator('h1')).toHaveText('WHERE TO STAY');
-  await expect(page.locator('.bf-area__name')).toHaveText(["PLAYA D’EN BOSSA", 'TALAMANCA', 'CALA LLONGA']);
+  await expect(page.locator('h1')).toHaveText('INFORMATION');
+  await expect(page.locator('.bf-area h2.bf-area__name')).toHaveText(["PLAYA D’EN BOSSA", 'TALAMANCA', 'CALA LLONGA']);
   await expect(page.locator('.bf-card__name')).toHaveText([
-    'BLESS IBIZA THE SITE', 'HOTEL TORRE DEL MAR', 'AMA IBIZA SUITES',
-    'NOBU HOTEL IBIZA BAY', 'HOTEL SIMBAD', 'HOTEL LUX ISLA',
-    'HYDE IBIZA', 'MONDRIAN IBIZA',
+    'BLESS IBIZA', 'HOTEL TORRE DEL MAR', 'AMA IBIZA SUITES',
+    'NOBU HOTEL', 'HOTEL SIMBAD', 'HOTEL LUX ISLA',
+    'HYDE IBIZA', 'MONDRIAN',
   ]);
   await expect(page.locator('.bf-card .bf-button--card').first()).toHaveAttribute('href', 'https://www.thesiteibiza.com/en/hotels/bless-ibiza-the-site/');
   const discounts = page.locator('.bf-card__discount');
@@ -119,16 +119,33 @@ test('each row of hotels has its BOOK buttons in line, whatever the length of th
   }
 });
 
-test('the map is the client\'s, 782 by 600 on desktop, in the same-height slot', async ({ page }) => {
+// The client's two maps (6 Nov 2026): the wide one on desktop, filling its
+// slot, and the squarer one on mobile.
+test('the map is the client\'s desktop version on desktop, filling its slot', async ({ page }) => {
   await page.setViewportSize({ width: 1920, height: 1080 });
   await page.goto('/accommodation/');
   const map = page.locator('.bf-map img');
   await expect(map).toHaveAttribute('alt', /Map of Ibiza/);
-  expect(await map.evaluate((img) => img.complete && img.naturalWidth)).toBe(1630);
+  await map.scrollIntoViewIfNeeded();
+  await expect.poll(() => map.evaluate((img) => img.complete && img.naturalWidth)).toBe(3259);
   const box = await map.boundingBox();
-  expect([Math.round(box.width), Math.round(box.height)]).toEqual([782, 600]);
-  expect(Math.round((await page.locator('.bf-map').boundingBox()).height)).toBe(782);
+  const slot = await page.locator('.bf-map').boundingBox();
+  expect([Math.round(box.width), Math.round(box.height)]).toEqual([Math.round(slot.width), Math.round(slot.height)]);
   await expect(page.locator('.bf-map .bf-placeholder-label')).toHaveCount(0);
+});
+
+test('the map is the client\'s mobile version on mobile', async ({ page }) => {
+  await page.setViewportSize({ width: 767, height: 1000 });
+  await page.goto('/accommodation/');
+  const map = page.locator('.bf-map img');
+  await map.scrollIntoViewIfNeeded();
+  await expect.poll(() => map.evaluate((img) => img.complete && img.naturalWidth)).toBe(1630);
+  // It fills the width, and its slot is as tall as the whole map (Luke, 6 Nov 2026).
+  const box = await map.boundingBox();
+  const slot = await page.locator('.bf-map').boundingBox();
+  expect(Math.round(box.width)).toBe(767);
+  expect(Math.abs(box.height - (767 * 600) / 782)).toBeLessThanOrEqual(1);
+  expect(Math.abs(slot.height - box.height)).toBeLessThanOrEqual(1);
 });
 
 test('Enquiries has the new copy and brodfestibiza.net addresses', async ({ page }) => {
@@ -208,15 +225,16 @@ test.describe('RSVP', () => {
     }
   });
 
-  test('the dietary list ends with Dairy Free and opens dark with gold brand lettering', async ({ page }) => {
+  test('the dietary list ends with Other and opens dark with gold brand lettering', async ({ page }) => {
     await page.goto('/rsvp/');
     const options = page.locator('#bf-dietary option');
-    await expect(options.last()).toHaveText('Dairy Free');
+    await expect(options.last()).toHaveText('Other (tell us under allergies)');
+    await expect(options.nth(-2)).toHaveText('Dairy Free');
     const style = await page.locator('#bf-dietary option').last().evaluate((el) => {
       const s = getComputedStyle(el);
       return { bg: s.backgroundColor, color: s.color, font: s.fontFamily };
     });
-    expect(style.bg).toBe('rgb(11, 3, 1)');
+    expect(style.bg).toBe('rgb(11, 6, 3)');
     expect(style.color).toBe('rgb(209, 149, 78)');
     // The form's own brand font, not the browser's.
     expect(style.font).toMatch(/aller|Lato/);

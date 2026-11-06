@@ -2,8 +2,8 @@
 /**
  * Celebrate. Figma: STD – Celebrate and Invite – Celebrate.
  *
- * The Save the Date version is the welcome, then the dress code and transport
- * under area-style subtitles; the Invite opens with a photo strip and adds the
+ * The Save the Date version is the welcome, then the dress code under an
+ * area-style subtitle (transport is on Information, at the client's request); the Invite opens with a photo strip and adds the
  * dress code.
  *
  * @package Brodfest
@@ -59,15 +59,6 @@ if ( brodfest_is_invite() ) {
 				'heading'    => 'h2',
 				'subtitle'   => true,
 				'paragraphs' => array( brodfest_std_copy( 'dress_code' ) ),
-			)
-		);
-		brodfest_part(
-			'text-section',
-			array(
-				'title'      => 'TRANSPORT FOR BRODFEST IBIZA',
-				'heading'    => 'h2',
-				'subtitle'   => true,
-				'paragraphs' => array( brodfest_std_copy( 'transport' ) ),
 			)
 		);
 		?>

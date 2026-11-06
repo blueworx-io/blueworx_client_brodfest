@@ -39,7 +39,7 @@ function near(actual, expected, allowance) {
 test('with no theme names set, the page shows the Brodfest colours', async ({ page }) => {
   await page.goto('/celebrate/');
   await page.addStyleTag({ content: NO_THEME });
-  expect(await rgb(page, 'body', 'backgroundColor')).toEqual([11, 3, 1]);
+  expect(await rgb(page, 'body', 'backgroundColor')).toEqual([11, 6, 3]);
   expect(await rgb(page, 'body', 'color')).toEqual([209, 149, 78]);
   expect(await rgb(page, '.bf-title', 'color')).toEqual([162, 67, 0]);
   expect(await font(page, '.bf-title')).toMatch(/^"?futura-pt/);
@@ -48,7 +48,7 @@ test('with no theme names set, the page shows the Brodfest colours', async ({ pa
   await page.goto('/');
   await page.addStyleTag({ content: NO_THEME });
   expect(await rgb(page, '.bf-pill', 'backgroundColor')).toEqual([209, 149, 78]);
-  expect(await rgb(page, '.bf-button--primary', 'backgroundColor')).toEqual([99, 40, 0]);
+  expect(await rgb(page, '.bf-button--primary', 'backgroundColor')).toEqual([99, 42, 1]);
 
   await page.goto('/rsvp/');
   await page.addStyleTag({ content: NO_THEME });
@@ -68,7 +68,7 @@ test("the colours follow the theme's names", async ({ page }) => {
   await page.goto('/');
   await page.addStyleTag({ content: TEST_THEME });
   expect(await rgb(page, '.bf-pill', 'backgroundColor')).toEqual([255, 0, 0]);
-  expect(await rgb(page, '.bf-button--primary', 'backgroundColor')).not.toEqual([99, 40, 0]);
+  expect(await rgb(page, '.bf-button--primary', 'backgroundColor')).not.toEqual([99, 42, 1]);
 
   await page.goto('/rsvp/');
   await page.addStyleTag({ content: TEST_THEME });
@@ -105,7 +105,8 @@ test("Brodfest's fonts and preset are on the Design screen", async ({ page }) =>
 test('the desktop text gutter is not changed by the theme', async ({ page }) => {
   await page.goto('/celebrate/');
   const padding = await page.locator('.bf-text').first().evaluate((el) => parseFloat(getComputedStyle(el).paddingLeft));
-  expect(Math.round(padding)).toBe(178);
+  // Figma's 178 at the desktop's three-quarter size, in the centred 1440 artboard.
+  expect(padding).toBeCloseTo(178 * 0.75 + (1920 - 1440) / 2, 1);
 });
 
 async function fill(page, selector) {
@@ -146,5 +147,5 @@ test('the open menu is mostly the page colour, so the video only tints it', asyn
   });
   expect(style.blur).toContain('blur');
   // The page colour at 80%, over whatever plays behind.
-  expect(style.bg).toMatch(/^(color\(srgb .* \/ 0\.8\)|rgba\(11, 3, 1, 0\.8\))$/);
+  expect(style.bg).toMatch(/^(color\(srgb .* \/ 0\.8\)|rgba\(11, 6, 3, 0\.8\))$/);
 });

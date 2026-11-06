@@ -5,6 +5,83 @@ All notable changes to this project are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.8.0] - 2026-11-06
+
+### Changed
+
+- RSVP lowers over the page you are on and goes back up when you close it or
+  have replied, rather than opening a page of its own and closing to the home
+  page. The RSVP button closes it too.
+- Add to Calendar offers Apple, Google and Outlook, so it opens a calendar on
+  desktop rather than only downloading a file. The entry is "Brodfest Ibiza",
+  with the line about Can Sakhara.
+- The home video starts with sound where the browser allows it; where it
+  does not, the sound comes on at the first tap or click.
+- Enquiries: one ENQUIRIES title, Private Concierge as a subtitle, and the
+  emails in the copy as bold links in place of the separate email lines.
+- "Nobu Hotel" and "Mondrian", without "Ibiza Bay" and "Ibiza".
+- The home note breaks after "Ibiza", and on Celebration the "A" moves down
+  to the next line.
+- Body copy is 30% bigger on phones and tablets.
+
+## [0.7.3] - 2026-11-06
+
+### Added
+
+- The client's photos: each area's banner (a wide cut on desktop, its own on
+  phones) and seven of the eight hotels. AMA Ibiza Suites' is still to come.
+
+### Fixed
+
+- The home video no longer changes size at 1024: tablets show the desktop
+  video at the desktop size, so it only changes where phones take over.
+
+## [0.7.2] - 2026-11-06
+
+### Fixed
+
+- The header no longer changes size at 1024: tablets and desktop share one
+  header, so it only changes where the phone layout takes over.
+
+## [0.7.1] - 2026-11-06
+
+### Changed
+
+- On phones the map fills the width of the screen, rather than sitting small
+  in the middle.
+
+## [0.7.0] - 2026-11-06
+
+### Changed
+
+- Everything on desktop is a quarter smaller. Phones and tablets are unchanged.
+- After Enter, the home video plays in its place on the page, with the header
+  as normal, rather than filling the window. It still plays by itself on later
+  visits.
+- Information opens with the transport details (moved from Celebration), then
+  Where to Stay as a subtitle, then the map.
+- Each area shows how far away it is under its name, and Bless Ibiza has lost
+  "The Site".
+- The site and the browser around it are #0b0603.
+- Hotel and recommendation rows swipe, with dots, as soon as the window is too
+  narrow to show them all.
+- On RSVP, "Other" is the last dietary choice.
+
+### Fixed
+
+- No pink flash while the home video loads.
+- Desktop shows the client's wide map, and mobile their squarer one.
+- Links no longer show a box after a tap or click; keyboard users still see
+  where they are.
+
+## [0.6.1] - 2026-11-06
+
+### Changed
+
+- The Enter screen is back: the logo draws itself on black, then Enter appears
+  under it. Pressing it plays the home video with sound, filling the window.
+  On later visits the video still plays by itself, muted.
+
 ## [0.6.0] - 2026-11-05
 
 ### Added
