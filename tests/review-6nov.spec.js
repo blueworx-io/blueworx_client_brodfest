@@ -190,7 +190,7 @@ test('each hotel card shows its photo', async ({ page }) => {
     return [card.querySelector('.bf-card__name').textContent.trim(), img ? img.getAttribute('src').split('/').pop() : null];
   }));
   expect(photos).toEqual([
-    ['BLESS IBIZA', 'bless.jpg'], ['HOTEL TORRE DEL MAR', 'torre-del-mar.jpg'], ['AMA IBIZA SUITES', 'ama.jpg'],
+    ['BLESS IBIZA', 'bless.jpg'], ['TORRE DEL MAR', 'torre-del-mar.jpg'], ['AMA IBIZA', 'ama.jpg'],
     ['NOBU HOTEL', 'nobu.jpg'], ['HOTEL SIMBAD', 'simbad.jpg'], ['HOTEL LUX ISLA', 'lux-isla.jpg'],
     ['HYDE IBIZA', 'hyde.jpg'], ['MONDRIAN', 'mondrian.jpg'],
   ]);

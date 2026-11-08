@@ -130,8 +130,8 @@ function brodfest_std_copy( $key ) {
 	// The client's photos (6 Nov 2026), by hotel.
 	$photos = array(
 		'BLESS IBIZA'          => 'bless',
-		'HOTEL TORRE DEL MAR'  => 'torre-del-mar',
-		'AMA IBIZA SUITES'     => 'ama',
+		'TORRE DEL MAR'        => 'torre-del-mar',
+		'AMA IBIZA'            => 'ama',
 		'NOBU HOTEL'           => 'nobu',
 		'HOTEL SIMBAD'         => 'simbad',
 		'HOTEL LUX ISLA'       => 'lux-isla',
@@ -169,8 +169,8 @@ function brodfest_std_copy( $key ) {
 				'intro'       => 'Playa d’en Bossa features Ibiza’s longest beachfront, lined with upscale beach clubs and open-air dining, making it ideal for anyone seeking high-energy days and sophisticated evening entertainment. This buzzing strip, close to Ibiza Town, balances premium relaxation with world-class nightlife venues, ensuring a spirited atmosphere right at your doorstep.',
 				'cards'       => array(
 					$hotel( 'BLESS IBIZA', 'BLESS Ibiza redefines Mediterranean luxury. A dazzling five-star hotel that opened in 2026, it features interiors by Lázaro Rosa-Violán. Guests can indulge in breathtaking sea views, curated gastronomy, a rooftop bar, a Natura Bissé spa, and restaurants including COYA, all making for a glamorous stay in a coastal paradise.', 'https://www.thesiteibiza.com/en/hotels/bless-ibiza-the-site/' ),
-					$hotel( 'HOTEL TORRE DEL MAR', 'Hotel Torre del Mar offers the best of both worlds. Situated on a prime beachfront stretch, this polished resort marries energetic island life with serene downtime. Highlights include spectacular sea views, the impressive Sal Rossa Spa, and an iconic infinity pool wrapped around a historic stone tower.', 'https://www.hoteltorredelmar.com/en' ),
-					$hotel( 'AMA IBIZA SUITES', 'AMA Ibiza Suites is an adults only, beachfront hideaway right on the sands of Playa d’en Bossa. Its stylish suites come with kitchenettes and private balconies or terraces, many with garden or sea views. Days revolve around the outdoor pool overlooking the beach, with DJ sessions setting a laid back rhythm, while the beach club and Mediterranean restaurant make it easy to stay put from breakfast until sunset.', 'https://www.amaibiza.com/' ),
+					$hotel( 'TORRE DEL MAR', 'Hotel Torre del Mar offers the best of both worlds. Situated on a prime beachfront stretch, this polished resort marries energetic island life with serene downtime. Highlights include spectacular sea views, the impressive Sal Rossa Spa, and an iconic infinity pool wrapped around a historic stone tower.', 'https://www.hoteltorredelmar.com/en' ),
+					$hotel( 'AMA IBIZA', 'AMA Ibiza Suites is an adults only, beachfront hideaway right on the sands of Playa d’en Bossa. Its stylish suites come with kitchenettes and private balconies or terraces, many with garden or sea views. Days revolve around the outdoor pool overlooking the beach, with DJ sessions setting a laid back rhythm, while the beach club and Mediterranean restaurant make it easy to stay put from breakfast until sunset.', 'https://www.amaibiza.com/' ),
 				),
 			),
 			array(

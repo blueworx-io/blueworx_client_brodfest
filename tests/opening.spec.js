@@ -4,15 +4,16 @@ import { test, expect, chromium } from '@playwright/test';
 // then an Enter button appears (Luke, 6 Nov 2026), on a visitor's first
 // arrival only. Enter is the tap that lets the browser play the video with
 // sound, so the video starts then, in its place on the page with the header as
-// normal (Luke, 6 Nov 2026). On later visits it plays by itself, muted, with a
-// sound button.
+// normal (Luke, 6 Nov 2026). On later visits it plays by itself with sound
+// where the browser allows, or else waits for the play button; it never
+// starts muted (client, 8 Nov 2026).
 
 async function videoState(page) {
   return page.locator('[data-bf-video]').evaluate((v) => ({ playing: !v.paused && !v.ended, muted: v.muted }));
 }
 
 // The video stays in its place: in its box under the header, which stays on
-// top. The box, as the video itself settles from a slight zoom inside it.
+// top.
 async function inPlace(page) {
   return page.evaluate(() => {
     const video = document.querySelector('.bf-hero').getBoundingClientRect();
@@ -122,35 +123,30 @@ test('on a later visit the video plays by itself, with sound where the browser a
   await browser.close();
 });
 
-test('where the browser refuses sound, the video plays muted and the sound comes on at the first click', async ({ page }) => {
+// Never muted (client, 8 Nov 2026): where the browser refuses sound, the
+// video waits for the play button, which plays it with sound.
+test('where the browser refuses sound, the video waits for the play button and never plays muted', async ({ page }) => {
   await returning(page, { refuseSound: true });
-  await expect.poll(() => videoState(page)).toEqual({ playing: true, muted: true });
-  await page.mouse.click(960, 900);
+  const play = page.locator('[data-bf-play]');
+  await expect(play).toBeVisible();
+  expect((await videoState(page)).playing).toBe(false);
+  await expect(page.locator('[data-bf-sound]')).toBeHidden();
+  await play.click();
   await expect.poll(() => videoState(page)).toEqual({ playing: true, muted: false });
   await expect(page.locator('[data-bf-sound]')).toHaveAttribute('aria-pressed', 'true');
 });
 
-test('a visitor who turns the sound off keeps it off', async ({ page }) => {
-  await returning(page, { refuseSound: true });
-  const sound = page.locator('[data-bf-sound]');
-  await sound.click();
-  await sound.click();
-  await page.mouse.click(960, 900);
-  await expect(sound).toHaveAttribute('aria-pressed', 'false');
-  expect((await videoState(page)).muted).toBe(true);
-});
-
-test('the sound button turns the sound on and off', async ({ page }) => {
-  await returning(page, { refuseSound: true });
+test('the sound button turns the sound off and on', async ({ page }) => {
+  await enter(page);
   const sound = page.locator('[data-bf-sound]');
   await expect(sound).toBeVisible();
+  await expect(sound).toHaveAttribute('aria-pressed', 'true');
+  await sound.click();
   await expect(sound).toHaveAttribute('aria-pressed', 'false');
+  expect((await videoState(page)).muted).toBe(true);
   await sound.click();
   await expect(sound).toHaveAttribute('aria-pressed', 'true');
   expect((await videoState(page)).muted).toBe(false);
-  await sound.click();
-  await expect(sound).toHaveAttribute('aria-pressed', 'false');
-  expect((await videoState(page)).muted).toBe(true);
 });
 
 test('when the video ends it offers a replay, with sound', async ({ page }) => {

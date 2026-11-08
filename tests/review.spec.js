@@ -97,7 +97,7 @@ test('Information has the real hotels, with only Cala Llonga discounted', async 
   await expect(page.locator('h1')).toHaveText('INFORMATION');
   await expect(page.locator('.bf-area h2.bf-area__name')).toHaveText(["PLAYA D’EN BOSSA", 'TALAMANCA', 'CALA LLONGA']);
   await expect(page.locator('.bf-card__name')).toHaveText([
-    'BLESS IBIZA', 'HOTEL TORRE DEL MAR', 'AMA IBIZA SUITES',
+    'BLESS IBIZA', 'TORRE DEL MAR', 'AMA IBIZA',
     'NOBU HOTEL', 'HOTEL SIMBAD', 'HOTEL LUX ISLA',
     'HYDE IBIZA', 'MONDRIAN',
   ]);

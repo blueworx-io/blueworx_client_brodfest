@@ -3,7 +3,7 @@ Contributors: blueworx
 Requires at least: 6.4
 Tested up to: 7.0
 Requires PHP: 8.1
-Stable tag: 0.9.1
+Stable tag: 0.10.0
 License: GPL-2.0-or-later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -25,6 +25,9 @@ renders them itself, so the design is exact whatever else is installed.
    page videos, and set where RSVP replies are emailed.
 
 == Changelog ==
+
+= 0.10.0 =
+* The animations are gone: the site is still again, with the opening as it was. Add to Calendar is the calendar file once more, with no choice of calendars. The home video only ever starts with sound, or waits for the play button. "Torre del Mar" and "AMA Ibiza".
 
 = 0.9.1 =
 * The home page's Save the Date block is 20% smaller on desktop, and the calendar choices no longer cover the line below.

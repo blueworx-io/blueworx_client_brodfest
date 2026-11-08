@@ -5,10 +5,8 @@
 import { initHeader } from './header.js';
 import { initIntro } from './intro.js';
 import { initCarousels } from './carousel.js';
-import { initCalendar } from './calendar.js';
 import { initRsvp } from './rsvp.js';
 import { initRsvpPanel } from './rsvp-panel.js';
-import { initAnimations } from './animations.js';
 
 document.documentElement.classList.add('brodfest-js');
 
@@ -19,7 +17,5 @@ document.addEventListener('pointerdown', () => document.documentElement.removeAt
 initHeader();
 initIntro();
 initCarousels();
-initCalendar();
 initRsvp();
 initRsvpPanel();
-initAnimations();

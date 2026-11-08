@@ -5,6 +5,22 @@ All notable changes to this project are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.10.0] - 2026-11-08
+
+### Removed
+
+- All the animation from 0.9.0, including the light across buttons on hover,
+  the opening's shine and curtain, and the GSAP dependency. The site is still
+  again and the opening fades to the page as it did before (client, 8 Nov).
+- Add to Calendar's choice of Apple, Google and Outlook: it did not open a
+  calendar for the client, so the button is the calendar file again.
+
+### Changed
+
+- The home video only ever starts with sound. Where the browser will not allow
+  that, it waits for the play button instead of playing muted.
+- "Torre del Mar" and "AMA Ibiza", so each hotel name sits on one line.
+
 ## [0.9.1] - 2026-11-06
 
 ### Changed
