@@ -58,7 +58,78 @@ function brodfest_calendar_ics( $event, $uid_host ) {
 }
 
 /**
- * Serves the calendar file at ?brodfest-calendar=1.
+ * The event's start, in UTC. Pure.
+ *
+ * @param array $event From brodfest_event().
+ * @return DateTimeImmutable
+ */
+function brodfest_calendar_start( $event ) {
+	$local = new DateTimeImmutable( $event['date'] . ' ' . $event['time'], new DateTimeZone( $event['timezone'] ) );
+
+	return $local->setTimezone( new DateTimeZone( 'UTC' ) );
+}
+
+/**
+ * The calendars Add to Calendar offers (client, 6 Nov 2026): Apple, Google
+ * and Outlook, each opening its calendar with the event filled in, nothing
+ * downloaded (client, 8 Nov 2026). Apple is the calendar file at a webcal
+ * address, which iPhones, iPads and Macs hand straight to Calendar. Google
+ * and Outlook go through their sign-in, which a signed-in visitor passes
+ * straight through: opened directly while signed out, both calendars dropped
+ * the event and showed a marketing page instead (Mark, 8 Nov 2026). Outlook
+ * is the Microsoft 365 address, which also takes personal accounts. No end
+ * time has been set, so Google's ends as it starts and Outlook's is left to
+ * Outlook. Pure.
+ *
+ * @param array  $event From brodfest_event().
+ * @param string $file  The calendar file's URL.
+ * @return array<string, string> Calendar name => URL.
+ */
+function brodfest_calendar_links( $event, $file ) {
+	$start = brodfest_calendar_start( $event );
+	$stamp = $start->format( 'Ymd\THis\Z' );
+
+	return array(
+		'Apple'   => preg_replace( '#^https?://#', 'webcal://', $file ),
+		'Google'  => 'https://accounts.google.com/ServiceLogin?' . http_build_query(
+			array(
+				'continue' => 'https://calendar.google.com/calendar/render?' . http_build_query(
+					array(
+						'action'   => 'TEMPLATE',
+						'text'     => $event['title'],
+						'dates'    => $stamp . '/' . $stamp,
+						'details'  => $event['description'],
+						'location' => $event['location'],
+					),
+					'',
+					'&',
+					PHP_QUERY_RFC3986
+				),
+			),
+			'',
+			'&',
+			PHP_QUERY_RFC3986
+		),
+		'Outlook' => 'https://outlook.office.com/calendar/0/deeplink/compose?' . http_build_query(
+			array(
+				'path'     => '/calendar/action/compose',
+				'rru'      => 'addevent',
+				'subject'  => $event['title'],
+				'startdt'  => $start->format( 'Y-m-d\TH:i:s\Z' ),
+				'body'     => $event['description'],
+				'location' => $event['location'],
+			),
+			'',
+			'&',
+			PHP_QUERY_RFC3986
+		),
+	);
+}
+
+/**
+ * Serves the calendar file at ?brodfest-calendar=1. Inline, not as a
+ * download: a browser that knows calendar files (Safari) then opens it in
+ * Calendar rather than saving it (client, 8 Nov 2026).
  *
  * @return void
  */
@@ -71,7 +142,7 @@ function brodfest_serve_calendar() {
 
 	nocache_headers();
 	header( 'Content-Type: text/calendar; charset=utf-8' );
-	header( 'Content-Disposition: attachment; filename="brodfest.ics"' );
+	header( 'Content-Disposition: inline; filename="brodfest.ics"' );
 	echo brodfest_calendar_ics( brodfest_event(), (string) wp_parse_url( home_url(), PHP_URL_HOST ) ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- A calendar file, not HTML; every value is escaped for iCalendar.
 	exit;
 }

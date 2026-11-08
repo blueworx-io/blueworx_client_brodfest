@@ -763,6 +763,43 @@ body.is-menu-open {
   margin-top: calc(63 * var(--u));
 }
 
+/* Add to Calendar's choices: a row under the button (client, 6 Nov 2026), in
+   the page's flow, so the line below moves down for it rather than being
+   covered (Luke, 6 Nov 2026). Not in Figma. */
+.bf-calendar__menu {
+  display: flex;
+  justify-content: center;
+  gap: calc(12 * var(--u));
+  margin: calc(16 * var(--u)) 0 0;
+  padding: 0;
+  list-style: none;
+  animation: bf-enter-in 0.3s ease both;
+}
+
+.bf-calendar__menu[hidden] {
+  display: none;
+}
+
+.bf-calendar__menu a {
+  display: inline-flex;
+  align-items: center;
+  height: calc(46 * var(--u));
+  padding: 0 calc(26 * var(--u));
+  border: 1.5px solid var(--bf-gold);
+  border-radius: 999px;
+  color: var(--bf-gold);
+  font-size: calc(20 * var(--u));
+  letter-spacing: var(--track-body);
+  text-decoration: none;
+  white-space: nowrap;
+  transition: background-color 0.3s, color 0.3s;
+}
+
+.bf-calendar__menu a:hover {
+  background: var(--bf-gold);
+  color: var(--bf-bg);
+}
+
 .bf-home__note {
   margin-top: calc(46 * var(--u));
   padding: 0 var(--bf-text-gutter);

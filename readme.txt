@@ -27,7 +27,7 @@ renders them itself, so the design is exact whatever else is installed.
 == Changelog ==
 
 = 0.10.0 =
-* The animations are gone: the site is still again, with the opening as it was. Add to Calendar is the calendar file once more, with no choice of calendars. The home video only ever starts with sound, or waits for the play button. "Torre del Mar" and "AMA Ibiza".
+* The animations are gone: the site is still again, with the opening as it was. Add to Calendar's choices now reach their calendars: Apple opens Calendar directly, nothing downloaded; Google and Outlook keep the event through sign-in. The home video only ever starts with sound, or waits for the play button. "Torre del Mar" and "AMA Ibiza".
 
 = 0.9.1 =
 * The home page's Save the Date block is 20% smaller on desktop, and the calendar choices no longer cover the line below.

@@ -12,11 +12,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - All the animation from 0.9.0, including the light across buttons on hover,
   the opening's shine and curtain, and the GSAP dependency. The site is still
   again and the opening fades to the page as it did before (client, 8 Nov).
-- Add to Calendar's choice of Apple, Google and Outlook: it did not open a
-  calendar for the client, so the button is the calendar file again.
 
 ### Changed
 
+- Add to Calendar's three choices now reach their calendars. Apple opens
+  Calendar directly on iPhone, iPad and Mac, with nothing downloaded. Google
+  and Outlook go through their sign-in with the event kept, where before a
+  signed-out visitor landed on a marketing page.
 - The home video only ever starts with sound. Where the browser will not allow
   that, it waits for the play button instead of playing muted.
 - "Torre del Mar" and "AMA Ibiza", so each hotel name sits on one line.
