@@ -22,8 +22,9 @@ if ( ! defined( 'ABSPATH' ) ) {
 const BRODFEST_GUEST_ROLE = 'brodfest_guest';
 
 /**
- * What is kept on each guest, and its heading in the Users list. The
- * WordPress name and email columns carry the rest.
+ * What is kept on each guest, with its label: every answer from the form.
+ * The person's profile shows them all; the Users list shows the first three
+ * and one Email column (Luke, 9 Nov 2026).
  *
  * @return array<string, string> Meta key => label.
  */
@@ -32,7 +33,7 @@ function brodfest_guest_fields() {
 		'brodfest_type'          => __( 'Type', 'blueworx-client-brodfest' ),
 		'brodfest_attending'     => __( 'Attending', 'blueworx-client-brodfest' ),
 		'brodfest_linked'        => __( 'Linked to', 'blueworx-client-brodfest' ),
-		'brodfest_email'         => __( 'Reply email', 'blueworx-client-brodfest' ),
+		'brodfest_email'         => __( 'Email', 'blueworx-client-brodfest' ),
 		'brodfest_phone'         => __( 'Phone', 'blueworx-client-brodfest' ),
 		'brodfest_dietary'       => __( 'Dietary', 'blueworx-client-brodfest' ),
 		'brodfest_allergies'     => __( 'Allergies', 'blueworx-client-brodfest' ),
@@ -352,15 +353,63 @@ function brodfest_guest_answer( $key, $user_id ) {
 }
 
 /**
- * The Users list's extra columns: every answer from the form.
+ * The Users list's columns: who, whether they are coming and with whom. The
+ * rest of the answers are on the person's profile, and Posts goes, as nobody
+ * here writes any (Luke, 9 Nov 2026).
+ *
+ * There is one Email column. It takes the place of WordPress's own, which
+ * shows only the account's address: a guest who shares an address with
+ * someone else has none on their account, only the one they replied with.
  *
  * @param array<string, string> $columns WordPress's columns.
  * @return array<string, string>
  */
 function brodfest_guest_columns( $columns ) {
-	return array_merge( $columns, brodfest_guest_fields() );
+	$fields = brodfest_guest_fields();
+	$kept   = array();
+
+	foreach ( $columns as $key => $label ) {
+		if ( 'email' === $key ) {
+			$kept['brodfest_contact'] = $label;
+		} elseif ( 'posts' !== $key ) {
+			$kept[ $key ] = $label;
+		}
+	}
+
+	foreach ( array( 'brodfest_type', 'brodfest_attending', 'brodfest_linked' ) as $key ) {
+		$kept[ $key ] = $fields[ $key ];
+	}
+
+	return $kept;
 }
 add_filter( 'manage_users_columns', 'brodfest_guest_columns' );
+
+/**
+ * The Email column still sorts by address.
+ *
+ * @param array<string, string> $columns Sortable columns.
+ * @return array<string, string>
+ */
+function brodfest_guest_sortable_columns( $columns ) {
+	$columns['brodfest_contact'] = 'email';
+
+	return $columns;
+}
+add_filter( 'manage_users_sortable_columns', 'brodfest_guest_sortable_columns' );
+
+/**
+ * The address to show for a user: the one a guest replied with, or the
+ * account's own for anyone else.
+ *
+ * @param int $user_id The user.
+ * @return string
+ */
+function brodfest_guest_contact_email( $user_id ) {
+	$user  = get_userdata( $user_id );
+	$reply = brodfest_is_guest( $user ) ? (string) get_user_meta( $user_id, 'brodfest_email', true ) : '';
+
+	return '' !== $reply ? $reply : ( $user ? (string) $user->user_email : '' );
+}
 
 /**
  * One cell of those columns. The linked person is a link to their profile.
@@ -371,6 +420,12 @@ add_filter( 'manage_users_columns', 'brodfest_guest_columns' );
  * @return string
  */
 function brodfest_guest_column( $output, $column, $user_id ) {
+	if ( 'brodfest_contact' === $column ) {
+		$email = brodfest_guest_contact_email( $user_id );
+
+		return '' === $email ? '—' : '<a href="' . esc_url( 'mailto:' . $email ) . '">' . esc_html( $email ) . '</a>';
+	}
+
 	if ( ! isset( brodfest_guest_fields()[ $column ] ) ) {
 		return $output;
 	}
@@ -384,6 +439,40 @@ function brodfest_guest_column( $output, $column, $user_id ) {
 	return $text;
 }
 add_filter( 'manage_users_custom_column', 'brodfest_guest_column', 10, 3 );
+
+/**
+ * A guest's profile shows every answer from their reply, under WordPress's
+ * own fields and in the same form as them. To read, not to edit: the answers
+ * are the guest's, and a new reply from them replaces the lot.
+ *
+ * @param WP_User $user Whose profile it is.
+ * @return void
+ */
+function brodfest_guest_profile( $user ) {
+	if ( ! brodfest_is_guest( $user ) || ! current_user_can( 'list_users' ) ) {
+		return;
+	}
+	?>
+	<div id="brodfest-rsvp">
+		<h2><?php esc_html_e( 'RSVP', 'blueworx-client-brodfest' ); ?></h2>
+		<table class="form-table" role="presentation">
+			<?php foreach ( brodfest_guest_fields() as $key => $label ) : ?>
+				<tr>
+					<th scope="row"><?php echo esc_html( $label ); ?></th>
+					<td>
+						<?php
+						// Escaped as it is built: plain text, or a link to the linked person.
+						echo brodfest_guest_column( '', $key, $user->ID ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+						?>
+					</td>
+				</tr>
+			<?php endforeach; ?>
+		</table>
+	</div>
+	<?php
+}
+add_action( 'edit_user_profile', 'brodfest_guest_profile' );
+add_action( 'show_user_profile', 'brodfest_guest_profile' );
 
 /**
  * A guest is never the signed-in user, however the sign-in came about. The

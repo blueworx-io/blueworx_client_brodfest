@@ -76,24 +76,47 @@ test('a reply becomes people in Users, a second reply changes them, and no real 
   const guestId = (await row.getAttribute('id')).replace('user-', '');
   await expect(row.locator('.column-role')).toHaveText('Brodfest guest');
   await expect(row.locator('.column-brodfest_attending')).toHaveText('Yes');
-  await expect(row.locator('.column-brodfest_email')).toHaveText(email);
-  await expect(row.locator('.column-brodfest_phone')).toHaveText('+44 7700 900123');
-  await expect(row.locator('.column-brodfest_dietary')).toHaveText('Vegetarian');
-  await expect(row.locator('.column-brodfest_allergies')).toHaveText('Peanuts');
-  await expect(row.locator('.column-brodfest_accessibility')).toHaveText('Yes');
+  await expect(row.locator('.column-brodfest_contact')).toHaveText(email);
   await expect(row.locator('.column-brodfest_linked')).toHaveText(plusOne);
+
+  // The list keeps to who, whether and with whom (Luke, 9 Nov 2026): one
+  // Email column, and the rest of the answers on the person's profile.
+  const headings = (await page.locator('table.users thead th, table.users thead td').allInnerTexts()).map((t) => t.trim().split(/\r?\n/)[0]);
+  expect(headings.filter((t) => /email/i.test(t))).toEqual(['Email']);
+  for (const gone of ['Phone', 'Dietary', 'Allergies', 'Accessibility', 'Replied', 'Posts', 'Reply email']) expect(headings, gone).not.toContain(gone);
 
   const guestRow = page.locator('#the-list tr').filter({ has: page.locator('.column-brodfest_type', { hasText: 'Guest' }) }).filter({ hasText: plusOne });
   await expect(guestRow).toHaveCount(1);
   await expect(guestRow.locator('.column-brodfest_attending')).toHaveText('Yes');
-  await expect(guestRow.locator('.column-brodfest_dietary')).toHaveText('Vegan');
   await expect(guestRow.locator('.column-brodfest_linked')).toHaveText(name);
-  await expect(guestRow.locator('.column-brodfest_email')).toHaveText(adminEmail);
+  await expect(guestRow.locator('.column-brodfest_contact')).toHaveText(adminEmail);
+  const plusOneId = (await guestRow.getAttribute('id')).replace('user-', '');
+
+  // Every answer from the form is on the person's profile.
+  const answers = page.locator('#brodfest-rsvp');
+  const answer = (label) => answers.locator('tr').filter({ has: page.locator('th', { hasText: new RegExp('^\\s*' + label + '\\s*$') }) }).locator('td');
+  await page.goto('/wp-admin/user-edit.php?user_id=' + guestId);
+  await expect(answer('Type')).toHaveText('Primary');
+  await expect(answer('Attending')).toHaveText('Yes');
+  await expect(answer('Linked to')).toHaveText(plusOne);
+  await expect(answer('Email')).toHaveText(email);
+  await expect(answer('Phone')).toHaveText('+44 7700 900123');
+  await expect(answer('Dietary')).toHaveText('Vegetarian');
+  await expect(answer('Allergies')).toHaveText('Peanuts');
+  await expect(answer('Accessibility')).toHaveText('Yes');
+  await expect(answer('Replied')).not.toHaveText('—');
+  await page.goto('/wp-admin/user-edit.php?user_id=' + plusOneId);
+  await expect(answer('Type')).toHaveText('Guest');
+  await expect(answer('Dietary')).toHaveText('Vegan');
+  await expect(answer('Linked to')).toHaveText(name);
+  // An administrator's profile has no such section.
+  await page.goto('/wp-admin/profile.php');
+  await expect(page.locator('#brodfest-rsvp')).toHaveCount(0);
 
   // The administrator is exactly as they were.
   await page.goto('/wp-admin/users.php?role=administrator');
   const admin = page.locator('#the-list tr').filter({ has: page.locator('.column-username', { hasText: adminLogin }) });
-  await expect(admin.locator('.column-email')).toContainText(adminEmail);
+  await expect(admin.locator('.column-brodfest_contact')).toHaveText(adminEmail);
   await expect(admin.locator('.column-role')).toHaveText('Administrator');
   await expect(admin.locator('.column-brodfest_type')).toHaveText('—');
 

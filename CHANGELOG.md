@@ -10,9 +10,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - RSVP replies are now people in the WordPress Users list, not a list of
-  their own. Each is a "Brodfest guest", with every answer from the form shown
-  as a column, and a plus-one is their own person, linked to whoever brought
-  them. Guests cannot sign in.
+  their own. Each is a "Brodfest guest", and a plus-one is their own person,
+  linked to whoever brought them. The list shows type, attending, who they
+  are linked to and one Email column; every answer from the form is on the
+  person's profile, under RSVP. Guests cannot sign in.
+- The Users list no longer has a Posts column.
 - A second reply from the same email changes that person rather than adding
   another, and a plus-one no longer brought is removed.
 - Replies sent before this update are carried over into Users.

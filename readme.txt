@@ -27,7 +27,7 @@ renders them itself, so the design is exact whatever else is installed.
 == Changelog ==
 
 = 0.12.0 =
-* RSVP replies are now people in the WordPress Users list, as "Brodfest guest", with every answer shown and a plus-one linked to whoever brought them. The separate RSVPs list is gone and earlier replies are carried over.
+* RSVP replies are now people in the WordPress Users list, as "Brodfest guest", with a plus-one linked to whoever brought them and every answer on the person's profile. The separate RSVPs list is gone and earlier replies are carried over.
 
 = 0.11.1 =
 * On phones and tablets a tapped button or link goes back to its own colour, rather than keeping its rollover colour.
