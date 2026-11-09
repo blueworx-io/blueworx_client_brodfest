@@ -22,6 +22,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Removed
 
 - The RSVPs list in the admin.
+## [0.11.1] - 2026-11-09
+
+### Fixed
+
+- On phones and tablets a tapped button or link goes back to its own colour,
+  where before it kept its rollover colour until something else was tapped.
 
 ## [0.11.0] - 2026-11-09
 

@@ -106,8 +106,14 @@
     transition: color 0.2s;
   }
 
-  body.brodfest .bf-email:hover {
+  body.brodfest .bf-email:active {
     color: var(--bf-white);
+  }
+
+  @media (hover: hover) {
+    body.brodfest .bf-email:hover {
+      color: var(--bf-white);
+    }
   }
 
   body.brodfest :focus-visible {
@@ -202,8 +208,14 @@
   transition: border-color 0.3s;
 }
 
-.bf-body a:hover {
+.bf-body a:active {
   border-bottom-color: currentColor;
+}
+
+@media (hover: hover) {
+  .bf-body a:hover {
+    border-bottom-color: currentColor;
+  }
 }
 
 /* The copy's own line breaks (brodfest_text()) are the desktop design's; the
@@ -252,6 +264,11 @@
 
 /* ---- Buttons ------------------------------------------------------------ */
 
+/* Rollover colours, here and across the stylesheet, are for a pointer that
+   can hover. A touch screen leaves "hover" on whatever was last tapped, so a
+   tapped button kept its rollover colour; there the colour shows only while
+   the finger is down, with :active (Luke, 9 Nov 2026). */
+
 .bf-pill,
 .bf-button {
   display: inline-flex;
@@ -276,9 +293,15 @@
   text-indent: var(--track-pill);
 }
 
-.bf-pill:hover,
-.bf-pill.is-active {
+.bf-pill.is-active,
+.bf-pill:active {
   background: var(--bf-orange);
+}
+
+@media (hover: hover) {
+  .bf-pill:hover {
+    background: var(--bf-orange);
+  }
 }
 
 .bf-button--primary {
@@ -292,9 +315,16 @@
   letter-spacing: var(--track-body);
 }
 
-.bf-button--primary:hover {
+.bf-button--primary:active {
   background: var(--bf-orange);
   color: var(--bf-bg);
+}
+
+@media (hover: hover) {
+  .bf-button--primary:hover {
+    background: var(--bf-orange);
+    color: var(--bf-bg);
+  }
 }
 
 .bf-button--card {
@@ -309,8 +339,14 @@
   text-indent: var(--track-wide);
 }
 
-.bf-button--card:hover {
+.bf-button--card:active {
   background: var(--bf-gold);
+}
+
+@media (hover: hover) {
+  .bf-button--card:hover {
+    background: var(--bf-gold);
+  }
 }
 
 /* SEND takes the RSVP pill's Futura, per the design comment. */
@@ -326,8 +362,14 @@
   text-indent: var(--track-pill);
 }
 
-.bf-button--send:hover {
+.bf-button--send:active {
   background: var(--bf-orange);
+}
+
+@media (hover: hover) {
+  .bf-button--send:hover {
+    background: var(--bf-orange);
+  }
 }
 
 @media (min-width: 1024px) {
@@ -538,10 +580,16 @@ body.admin-bar .bf-menu {
    keyboard is in use: the menu moves focus to its first link as it opens, and
    Safari showed that link white after a tap, as if it were the current page
    (Luke, 9 Nov 2026). */
-.bf-menu__items a:hover,
 html[data-bf-keys] .bf-menu__items a:focus-visible,
-.bf-menu__items a[aria-current="page"] {
+.bf-menu__items a[aria-current="page"],
+.bf-menu__items a:active {
   color: var(--bf-white);
+}
+
+@media (hover: hover) {
+  .bf-menu__items a:hover {
+    color: var(--bf-white);
+  }
 }
 
 .bf-menu__divider {
@@ -686,9 +734,16 @@ body.is-menu-open {
   transform: translate(-50%, -50%);
 }
 
-.bf-hero__play:hover {
+.bf-hero__play:active {
   transform: translate(-50%, -50%) scale(1.06);
   background: color-mix(in srgb, var(--bf-bg) 70%, transparent);
+}
+
+@media (hover: hover) {
+  .bf-hero__play:hover {
+    transform: translate(-50%, -50%) scale(1.06);
+    background: color-mix(in srgb, var(--bf-bg) 70%, transparent);
+  }
 }
 
 .bf-hero__sound {
@@ -712,8 +767,14 @@ body.is-menu-open {
   display: none;
 }
 
-.bf-hero__sound:hover {
+.bf-hero__sound:active {
   background: color-mix(in srgb, var(--bf-bg) 70%, transparent);
+}
+
+@media (hover: hover) {
+  .bf-hero__sound:hover {
+    background: color-mix(in srgb, var(--bf-bg) 70%, transparent);
+  }
 }
 
 .bf-hero__sound svg {
@@ -798,9 +859,16 @@ body.is-menu-open {
   transition: background-color 0.3s, color 0.3s;
 }
 
-.bf-calendar__menu a:hover {
+.bf-calendar__menu a:active {
   background: var(--bf-gold);
   color: var(--bf-bg);
+}
+
+@media (hover: hover) {
+  .bf-calendar__menu a:hover {
+    background: var(--bf-gold);
+    color: var(--bf-bg);
+  }
 }
 
 .bf-home__note {
@@ -1550,11 +1618,18 @@ html.is-rsvp-locked {
     padding: calc(10 * var(--u)) calc(24 * var(--u));
   }
 
-  .bf-field select option:hover,
   .bf-field select option:focus-visible,
-  .bf-field select option:checked {
+  .bf-field select option:checked,
+  .bf-field select option:active {
     background: var(--bf-rust);
     outline: none;
+  }
+
+  @media (hover: hover) {
+    .bf-field select option:hover {
+      background: var(--bf-rust);
+      outline: none;
+    }
   }
 
   .bf-field .bf-field__prefix {

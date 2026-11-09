@@ -29,6 +29,9 @@ renders them itself, so the design is exact whatever else is installed.
 = 0.12.0 =
 * RSVP replies are now people in the WordPress Users list, as "Brodfest guest", with every answer shown and a plus-one linked to whoever brought them. The separate RSVPs list is gone and earlier replies are carried over.
 
+= 0.11.1 =
+* On phones and tablets a tapped button or link goes back to its own colour, rather than keeping its rollover colour.
+
 = 0.11.0 =
 * The Brodfest icon in the browser tab. Add to Calendar is hidden for now. Enquiries addresses are now at brodfest.net. Hotel card text is 13px on desktop. Apple's Add to Calendar choice adds the one event rather than a calendar subscription. The calendar event runs 7pm to 4am Ibiza time (6pm to 3am in the UK), with "(7pm to 4am CEST)" in its note. The home page's Save the Date block is the desktop one from tablets up. On Safari the menu's first link no longer shows white after a tap.
 
