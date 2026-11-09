@@ -5,6 +5,24 @@ All notable changes to this project are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.12.0] - 2026-11-09
+
+### Changed
+
+- RSVP replies are now people in the WordPress Users list, not a list of
+  their own. Each is a "Brodfest guest", with every answer from the form shown
+  as a column, and a plus-one is their own person, linked to whoever brought
+  them. Guests cannot sign in.
+- A second reply from the same email changes that person rather than adding
+  another, and a plus-one no longer brought is removed.
+- Replies sent before this update are carried over into Users.
+- Guests have no public author page, are never signed in, and are left out
+  of the theme's Klaviyo list.
+
+### Removed
+
+- The RSVPs list in the admin.
+
 ## [0.11.0] - 2026-11-09
 
 ### Added
