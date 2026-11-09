@@ -14,6 +14,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- The home page's Add to Calendar button is hidden for now, and the line
+  under it sits in its place.
 - The addresses on Enquiries are info@brodfest.net and concierge@brodfest.net.
 - On desktop a hotel card's description and discount line are 13px (Mark,
   9 Nov).

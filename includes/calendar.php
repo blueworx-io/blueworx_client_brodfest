@@ -161,3 +161,15 @@ function brodfest_serve_calendar() {
 	exit;
 }
 add_action( 'template_redirect', 'brodfest_serve_calendar', 1 );
+
+/**
+ * Whether the home page shows the Add to Calendar button. Hidden for now
+ * (Luke, 9 Nov 2026): the line under it moves up into its place. The calendar
+ * file itself still works at its address. Turn the button back on here, and
+ * un-skip its tests, when it is wanted again.
+ *
+ * @return bool
+ */
+function brodfest_show_calendar() {
+	return (bool) apply_filters( 'brodfest_show_calendar', false );
+}

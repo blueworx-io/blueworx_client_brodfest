@@ -115,10 +115,9 @@ test.describe('on a phone', () => {
   });
 });
 
-test('Add to Calendar downloads the event as a calendar entry', async ({ page }) => {
+test('the calendar file holds the event as a calendar entry', async ({ page }) => {
   await page.goto('/');
-  const href = await page.locator('.bf-home .bf-button--primary').getAttribute('href');
-  const response = await page.request.get(href);
+  const response = await page.request.get('/?brodfest-calendar=1');
   expect(response.headers()['content-type']).toContain('text/calendar');
   const body = await response.text();
   expect(body).toContain('DTSTART:20270605T');
@@ -134,7 +133,7 @@ test('the site shows the Brodfest icon in the browser tab', async ({ page }) => 
   await expect(icons).toHaveCount(1);
   const href = await icons.getAttribute('href');
   expect(href).toContain('assets/img/favicon.svg');
-  const response = await page.request.get(href);
+  const response = await page.request.get('/?brodfest-calendar=1');
   expect(response.status()).toBe(200);
   expect(response.headers()['content-type']).toContain('image/svg+xml');
 });

@@ -811,6 +811,12 @@ body.is-menu-open {
   letter-spacing: var(--track-body);
 }
 
+/* While Add to Calendar is hidden the line takes its place, as far below the
+   lettering as the button was (Luke, 9 Nov 2026). */
+.bf-home--no-calendar .bf-home__note {
+  margin-top: calc(63 * var(--u));
+}
+
 /* From tablets up the block is the desktop one, as the header and video
    above it are, so it only changes where phones take over, with no tablet
    size in between (Luke, 9 Nov 2026). It carries the desktop's measures
@@ -859,6 +865,10 @@ body.is-menu-open {
     margin-top: calc(87 * var(--u));
     font-size: calc(25 * var(--u));
     line-height: 1;
+  }
+
+  .bf-home--no-calendar .bf-home__note {
+    margin-top: calc(84 * var(--u));
   }
 }
 

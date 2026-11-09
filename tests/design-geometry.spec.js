@@ -24,8 +24,12 @@ import { loginAsAdmin, skipIntro } from './helpers/wp.js';
 // When Figma is re-wrapped (opened with the fonts), re-export the frames and
 // drop the "re-wrapped" pins.
 
+// The home page's Add to Calendar button is hidden for now (Luke, 9 Nov
+// 2026), so its rows are left out until brodfest_show_calendar() turns it
+// back on; the rows under it are pinned to where they sit without it.
 const ROWS = JSON.parse(readFileSync(new URL('./fixtures/design-geometry.json', import.meta.url), 'utf8'))
-  .map((r, row) => ({ ...r, row, figma: r.expect || r.figma }));
+  .map((r, row) => ({ ...r, row, figma: r.expect || r.figma }))
+  .filter((r) => !r.sel.includes('bf-calendar'));
 const TOLERANCE = { box: 1, text: 2 };
 
 // The desktop design is drawn at three-quarters of Figma's size (Luke, 6 Nov

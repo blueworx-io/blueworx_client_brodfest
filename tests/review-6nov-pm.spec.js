@@ -41,16 +41,21 @@ test('the calendar event runs 7pm to 4am Ibiza time, and its note says so', asyn
   expect(ics).toContain('DTSTART:20270605T170000Z');
   expect(ics).toContain('DTEND:20270606T020000Z');
   expect(ics).toContain('his home on the iconic island of Ibiza. (7pm to 4am CEST)\r\n');
+});
 
-  await page.goto('/');
-  const links = page.locator('[data-bf-calendar-menu] a');
-  const google = new URL(new URL(await links.nth(1).getAttribute('href')).searchParams.get('continue'));
-  expect(google.searchParams.get('dates')).toBe('20270605T170000Z/20270606T020000Z');
-  expect(google.searchParams.get('details')).toMatch(/\(7pm to 4am CEST\)$/);
-  const outlook = new URL(await links.nth(2).getAttribute('href'));
-  expect(outlook.searchParams.get('startdt')).toBe('2027-06-05T17:00:00Z');
-  expect(outlook.searchParams.get('enddt')).toBe('2027-06-06T02:00:00Z');
-  expect(outlook.searchParams.get('body')).toMatch(/\(7pm to 4am CEST\)$/);
+// Add to Calendar is hidden for now (Luke, 9 Nov 2026), and the line under it
+// sits in its place, as far below the lettering as the button was: 63 on the
+// mobile design, 84 on the desktop one at its 0.6 size. The three tests of
+// the button further down are skipped until brodfest_show_calendar() turns
+// it back on; the calendar file itself still works and is still tested.
+test('Add to Calendar is hidden, and the line below sits in its place', async ({ page }) => {
+  for (const [width, gap] of [[767, 63], [1440, 50.4]]) {
+    await page.setViewportSize({ width, height: 900 });
+    await page.goto('/');
+    await expect(page.locator('.bf-calendar, [data-bf-calendar-toggle], [data-bf-calendar-menu]')).toHaveCount(0);
+    const got = await page.evaluate(() => document.querySelector('.bf-home__note').getBoundingClientRect().top - document.querySelector('.bf-home__lettering').getBoundingClientRect().bottom);
+    expect(Math.abs(got - gap), `at ${width}: ${got}`).toBeLessThan(0.6);
+  }
 });
 
 test('on Celebration the "A" never sits alone at the end of a line', async ({ page }) => {
@@ -75,11 +80,11 @@ test('the home note breaks after "Ibiza", across two lines', async ({ page }) =>
 
 // Add to Calendar offers Apple, Google and Outlook, each opening its calendar
 // with the event filled in (client, 6 Nov 2026). Nothing is downloaded
-// (client, 8 Nov 2026): Apple is a webcal address, which Apple devices hand
+// (client, 8 Nov 2026): Apple is the calendar file, which Apple devices hand
 // straight to Calendar. Google and Outlook go through their sign-in, which
 // keeps the event; opened directly while signed out, both showed a marketing
 // page instead (Mark, 8 Nov 2026).
-test('Add to Calendar offers Apple, Google and Outlook, with nothing to download', async ({ page }) => {
+test.skip('Add to Calendar offers Apple, Google and Outlook, with nothing to download', async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 900 });
   await page.goto('/');
   const button = page.locator('[data-bf-calendar-toggle]');
@@ -103,13 +108,15 @@ test('Add to Calendar offers Apple, Google and Outlook, with nothing to download
   expect(google.origin + google.pathname).toBe('https://calendar.google.com/calendar/render');
   expect(google.searchParams.get('action')).toBe('TEMPLATE');
   expect(google.searchParams.get('text')).toBe('Brodfest Ibiza');
-  expect(google.searchParams.get('dates')).toMatch(/^20270605T170000Z\//);
-  expect(google.searchParams.get('details')).toContain('Can Sakhara');
+  expect(google.searchParams.get('dates')).toBe('20270605T170000Z/20270606T020000Z');
+  expect(google.searchParams.get('details')).toMatch(/Can Sakhara.*\(7pm to 4am CEST\)$/);
 
   const outlook = new URL(await links.nth(2).getAttribute('href'));
   expect(outlook.origin + outlook.pathname).toBe('https://outlook.office.com/calendar/0/deeplink/compose');
   expect(outlook.searchParams.get('subject')).toBe('Brodfest Ibiza');
   expect(outlook.searchParams.get('startdt')).toBe('2027-06-05T17:00:00Z');
+  expect(outlook.searchParams.get('enddt')).toBe('2027-06-06T02:00:00Z');
+  expect(outlook.searchParams.get('body')).toMatch(/\(7pm to 4am CEST\)$/);
   for (const i of [1, 2]) await expect(links.nth(i)).toHaveAttribute('target', '_blank');
 
   await page.keyboard.press('Escape');
@@ -125,7 +132,7 @@ test('the calendar file is served inline', async ({ page }) => {
 });
 
 // Luke, 6 Nov 2026: the choices sat over the line below the button.
-test('the calendar choices never cover the line below, on desktop or phone', async ({ page }) => {
+test.skip('the calendar choices never cover the line below, on desktop or phone', async ({ page }) => {
   for (const width of [1440, 767]) {
     await page.setViewportSize({ width, height: 900 });
     await page.goto('/');

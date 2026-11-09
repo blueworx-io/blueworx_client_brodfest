@@ -211,17 +211,16 @@ test('the Save the Date block is one size from 768 up, and the mobile one below'
       return {
         date: size('.bf-home__date'),
         lettering: size('.bf-home__lettering'),
-        button: size('.bf-home .bf-button--primary'),
-        buttonText: getComputedStyle(document.querySelector('.bf-home .bf-button--primary')).fontSize,
         note: getComputedStyle(document.querySelector('.bf-home__note')).fontSize,
-        gaps: ['.bf-home__lettering', '.bf-calendar', '.bf-home__note'].map((sel) => Math.round((top(sel) - top('.bf-home__date')) * 10) / 10),
+        gaps: ['.bf-home__lettering', '.bf-home__note'].map((sel) => Math.round((top(sel) - top('.bf-home__date')) * 10) / 10),
       };
     });
   };
+  // The date is Figma's 412 wide at the block's 0.6 size, and 309 on mobile.
   const desktop = await block(1024);
-  expect(desktop.button).toEqual([360, 54]);
+  expect(desktop.date[0]).toBe(247.2);
   for (const width of [768, 900, 1023]) expect(await block(width), `at ${width}`).toEqual(desktop);
-  expect((await block(767)).button).toEqual([450, 67]);
+  expect((await block(767)).date[0]).toBe(309);
 });
 
 // The client's photos (6 Nov 2026): each area's banner, wide on desktop and

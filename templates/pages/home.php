@@ -19,7 +19,7 @@ brodfest_document_open( array( 'opening' => true ) );
 
 brodfest_part( 'hero', array( 'videos' => brodfest_hero_videos() ) );
 ?>
-<section class="bf-home">
+<section class="bf-home<?php echo brodfest_show_calendar() ? '' : ' bf-home--no-calendar'; ?>">
 	<h1 class="bf-home__date">
 		<?php brodfest_inline_svg( 'date', gmdate( 'j F Y', strtotime( $brodfest_event['date'] ) ) ); ?>
 	</h1>
@@ -33,8 +33,10 @@ brodfest_part( 'hero', array( 'videos' => brodfest_hero_videos() ) );
 		?>
 	</p>
 	<?php
+	// Hidden for now (Luke, 9 Nov 2026); see brodfest_show_calendar().
 	// Without JavaScript the button is the calendar file itself.
 	?>
+	<?php if ( brodfest_show_calendar() ) : ?>
 	<div class="bf-calendar" data-bf-calendar>
 		<a class="bf-button bf-button--primary" href="<?php echo esc_url( brodfest_calendar_url() ); ?>" aria-expanded="false" aria-controls="bf-calendar-menu" data-bf-calendar-toggle>
 			<?php esc_html_e( 'Add to Calendar', 'blueworx-client-brodfest' ); ?>
@@ -51,6 +53,7 @@ brodfest_part( 'hero', array( 'videos' => brodfest_hero_videos() ) );
 			<?php endforeach; ?>
 		</ul>
 	</div>
+	<?php endif; ?>
 	<p class="bf-home__note">
 		<?php
 		if ( $brodfest_invite ) {

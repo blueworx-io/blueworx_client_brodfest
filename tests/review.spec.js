@@ -257,10 +257,9 @@ test.describe('RSVP', () => {
   });
 });
 
-test('Add to Calendar books 7pm Spanish time', async ({ page }) => {
+test('the calendar file books 7pm Spanish time', async ({ page }) => {
   await page.goto('/');
-  const href = await page.locator('.bf-home .bf-button--primary').getAttribute('href');
-  const body = await (await page.request.get(href)).text();
+  const body = await (await page.request.get('/?brodfest-calendar=1')).text();
   // 7pm in Ibiza in June is 17:00 UTC (summer time, UTC+2).
   expect(body).toContain('DTSTART:20270605T170000Z');
   expect(body).not.toContain('VALUE=DATE');
