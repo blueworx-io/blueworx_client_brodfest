@@ -3,7 +3,7 @@ Contributors: blueworx
 Requires at least: 6.4
 Tested up to: 7.0
 Requires PHP: 8.1
-Stable tag: 0.11.0
+Stable tag: 0.11.1
 License: GPL-2.0-or-later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -25,6 +25,9 @@ renders them itself, so the design is exact whatever else is installed.
    page videos, and set where RSVP replies are emailed.
 
 == Changelog ==
+
+= 0.11.1 =
+* On phones and tablets a tapped button or link goes back to its own colour, rather than keeping its rollover colour.
 
 = 0.11.0 =
 * The Brodfest icon in the browser tab. Add to Calendar is hidden for now. Enquiries addresses are now at brodfest.net. Hotel card text is 13px on desktop. Apple's Add to Calendar choice adds the one event rather than a calendar subscription. The calendar event runs 7pm to 4am Ibiza time (6pm to 3am in the UK), with "(7pm to 4am CEST)" in its note. The home page's Save the Date block is the desktop one from tablets up. On Safari the menu's first link no longer shows white after a tap.

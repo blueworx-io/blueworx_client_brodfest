@@ -5,6 +5,13 @@ All notable changes to this project are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.11.1] - 2026-11-09
+
+### Fixed
+
+- On phones and tablets a tapped button or link goes back to its own colour,
+  where before it kept its rollover colour until something else was tapped.
+
 ## [0.11.0] - 2026-11-09
 
 ### Added

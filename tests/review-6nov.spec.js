@@ -252,3 +252,48 @@ test('each hotel card shows its photo', async ({ page }) => {
     ['HYDE IBIZA', 'hyde.jpg'], ['MONDRIAN', 'mondrian.jpg'],
   ]);
 });
+
+// On a phone a tapped button showed its rollover colour and kept it, as
+// touch screens leave "hover" on whatever was last tapped (Luke, 9 Nov 2026).
+// Rollover colours are now for devices with a pointer that can hover; a
+// touch shows the colour only while the finger is down.
+test.describe('on a touch screen', () => {
+  test.use({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true });
+
+  test('a tapped button goes back to its own colour', async ({ page }) => {
+    await page.goto('/accommodation/');
+    const button = page.locator('.bf-button--card').first();
+    await button.evaluate((el) => el.addEventListener('click', (event) => event.preventDefault()));
+    const colour = () => button.evaluate((el) => {
+      el.style.transition = 'none';
+      return getComputedStyle(el).backgroundColor;
+    });
+    const before = await colour();
+    await button.tap();
+    // The colour shows while the finger is down, then goes; the browser still
+    // counts the button as hovered, which is what used to hold the colour.
+    await expect.poll(colour).toBe(before);
+    expect(await button.evaluate((el) => el.matches(':hover'))).toBe(true);
+  });
+
+  test('no rollover style applies without a pointer that can hover', async ({ page }) => {
+    for (const path of ['/', '/accommodation/', '/rsvp/']) {
+      await page.goto(path);
+      const loose = await page.evaluate(() => {
+        const found = [];
+        const walk = (rules, hoverOnly) => {
+          for (const rule of rules) {
+            if (rule instanceof CSSMediaRule) walk(rule.cssRules, hoverOnly || /hover:\s*hover/.test(rule.conditionText));
+            else if (rule.cssRules && !(rule instanceof CSSStyleRule)) walk(rule.cssRules, hoverOnly);
+            else if (!hoverOnly && rule.selectorText && /\.bf-[^,]*:hover/.test(rule.selectorText)) found.push(rule.selectorText);
+          }
+        };
+        for (const sheet of document.styleSheets) {
+          if (sheet.href && sheet.href.includes('assets/css/public.css')) walk(sheet.cssRules, false);
+        }
+        return found;
+      });
+      expect(loose, `${path}: ${loose.join(' | ')}`).toEqual([]);
+    }
+  });
+});
