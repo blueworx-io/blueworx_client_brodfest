@@ -133,7 +133,7 @@ test('the site shows the Brodfest icon in the browser tab', async ({ page }) => 
   await expect(icons).toHaveCount(1);
   const href = await icons.getAttribute('href');
   expect(href).toContain('assets/img/favicon.svg');
-  const response = await page.request.get('/?brodfest-calendar=1');
+  const response = await page.request.get(href);
   expect(response.status()).toBe(200);
   expect(response.headers()['content-type']).toContain('image/svg+xml');
 });

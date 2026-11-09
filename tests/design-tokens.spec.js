@@ -48,6 +48,9 @@ test('with no theme names set, the page shows the Brodfest colours', async ({ pa
   await page.goto('/');
   await page.addStyleTag({ content: NO_THEME });
   expect(await rgb(page, '.bf-pill', 'backgroundColor')).toEqual([209, 149, 78]);
+  // The page's only primary button, Add to Calendar, is hidden for now (Luke,
+  // 9 Nov 2026), so one is stood in to keep its colour checked.
+  await page.evaluate(() => document.querySelector('.bf-home').insertAdjacentHTML('beforeend', '<a class="bf-button bf-button--primary">Add to Calendar</a>'));
   expect(await rgb(page, '.bf-button--primary', 'backgroundColor')).toEqual([99, 42, 1]);
 
   await page.goto('/rsvp/');
@@ -68,6 +71,7 @@ test("the colours follow the theme's names", async ({ page }) => {
   await page.goto('/');
   await page.addStyleTag({ content: TEST_THEME });
   expect(await rgb(page, '.bf-pill', 'backgroundColor')).toEqual([255, 0, 0]);
+  await page.evaluate(() => document.querySelector('.bf-home').insertAdjacentHTML('beforeend', '<a class="bf-button bf-button--primary">Add to Calendar</a>'));
   expect(await rgb(page, '.bf-button--primary', 'backgroundColor')).not.toEqual([99, 42, 1]);
 
   await page.goto('/rsvp/');
