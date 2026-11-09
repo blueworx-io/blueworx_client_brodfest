@@ -22,6 +22,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Removed
 
 - The RSVPs list in the admin.
+
 ## [0.11.1] - 2026-11-09
 
 ### Fixed
