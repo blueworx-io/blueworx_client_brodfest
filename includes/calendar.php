@@ -21,9 +21,9 @@ function brodfest_calendar_url() {
 }
 
 /**
- * The event as an iCalendar file, starting at its local time. The start is
- * written in UTC so every calendar app places it right without a time-zone
- * table. No end time has been set, so none is given. Pure.
+ * The event as an iCalendar file, starting at its local time. The start and
+ * end are written in UTC so every calendar app places them right without a
+ * time-zone table. Pure.
  *
  * @param array  $event From brodfest_event().
  * @param string $uid_host Host for the event's unique id.
@@ -47,6 +47,7 @@ function brodfest_calendar_ics( $event, $uid_host ) {
 			'UID:brodfest-' . $local->format( 'Ymd' ) . '@' . $uid_host,
 			'DTSTAMP:' . gmdate( 'Ymd\THis\Z' ),
 			'DTSTART:' . $start,
+			'DTEND:' . brodfest_calendar_end( $event )->format( 'Ymd\THis\Z' ),
 			'SUMMARY:' . $escape( $event['title'] ),
 			'LOCATION:' . $escape( $event['location'] ),
 			'DESCRIPTION:' . $escape( $event['description'] ),
@@ -70,16 +71,28 @@ function brodfest_calendar_start( $event ) {
 }
 
 /**
+ * The event's end, in UTC. Pure.
+ *
+ * @param array $event From brodfest_event().
+ * @return DateTimeImmutable
+ */
+function brodfest_calendar_end( $event ) {
+	$local = new DateTimeImmutable( $event['end'], new DateTimeZone( $event['timezone'] ) );
+
+	return $local->setTimezone( new DateTimeZone( 'UTC' ) );
+}
+
+/**
  * The calendars Add to Calendar offers (client, 6 Nov 2026): Apple, Google
  * and Outlook, each opening its calendar with the event filled in, nothing
- * downloaded (client, 8 Nov 2026). Apple is the calendar file at a webcal
- * address, which iPhones, iPads and Macs hand straight to Calendar. Google
+ * downloaded (client, 8 Nov 2026). Apple is the calendar file at its plain
+ * web address, which Safari hands to Calendar as one event to add. It is not
+ * a webcal address: Calendar treats those as a calendar to subscribe to
+ * (Luke, 9 Nov 2026). Google
  * and Outlook go through their sign-in, which a signed-in visitor passes
  * straight through: opened directly while signed out, both calendars dropped
  * the event and showed a marketing page instead (Mark, 8 Nov 2026). Outlook
- * is the Microsoft 365 address, which also takes personal accounts. No end
- * time has been set, so Google's ends as it starts and Outlook's is left to
- * Outlook. Pure.
+ * is the Microsoft 365 address, which also takes personal accounts. Pure.
  *
  * @param array  $event From brodfest_event().
  * @param string $file  The calendar file's URL.
@@ -87,17 +100,17 @@ function brodfest_calendar_start( $event ) {
  */
 function brodfest_calendar_links( $event, $file ) {
 	$start = brodfest_calendar_start( $event );
-	$stamp = $start->format( 'Ymd\THis\Z' );
+	$end   = brodfest_calendar_end( $event );
 
 	return array(
-		'Apple'   => preg_replace( '#^https?://#', 'webcal://', $file ),
+		'Apple'   => $file,
 		'Google'  => 'https://accounts.google.com/ServiceLogin?' . http_build_query(
 			array(
 				'continue' => 'https://calendar.google.com/calendar/render?' . http_build_query(
 					array(
 						'action'   => 'TEMPLATE',
 						'text'     => $event['title'],
-						'dates'    => $stamp . '/' . $stamp,
+						'dates'    => $start->format( 'Ymd\THis\Z' ) . '/' . $end->format( 'Ymd\THis\Z' ),
 						'details'  => $event['description'],
 						'location' => $event['location'],
 					),
@@ -116,6 +129,7 @@ function brodfest_calendar_links( $event, $file ) {
 				'rru'      => 'addevent',
 				'subject'  => $event['title'],
 				'startdt'  => $start->format( 'Y-m-d\TH:i:s\Z' ),
+				'enddt'    => $end->format( 'Y-m-d\TH:i:s\Z' ),
 				'body'     => $event['description'],
 				'location' => $event['location'],
 			),

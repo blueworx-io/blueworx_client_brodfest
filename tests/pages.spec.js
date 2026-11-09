@@ -124,3 +124,17 @@ test('Add to Calendar downloads the event as a calendar entry', async ({ page })
   expect(body).toContain('DTSTART:20270605T');
   expect(body).toContain('SUMMARY:Brodfest');
 });
+
+// The browser-tab icon is the client's gold mark, shipped with the plugin,
+// for as long as no Site Icon is chosen under Settings › General, as on the
+// test site (Luke, 9 Nov 2026).
+test('the site shows the Brodfest icon in the browser tab', async ({ page }) => {
+  await page.goto('/');
+  const icons = page.locator('link[rel="icon"]');
+  await expect(icons).toHaveCount(1);
+  const href = await icons.getAttribute('href');
+  expect(href).toContain('assets/img/favicon.svg');
+  const response = await page.request.get(href);
+  expect(response.status()).toBe(200);
+  expect(response.headers()['content-type']).toContain('image/svg+xml');
+});

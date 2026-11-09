@@ -69,7 +69,9 @@ function tablet(r, [x, y, w, h]) {
 
 function expected(r, width) {
   const V = width === PHONE ? 767 : width;
-  if (r.width === 767 && V >= 768 && /bf-header|bf-hero/.test(r.sel)) {
+  // The home's block under the video is the desktop one there as well (Luke,
+  // 9 Nov 2026).
+  if (r.width === 767 && V >= 768 && /bf-header|bf-hero|bf-home/.test(r.sel)) {
     if (r.node === 'Header') return [0, 0, V, HEADER_H];
     const twin = TWINS.get(`${r.frame.replace(/_767$/, '_1920')}|${r.sel}|${r.kind}`);
     if (!twin) throw new Error(`no desktop header row for ${r.frame} ${r.node} (${r.sel})`);

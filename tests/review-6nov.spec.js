@@ -98,6 +98,36 @@ test('a link only shows its focus box when the keyboard is in use', async ({ pag
   expect(await outline()).toBe('solid');
 });
 
+// The same goes for the menu's white: Safari counts the focus the menu moves
+// to its first link as keyboard focus, even after a tap, so that link showed
+// white as if it were the current page (Luke, 9 Nov 2026). The browser is
+// told to treat the link that way here, as Safari does by itself.
+test('the menu\'s first link only turns white on focus when the keyboard is in use', async ({ page }) => {
+  await page.setViewportSize({ width: 767, height: 1000 });
+  await page.goto('/');
+  await page.locator('[data-bf-menu-toggle]').click();
+  const links = page.locator('.bf-menu__items a');
+  await expect(links.first()).toBeFocused();
+
+  const cdp = await page.context().newCDPSession(page);
+  await cdp.send('DOM.enable');
+  await cdp.send('CSS.enable');
+  const { root } = await cdp.send('DOM.getDocument');
+  const { nodeId } = await cdp.send('DOM.querySelector', { nodeId: root.nodeId, selector: '.bf-menu__items a' });
+  await cdp.send('CSS.forcePseudoState', { nodeId, forcedPseudoClasses: ['focus-visible'] });
+
+  const colour = (i) => links.nth(i).evaluate((el) => {
+    el.style.transition = 'none';
+    return getComputedStyle(el).color;
+  });
+  const white = 'rgb(255, 255, 255)';
+  expect(await colour(1)).not.toBe(white);
+  expect(await colour(0)).toBe(await colour(1));
+
+  await page.keyboard.press('Shift');
+  expect(await colour(0)).toBe(white);
+});
+
 // A general 25% reduction on desktop only (Luke, 6 Nov 2026): every Figma size
 // is drawn at three-quarters from 1024 up; the mobile design is untouched.
 test('desktop is three-quarters of the Figma size, and mobile stays at full size', async ({ page }) => {
@@ -164,6 +194,34 @@ test('the home video is one size from 768 up, and the square one below', async (
   const phone = await hero(767);
   expect(phone.height).toBe(767);
   expect(phone.wide).toBe(false);
+});
+
+// The block under the video follows suit (Luke, 9 Nov 2026): the desktop one
+// from 768 up, the mobile one below, with no tablet size in between.
+test('the Save the Date block is one size from 768 up, and the mobile one below', async ({ page }) => {
+  const block = async (width) => {
+    await page.setViewportSize({ width, height: 900 });
+    await page.goto('/');
+    return page.evaluate(() => {
+      const size = (sel) => {
+        const b = document.querySelector(sel).getBoundingClientRect();
+        return [b.width, b.height].map((v) => Math.round(v * 10) / 10);
+      };
+      const top = (sel) => document.querySelector(sel).getBoundingClientRect().top + scrollY;
+      return {
+        date: size('.bf-home__date'),
+        lettering: size('.bf-home__lettering'),
+        button: size('.bf-home .bf-button--primary'),
+        buttonText: getComputedStyle(document.querySelector('.bf-home .bf-button--primary')).fontSize,
+        note: getComputedStyle(document.querySelector('.bf-home__note')).fontSize,
+        gaps: ['.bf-home__lettering', '.bf-calendar', '.bf-home__note'].map((sel) => Math.round((top(sel) - top('.bf-home__date')) * 10) / 10),
+      };
+    });
+  };
+  const desktop = await block(1024);
+  expect(desktop.button).toEqual([360, 54]);
+  for (const width of [768, 900, 1023]) expect(await block(width), `at ${width}`).toEqual(desktop);
+  expect((await block(767)).button).toEqual([450, 67]);
 });
 
 // The client's photos (6 Nov 2026): each area's banner, wide on desktop and

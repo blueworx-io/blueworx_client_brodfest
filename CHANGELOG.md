@@ -5,6 +5,30 @@ All notable changes to this project are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.11.0] - 2026-11-09
+
+### Added
+
+- The Brodfest gold mark as the icon in the browser tab, until a Site Icon is
+  chosen under Settings › General.
+
+### Changed
+
+- The addresses on Enquiries are info@brodfest.net and concierge@brodfest.net.
+- On desktop a hotel card's description and discount line are 13px (Mark,
+  9 Nov).
+- The calendar event now runs 7pm to 4am Ibiza time (6pm to 3am in the UK), and its note ends
+  "(7pm to 4am CEST)".
+- The home page's Save the Date block is the desktop one from tablets up, so
+  it only changes once, where phones take over.
+
+### Fixed
+
+- Apple's Add to Calendar choice adds the one event, where before Calendar
+  asked to subscribe to a whole calendar.
+- On Safari the menu's first link no longer shows white after a tap, as if
+  it were the current page.
+
 ## [0.10.0] - 2026-11-08
 
 ### Removed

@@ -534,9 +534,12 @@ body.admin-bar .bf-menu {
   transition: color 0.2s;
 }
 
-/* White on rollover, not bolder (client, 5 Nov). */
+/* White on rollover, not bolder (client, 5 Nov). On focus only while the
+   keyboard is in use: the menu moves focus to its first link as it opens, and
+   Safari showed that link white after a tap, as if it were the current page
+   (Luke, 9 Nov 2026). */
 .bf-menu__items a:hover,
-.bf-menu__items a:focus-visible,
+html[data-bf-keys] .bf-menu__items a:focus-visible,
 .bf-menu__items a[aria-current="page"] {
   color: var(--bf-white);
 }
@@ -808,11 +811,23 @@ body.is-menu-open {
   letter-spacing: var(--track-body);
 }
 
-@media (min-width: 1024px) {
+/* From tablets up the block is the desktop one, as the header and video
+   above it are, so it only changes where phones take over, with no tablet
+   size in between (Luke, 9 Nov 2026). It carries the desktop's measures
+   itself, for its button and side margins too. */
+@media (min-width: 768px) {
   /* 20% smaller than the rest of the desktop page (Luke, 6 Nov 2026). */
   .bf-home {
     --u: calc(0.75px * 0.8);
+    --bf-shift: max(-120px, calc((100% - 1440px) / 2));
+    --bf-text-gutter: calc(133.5px + var(--bf-shift));
     padding-top: calc(103 * var(--u));
+  }
+
+  .bf-home .bf-button--primary {
+    width: calc(600 * var(--u));
+    height: calc(90 * var(--u));
+    font-size: calc(35 * var(--u));
   }
 
   .bf-home__date {
@@ -1352,7 +1367,8 @@ body.brodfest .bf-story-banner svg {
 
   .bf-card__text {
     margin-top: calc(25 * var(--u));
-    font-size: calc(20 * var(--u));
+    /* 13 on screen, not Figma's 20 at three-quarters (Mark, 9 Nov 2026). */
+    font-size: 13px;
   }
 
   .bf-card .bf-button--card {
@@ -1361,7 +1377,8 @@ body.brodfest .bf-story-banner svg {
 
   .bf-card__discount {
     margin-top: calc(32 * var(--u));
-    font-size: calc(20 * var(--u));
+    /* 13 on screen, not Figma's 20 at three-quarters (Mark, 9 Nov 2026). */
+    font-size: 13px;
   }
 
   .bf-cards__dots {

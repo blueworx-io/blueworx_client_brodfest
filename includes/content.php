@@ -36,10 +36,11 @@ function brodfest_lorem( $sentences = 3 ) {
 /**
  * The event itself: what Add to Calendar and the home page show.
  *
- * It starts at 7pm Ibiza time. On the Save the Date its note is the copy
- * document's line about the invitation.
+ * It runs 7pm to 4am Ibiza time, which is 6pm to 3am in the UK (client, 9 Nov
+ * 2026). On the Save the Date
+ * its note is the copy document's line about the invitation.
  *
- * @return array{title: string, date: string, time: string, timezone: string, location: string, description: string}
+ * @return array{title: string, date: string, time: string, timezone: string, end: string, location: string, description: string}
  */
 function brodfest_event() {
 	return (array) apply_filters(
@@ -49,6 +50,7 @@ function brodfest_event() {
 			'date'        => '2027-06-05',
 			'time'        => '19:00',
 			'timezone'    => 'Europe/Madrid',
+			'end'         => '2027-06-06 04:00',
 			'location'    => 'Ibiza',
 			'description' => brodfest_is_invite() ? __( 'Full invitation and information coming soon.', 'blueworx-client-brodfest' ) : brodfest_std_copy( 'calendar' ),
 		)
@@ -154,8 +156,9 @@ function brodfest_std_copy( $key ) {
 			'To celebrate Peter’s birthday in 2027, Brodfest arrives at Can Sakhara, his home on the iconic island of Ibiza. A stunningly contemporary villa, Can Sakhara carries a quiet echo of something far more historic, with subtle design references drawn from ancient cultures. The night will be a glorious celebration of your host, the island’s vibrant spirit and Can Sakhara’s timeless roots.',
 		),
 		'invitation' => 'Your invitation and the full Brodfest Ibiza website will land before Christmas.',
-		// The calendar entry's note (client, 6 Nov 2026).
-		'calendar'   => 'To celebrate Peter’s birthday in 2027, Brodfest arrives at Can Sakhara, his home on the iconic island of Ibiza.',
+		// The calendar entry's note (client, 6 Nov 2026), with the times as the
+		// client worded them (Luke, 9 Nov 2026).
+		'calendar'   => 'To celebrate Peter’s birthday in 2027, Brodfest arrives at Can Sakhara, his home on the iconic island of Ibiza. (7pm to 4am CEST)',
 		'dress_code' => 'Black, Gold & Ibiza Bold',
 		'transport'  => 'To make your evening as effortless as possible (and to make sure the neighbours don’t alert the police!), it’s essential that we provide transfers to and from the party. Guests are warmly invited to join a vehicle from any of our recommended hotels below, and our guest liaison team will be in touch in due course to make personal arrangements with you. There will be no vehicle access or parking at the house on the evening of the party, so we ask that guests do not arrive in private cars or by taxi. If you are staying elsewhere on the island, simply take a taxi to the nearest listed hotel and join one of our organised transfers from there. We look forward to welcoming you.',
 		'stay'       => 'If you’re looking for somewhere to stay, we’ve gathered a few of our favourite hotels across three of the island’s loveliest areas, each chosen for its comfort, character and easy connection to the celebration.',
@@ -203,12 +206,12 @@ function brodfest_std_copy( $key ) {
 			array(
 				// The emails are in the copy, as links (client, 6 Nov 2026).
 				'title' => 'ENQUIRIES',
-				'text'  => 'Should you have any questions about the celebration, or wish to share further details with us, please email info@brodfestibiza.net. Our guest liaison team will be happy to help in any way they can.',
+				'text'  => 'Should you have any questions about the celebration, or wish to share further details with us, please email info@brodfest.net. Our guest liaison team will be happy to help in any way they can.',
 				'email' => '',
 			),
 			array(
 				'title' => 'PRIVATE CONCIERGE',
-				'text'  => 'Should you need a helping hand with the smooth running of your Ibiza stay, whether that’s childcare, restaurant recommendations and reservations, club bookings or private transport, please contact concierge@brodfestibiza.net. Concierge services are offered privately and charged directly to guests. Our team can provide full details on request.',
+				'text'  => 'Should you need a helping hand with the smooth running of your Ibiza stay, whether that’s childcare, restaurant recommendations and reservations, club bookings or private transport, please contact concierge@brodfest.net. Concierge services are offered privately and charged directly to guests. Our team can provide full details on request.',
 				'email' => '',
 			),
 		),

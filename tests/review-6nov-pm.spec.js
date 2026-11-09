@@ -17,8 +17,8 @@ test('Enquiries: one ENQUIRIES title, Private Concierge as a subtitle, emails in
   await expect(page.locator('main')).not.toContainText('GENERAL');
   await expect(page.locator('main')).not.toContainText('Email :');
   const links = page.locator('main .bf-body a[href^="mailto:"]');
-  await expect(links).toHaveText(['info@brodfestibiza.net', 'concierge@brodfestibiza.net']);
-  await expect(links.first()).toHaveAttribute('href', 'mailto:info@brodfestibiza.net');
+  await expect(links).toHaveText(['info@brodfest.net', 'concierge@brodfest.net']);
+  await expect(links.first()).toHaveAttribute('href', 'mailto:info@brodfest.net');
   expect(Number(await links.first().evaluate((a) => getComputedStyle(a).fontWeight))).toBeGreaterThanOrEqual(600);
 });
 
@@ -32,6 +32,25 @@ test('the calendar entry is "Brodfest Ibiza", with the line about Can Sakhara', 
   const ics = await (await page.request.get('/?brodfest-calendar=1')).text();
   expect(ics).toContain('SUMMARY:Brodfest Ibiza');
   expect(ics.replace(/\r\n /g, '')).toContain('DESCRIPTION:To celebrate Peter’s birthday in 2027\\, Brodfest arrives at Can Sakhara\\, his home on the iconic island of Ibiza.');
+});
+
+// The event runs 7pm to 4am in Ibiza, 6pm to 3am UK time, and its note gives the Ibiza times
+// as the client worded them (Luke, 9 Nov 2026).
+test('the calendar event runs 7pm to 4am Ibiza time, and its note says so', async ({ page }) => {
+  const ics = (await (await page.request.get('/?brodfest-calendar=1')).text()).replace(/\r\n /g, '');
+  expect(ics).toContain('DTSTART:20270605T170000Z');
+  expect(ics).toContain('DTEND:20270606T020000Z');
+  expect(ics).toContain('his home on the iconic island of Ibiza. (7pm to 4am CEST)\r\n');
+
+  await page.goto('/');
+  const links = page.locator('[data-bf-calendar-menu] a');
+  const google = new URL(new URL(await links.nth(1).getAttribute('href')).searchParams.get('continue'));
+  expect(google.searchParams.get('dates')).toBe('20270605T170000Z/20270606T020000Z');
+  expect(google.searchParams.get('details')).toMatch(/\(7pm to 4am CEST\)$/);
+  const outlook = new URL(await links.nth(2).getAttribute('href'));
+  expect(outlook.searchParams.get('startdt')).toBe('2027-06-05T17:00:00Z');
+  expect(outlook.searchParams.get('enddt')).toBe('2027-06-06T02:00:00Z');
+  expect(outlook.searchParams.get('body')).toMatch(/\(7pm to 4am CEST\)$/);
 });
 
 test('on Celebration the "A" never sits alone at the end of a line', async ({ page }) => {
@@ -73,7 +92,9 @@ test('Add to Calendar offers Apple, Google and Outlook, with nothing to download
   await expect(page.locator('.bf-calendar [download]')).toHaveCount(0);
 
   const apple = await links.nth(0).getAttribute('href');
-  expect(apple).toMatch(/^webcal:\/\//);
+  // A plain web address, never webcal: Calendar treats webcal as a calendar
+  // to subscribe to, not an event to add (Luke, 9 Nov 2026).
+  expect(apple).toMatch(/^https?:\/\//);
   expect(apple).toContain('brodfest-calendar=1');
 
   const signIn = new URL(await links.nth(1).getAttribute('href'));
@@ -126,4 +147,17 @@ test('body copy is 30% bigger on mobile, and unchanged on desktop', async ({ pag
   expect(await size(767)).toBe('26px');
   expect(await size(1023)).toBe('26px');
   expect(await size(1920)).toBe('15px');
+});
+
+// Mark, 9 Nov 2026 (Pastel #94, #95): on desktop a hotel card's description
+// and its discount line are 13px. The mobile design keeps its size.
+test('hotel card text and discount lines are 13px on desktop, and unchanged on mobile', async ({ page }) => {
+  const sizes = async (width) => {
+    await page.setViewportSize({ width, height: 900 });
+    await page.goto('/accommodation/');
+    return page.evaluate(() => ['.bf-card__text', '.bf-card__discount'].map((sel) => getComputedStyle(document.querySelector(sel)).fontSize));
+  };
+  expect(await sizes(1920)).toEqual(['13px', '13px']);
+  expect(await sizes(1024)).toEqual(['13px', '13px']);
+  expect(await sizes(767)).toEqual(['20px', '20px']);
 });

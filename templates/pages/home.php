@@ -43,7 +43,7 @@ brodfest_part( 'hero', array( 'videos' => brodfest_hero_videos() ) );
 			<?php foreach ( brodfest_calendar_links( $brodfest_event, brodfest_calendar_url() ) as $brodfest_name => $brodfest_url ) : ?>
 				<li>
 					<?php if ( 'Apple' === $brodfest_name ) : ?>
-						<a href="<?php echo esc_url( $brodfest_url, array( 'webcal', 'http', 'https' ) ); ?>"><?php echo esc_html( $brodfest_name ); ?></a>
+						<a href="<?php echo esc_url( $brodfest_url ); ?>"><?php echo esc_html( $brodfest_name ); ?></a>
 					<?php else : ?>
 						<a href="<?php echo esc_url( $brodfest_url ); ?>" target="_blank" rel="noopener"><?php echo esc_html( $brodfest_name ); ?></a>
 					<?php endif; ?>

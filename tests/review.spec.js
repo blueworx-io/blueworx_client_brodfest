@@ -148,9 +148,9 @@ test('the map is the client\'s mobile version on mobile', async ({ page }) => {
   expect(Math.abs(slot.height - box.height)).toBeLessThanOrEqual(1);
 });
 
-test('Enquiries has the new copy and brodfestibiza.net addresses', async ({ page }) => {
+test('Enquiries has the new copy and brodfest.net addresses', async ({ page }) => {
   await page.goto('/enquiries/');
-  await expect(page.locator('a[href^="mailto:"]')).toHaveText(['info@brodfestibiza.net', 'concierge@brodfestibiza.net']);
+  await expect(page.locator('a[href^="mailto:"]')).toHaveText(['info@brodfest.net', 'concierge@brodfest.net']);
   await expect(page.locator('main')).toContainText('Concierge services are offered privately');
 });
 
