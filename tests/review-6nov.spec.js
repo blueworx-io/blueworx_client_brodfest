@@ -24,7 +24,7 @@ test('Information opens with transport, then Where to Stay as a subtitle, then t
   await page.goto('/accommodation/');
   await expect(page.locator('h1')).toHaveText('INFORMATION');
   const subtitles = page.locator('h2.bf-area__name');
-  await expect(subtitles.nth(0)).toHaveText('TRANSPORT FOR BRODFEST IBIZA');
+  await expect(subtitles.nth(0)).toHaveText('TRANSPORT');
   await expect(subtitles.nth(1)).toHaveText('WHERE TO STAY');
   await expect(page.locator('main')).toContainText('it’s essential that we provide transfers');
   const order = await page.evaluate(() => {

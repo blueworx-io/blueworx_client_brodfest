@@ -38,7 +38,7 @@ dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco 
 		brodfest_part(
 			'text-section',
 			array(
-				'title'      => 'TRANSPORT FOR BRODFEST IBIZA',
+				'title'      => 'TRANSPORT',
 				'heading'    => 'h2',
 				'subtitle'   => true,
 				'paragraphs' => array( brodfest_std_copy( 'transport' ) ),
