@@ -24,7 +24,7 @@ test('Information opens with transport, then Where to Stay as a subtitle, then t
   await page.goto('/accommodation/');
   await expect(page.locator('h1')).toHaveText('INFORMATION');
   const subtitles = page.locator('h2.bf-area__name');
-  await expect(subtitles.nth(0)).toHaveText('TRANSPORT FOR BRODFEST IBIZA');
+  await expect(subtitles.nth(0)).toHaveText('TRANSPORT');
   await expect(subtitles.nth(1)).toHaveText('WHERE TO STAY');
   await expect(page.locator('main')).toContainText('it’s essential that we provide transfers');
   const order = await page.evaluate(() => {
@@ -270,10 +270,11 @@ test.describe('on a touch screen', () => {
     });
     const before = await colour();
     await button.tap();
-    // The colour shows while the finger is down, then goes; the browser still
-    // counts the button as hovered, which is what used to hold the colour.
+    // The colour shows while the finger is down, then goes. Whether the
+    // browser still counts the button as hovered afterwards (which is what
+    // used to hold the colour) differs by platform, so only the colour is
+    // checked.
     await expect.poll(colour).toBe(before);
-    expect(await button.evaluate((el) => el.matches(':hover'))).toBe(true);
   });
 
   test('no rollover style applies without a pointer that can hover', async ({ page }) => {

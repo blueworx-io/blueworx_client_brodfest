@@ -5,6 +5,44 @@ All notable changes to this project are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.12.3] - 2026-11-10
+
+### Fixed
+
+- The automated checks pass again: the design measurements expect the shorter TRANSPORT heading on phones, and letters are placed the same way on the check machine as on a desktop.
+
+## [0.12.2] - 2026-11-10
+
+### Fixed
+
+- The theme's design system page shows with its styles again. The clean-up that keeps other stylesheets off Brodfest's pages was taking the theme's page along with them.
+
+## [0.12.1] - 2026-11-10
+
+### Changed
+
+- The transport heading on the accommodation page now reads "TRANSPORT".
+
+## [0.12.0] - 2026-11-09
+
+### Changed
+
+- RSVP replies are now people in the WordPress Users list, not a list of
+  their own. Each is a "Brodfest guest", and a plus-one is their own person,
+  linked to whoever brought them. The list shows type, attending, who they
+  are linked to and one Email column; every answer from the form is on the
+  person's profile, under RSVP. Guests cannot sign in.
+- The Users list no longer has a Posts column.
+- A second reply from the same email changes that person rather than adding
+  another, and a plus-one no longer brought is removed.
+- Replies sent before this update are carried over into Users.
+- Guests have no public author page, are never signed in, and are left out
+  of the theme's Klaviyo list.
+
+### Removed
+
+- The RSVPs list in the admin.
+
 ## [0.11.1] - 2026-11-09
 
 ### Fixed

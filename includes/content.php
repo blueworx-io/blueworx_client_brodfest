@@ -131,16 +131,16 @@ function brodfest_std_copy( $key ) {
 	$discount = 'For up to 25% discount on bookings made before 15/02/2027, quote BRODFEST';
 	// The client's photos (6 Nov 2026), by hotel.
 	$photos = array(
-		'BLESS IBIZA'          => 'bless',
-		'TORRE DEL MAR'        => 'torre-del-mar',
-		'AMA IBIZA'            => 'ama',
-		'NOBU HOTEL'           => 'nobu',
-		'HOTEL SIMBAD'         => 'simbad',
-		'HOTEL LUX ISLA'       => 'lux-isla',
-		'HYDE IBIZA'           => 'hyde',
-		'MONDRIAN'             => 'mondrian',
+		'BLESS IBIZA'    => 'bless',
+		'TORRE DEL MAR'  => 'torre-del-mar',
+		'AMA IBIZA'      => 'ama',
+		'NOBU HOTEL'     => 'nobu',
+		'HOTEL SIMBAD'   => 'simbad',
+		'HOTEL LUX ISLA' => 'lux-isla',
+		'HYDE IBIZA'     => 'hyde',
+		'MONDRIAN'       => 'mondrian',
 	);
-	$hotel    = static function ( $name, $text, $url, $discount = '' ) use ( $photos ) {
+	$hotel  = static function ( $name, $text, $url, $discount = '' ) use ( $photos ) {
 		return array(
 			'name'     => $name,
 			'text'     => $text,

@@ -77,6 +77,12 @@ function brodfest_sweep_foreign_assets() {
 		return;
 	}
 
+	// The theme's design system page is drawn at the home address, but it is
+	// the theme's page, not ours: it needs its own styles to show the design.
+	if ( function_exists( 'blueworx_design_reference_requested' ) && blueworx_design_reference_requested() ) {
+		return;
+	}
+
 	/**
 	 * Filters the stylesheet handles the sweep leaves alone on owned pages.
 	 *

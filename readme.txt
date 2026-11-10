@@ -3,7 +3,7 @@ Contributors: blueworx
 Requires at least: 6.4
 Tested up to: 7.0
 Requires PHP: 8.1
-Stable tag: 0.11.1
+Stable tag: 0.12.3
 License: GPL-2.0-or-later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -25,6 +25,9 @@ renders them itself, so the design is exact whatever else is installed.
    page videos, and set where RSVP replies are emailed.
 
 == Changelog ==
+
+= 0.12.0 =
+* RSVP replies are now people in the WordPress Users list, as "Brodfest guest", with a plus-one linked to whoever brought them and every answer on the person's profile. The separate RSVPs list is gone and earlier replies are carried over.
 
 = 0.11.1 =
 * On phones and tablets a tapped button or link goes back to its own colour, rather than keeping its rollover colour.
