@@ -5,11 +5,19 @@
 import { initHeader } from './header.js';
 import { initIntro } from './intro.js';
 import { initCarousels } from './carousel.js';
+import { initCalendar } from './calendar.js';
 import { initRsvp } from './rsvp.js';
+import { initRsvpPanel } from './rsvp-panel.js';
 
 document.documentElement.classList.add('brodfest-js');
+
+// Focus rings show while the keyboard is in use, never after a tap or click.
+document.addEventListener('keydown', () => document.documentElement.setAttribute('data-bf-keys', ''), true);
+document.addEventListener('pointerdown', () => document.documentElement.removeAttribute('data-bf-keys'), true);
 
 initHeader();
 initIntro();
 initCarousels();
+initCalendar();
 initRsvp();
+initRsvpPanel();

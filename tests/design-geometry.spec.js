@@ -24,30 +24,76 @@ import { loginAsAdmin, skipIntro } from './helpers/wp.js';
 // When Figma is re-wrapped (opened with the fonts), re-export the frames and
 // drop the "re-wrapped" pins.
 
+// The home page's Add to Calendar button is hidden for now (Luke, 9 Nov
+// 2026), so its rows are left out until brodfest_show_calendar() turns it
+// back on; the rows under it are pinned to where they sit without it.
 const ROWS = JSON.parse(readFileSync(new URL('./fixtures/design-geometry.json', import.meta.url), 'utf8'))
-  .map((r, row) => ({ ...r, row, figma: r.expect || r.figma }));
+  .map((r, row) => ({ ...r, row, figma: r.expect || r.figma }))
+  .filter((r) => !r.sel.includes('bf-calendar'));
 const TOLERANCE = { box: 1, text: 2 };
 
-// The desktop design keeps Figma's sizes from 1600 up, centred; the mobile
-// design keeps Figma's sizes, centred. Full-width pieces span the window. The
-// RSVP pill keeps at least 18px from the right edge, so below 1738 it moves
-// in. A 390 phone is told it is 767 wide, so it lays out the mobile design
-// exactly as at 767 (834 tall, so the zoomed screen is the artboard's 1640).
-// Laptops (1024 to 1599) keep Figma's heights but not its widths; they are
-// checked further down.
+// The desktop design is drawn at three-quarters of Figma's size (Luke, 6 Nov
+// 2026): every desktop box is Figma's times 0.75, about the window's centre.
+// It keeps that size from 1200 up (Figma's 1600), centred; the mobile design
+// keeps Figma's sizes, centred. Full-width pieces span the window. The menu
+// button and RSVP pill keep at least the mobile header's 48 from the edges
+// (36 on desktop), so the pill moves in below 1365 and the button below 1223,
+// as at 1820 and 1630 at full size. A 390 phone is told it is 767 wide, so it
+// lays out the mobile design exactly as at 767 (834 tall, so the zoomed
+// screen is the artboard's 1640). Laptops (1024 to 1199) keep the heights but
+// not the widths; they are checked further down.
 const PHONE = 390;
-const WIDTHS = { 1920: [1920, 2560, 1600], 767: [767, 1023, PHONE] };
-const LAPTOPS = [1440, 1024];
+const SCALE = 0.75;
+const WIDTHS = { 1920: [1920, 2560, 1200], 767: [767, 1023, PHONE] };
+const LAPTOPS = [1100, 1024];
+const PAGE_H = Object.fromEntries(ROWS.filter((r) => r.node === 'Page').map((r) => [r.frame, r.figma[3]]));
+
+// From tablets up the header is the desktop one, at the desktop's size (Luke,
+// 6 Nov 2026): one header from 768 to the widest window, so the only change
+// is where phones take over. On the 767 design at a tablet width its contents
+// are where the desktop frame puts them, and everything under it rises the
+// difference between the mobile 207 and the desktop 127.5 — except the footer
+// of a page that fits the screen, which stays at the bottom, and the open
+// menu's panel, which grows to fill. The home video is the desktop one there
+// too (Luke, 6 Nov 2026), so what follows it rises by the difference as well.
+const HEADER_H = 170 * SCALE;
+const HERO = Object.fromEntries(ROWS.filter((r) => r.width === 767 && r.node === 'Media/Hero Video').map((r) => [r.frame, r.figma]));
+// Paired on element and kind, as a pill's box and its label share an element.
+const TWINS = new Map(ROWS.filter((r) => r.width === 1920).map((r) => [`${r.frame}|${r.sel}|${r.kind}`, r]));
+
+function tablet(r, [x, y, w, h]) {
+  const hero = HERO[r.frame];
+  const d = 207 - HEADER_H + (hero && y >= hero[1] + hero[3] ? hero[3] - 840 * SCALE : 0);
+  const fits = (PAGE_H[r.frame] ?? 1640) <= 1640;
+  if (r.node === 'Page') return [x, y, w, fits ? h : h - d];
+  if (r.node === 'Menu/Panel') return [x, y - d, w, h + d];
+  if (fits && /bf-footer/.test(r.sel)) return [x, y, w, h];
+  return [x, y - d, w, h];
+}
 
 function expected(r, width) {
-  const [x, y, w, h] = r.figma;
   const V = width === PHONE ? 767 : width;
+  // The home's block under the video is the desktop one there as well (Luke,
+  // 9 Nov 2026).
+  if (r.width === 767 && V >= 768 && /bf-header|bf-hero|bf-home/.test(r.sel)) {
+    if (r.node === 'Header') return [0, 0, V, HEADER_H];
+    const twin = TWINS.get(`${r.frame.replace(/_767$/, '_1920')}|${r.sel}|${r.kind}`);
+    if (!twin) throw new Error(`no desktop header row for ${r.frame} ${r.node} (${r.sel})`);
+    return expected({ ...twin, figma: twin.expect || twin.figma }, width);
+  }
   if (r.width === 767) {
+    const [x, y, w, h] = V >= 768 ? tablet(r, r.figma) : r.figma;
     return w >= 760 ? [0, y, V, h] : [x + Math.max(0, (V - 767) / 2), y, w, h];
   }
-  if (w >= 1900) return [0, y, V, h];
-  const pill = x >= 1600 && y < 270 ? Math.max(0, Math.min(69, -91 - (V - 1920) / 2)) : 0;
-  return [x - pill - 960 + V / 2, y, w, h];
+  // Worked out in Figma's pixels for the window at full size, then scaled.
+  const D = V / SCALE;
+  const [x, y, w, h] = r.figma;
+  const full = w >= 1900 ? [0, y, D, h] : (() => {
+    const pill = x >= 1600 && y < 170 ? Math.max(0, -61 - (D - 1920) / 2) : 0;
+    const left = x < 300 && (y < 170 || r.mode === 'menu') ? Math.max(0, 48 - (193 - 960 + D / 2)) : 0;
+    return [x - pill + left - 960 + D / 2, y, w, h];
+  })();
+  return full.map((v) => v * SCALE);
 }
 const STILL = '#wpadminbar{display:none!important} html{margin-top:0!important} :root{--wp-admin--admin-bar--height:0px!important} *,*::before,*::after{transition:none!important;animation:none!important}';
 
@@ -79,7 +125,7 @@ for (const frame of frames) for (const V of WIDTHS[frame.endsWith('_767') ? 767 
       page = await (await browser.newContext({ baseURL: test.info().project.use.baseURL, viewport: { width: PHONE, height: 834 }, isMobile: true, hasTouch: true, deviceScaleFactor: 3 })).newPage();
     } else {
       // As tall as the artboard, so a short page's footer sits where Figma's does.
-      await page.setViewportSize({ width: V, height: width === 1920 ? 2529 : 1640 });
+      await page.setViewportSize({ width: V, height: width === 1920 ? Math.round(2529 * SCALE) : 1640 });
     }
     await open(page, frame, path, mode);
 
@@ -153,7 +199,7 @@ for (const frame of frames.filter((f) => f.endsWith('_1920'))) for (const V of L
   const { path, mode } = rows[0];
 
   test(`${frame} keeps Figma's heights at ${V}`, async ({ page }) => {
-    await page.setViewportSize({ width: V, height: 2529 });
+    await page.setViewportSize({ width: V, height: Math.round(2529 * SCALE) });
     await open(page, frame, path, mode);
 
     const measured = await page.evaluate((rows) => rows.map((r) => {
@@ -168,13 +214,14 @@ for (const frame of frames.filter((f) => f.endsWith('_1920'))) for (const V of L
       const got = measured[i];
       const label = `${r.node}${r.text ? ` "${r.text}"` : ''} [row ${r.row}]`;
       if (!got) return off.push(`${label}: not on the page (${r.sel})`);
-      const [, , fw, fh] = r.figma;
+      const fw = r.figma[2];
+      const fh = r.figma[3] * SCALE;
       if (r.kind !== 'text') {
         if (r.container ? got.h < fh - 1 : Math.abs(got.h - fh) > 1) off.push(`${label}: ${Math.round(got.h)} tall, Figma ${fh}`);
       }
       if (fw >= 1900) {
         if (Math.abs(got.w - V) > 1) off.push(`${label}: ${Math.round(got.w)} wide in a ${V} window`);
-      } else if (!got.swiped && (got.x < -1 || got.x + got.w > V + 1 || got.w > 1565)) {
+      } else if (!got.swiped && (got.x < -1 || got.x + got.w > V + 1 || got.w > 1564 * SCALE + 1)) {
         off.push(`${label}: spans ${Math.round(got.x)} to ${Math.round(got.x + got.w)} in a ${V} window`);
       }
     });
@@ -183,11 +230,13 @@ for (const frame of frames.filter((f) => f.endsWith('_1920'))) for (const V of L
 }
 
 // Placeholder copy carries Figma's desktop line breaks; on a phone the text
-// wraps on its own, so the breaks and their hyphens must not show.
+// wraps on its own, so the breaks and their hyphens must not show. The
+// Invite still has placeholder hotels.
 test('placeholder line breaks show on desktop only', async ({ page }) => {
   await skipIntro(page);
+  await loginAsAdmin(page);
   await page.setViewportSize({ width: 1920, height: 1080 });
-  await page.goto('/accommodation/');
+  await page.goto('/accommodation/?brodfest-site=invite');
   const desktop = await page.locator('.bf-card__text').first().innerText();
   expect(desktop).toContain('adip-\niscing');
 
@@ -220,7 +269,8 @@ test.describe('RSVP form details at 1920', () => {
     });
     expect(arrow.clip).toContain('polygon');
     expect(arrow.border).toBe('0px');
-    expect([arrow.w, arrow.h]).toEqual(['29px', '16px']);
+    // Figma's 29 by 16, at the desktop's three-quarter size.
+    expect([arrow.w, arrow.h]).toEqual(['21.75px', '12px']);
     expect(arrow.bg).toBe('rgb(209, 149, 78)');
   });
 
@@ -271,9 +321,10 @@ test.describe('on a 390 phone', () => {
 // other text is narrower than Figma's and wraps on its own.
 test('on a laptop only the hotel cards keep Figma\'s line breaks', async ({ page }) => {
   await skipIntro(page);
+  await loginAsAdmin(page);
   for (const width of LAPTOPS) {
     await page.setViewportSize({ width, height: 900 });
-    await page.goto('/accommodation/');
+    await page.goto('/accommodation/?brodfest-site=invite');
     expect(await page.locator('.bf-card__text').first().innerText()).toContain('adip-\niscing');
     expect(await page.locator('.bf-area__intro').first().innerText()).not.toContain('\n');
   }

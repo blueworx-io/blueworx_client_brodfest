@@ -11,5 +11,13 @@ export default defineConfig({
   reporter: [['list'], ['json', { outputFile: 'test-results/results.json' }]],
   use: {
     baseURL: process.env.PLAYWRIGHT_BASE_URL ?? 'http://127.0.0.1:8881',
+    // On Linux, Chromium hints letters to the pixel grid, so a long line
+    // comes out one to two percent wider than on Windows or a Mac, and a
+    // paragraph can take an extra line. The design geometry suite measures
+    // against Figma to 2px, so CI turns hinting off and lays text out the way
+    // the other platforms do.
+    launchOptions: {
+      args: process.platform === 'linux' ? ['--font-render-hinting=none'] : [],
+    },
   },
 });

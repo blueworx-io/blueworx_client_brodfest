@@ -10,21 +10,30 @@ export function initHeader() {
 	initMenu(header);
 
 	let last = window.scrollY;
+	let y = last;
 	let ticking = false;
+	// Measured when it changes, not on every scroll, which would make the
+	// browser stop and lay the page out mid-animation.
+	let height = header.offsetHeight;
+	new ResizeObserver(([entry]) => {
+		height = entry.borderBoxSize?.[0]?.blockSize ?? header.offsetHeight;
+	}).observe(header);
 
 	window.addEventListener(
 		'scroll',
 		() => {
+			// Read here, before anything has moved this frame; read later, it
+			// would make the browser stop and lay the page out again.
+			y = window.scrollY;
 			if (ticking) {
 				return;
 			}
 			ticking = true;
 			requestAnimationFrame(() => {
-				const y = window.scrollY;
 				const menuOpen = document.body.classList.contains('is-menu-open');
 				// A small dead zone so a trackpad's jitter does not flicker it.
 				if (!menuOpen && Math.abs(y - last) > 6) {
-					header.classList.toggle('is-hidden', y > last && y > header.offsetHeight);
+					header.classList.toggle('is-hidden', y > last && y > height);
 					last = y;
 				}
 				ticking = false;

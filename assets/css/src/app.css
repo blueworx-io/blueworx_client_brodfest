@@ -12,9 +12,10 @@
    Sizes are written in --u, one Figma pixel, and are Figma's exact numbers.
    Below 1024px the layout is the 767-wide mobile artboard, at Figma's size
    (a phone is told it is 767 wide and zooms it to fit). At 1024px and up it
-   is the 1920-wide desktop artboard at Figma's size. Heights never change:
-   below 1600, where the widest pieces (1564) stop fitting, the side margins
-   hold at 18px and only widths give way. --bf-shift centres the artboard in
+   is the 1920-wide desktop artboard at three-quarters of Figma's size, --u
+   being 0.75px there (a general 25% reduction on desktop, Luke, 6 Nov 2026).
+   Heights never change: below 1200, where the widest pieces (1564, drawn
+   1173) stop fitting, the side margins hold at 18 and only widths give way. --bf-shift centres the artboard in
    the window; it is written with 100% so it measures each element's own
    container, not a viewport that may include a scrollbar.
    ------------------------------------------------------------------------ */
@@ -23,8 +24,9 @@
      Design); the Brodfest preset sets them to the design. The fallbacks are
      the same values, for a site without the theme. Rust and field have no
      slot there, so they are mixed from the others: with the preset, rust is
-     #632800 and field lands within a few steps of #210c07. */
-  --bf-bg: var(--color-bg, #0b0301);
+     #632a01 (Figma's #632800, mixed on the old #0b0301 page) and field
+     lands within a few steps of #210c07. */
+  --bf-bg: var(--color-bg, #0b0603);
   --bf-gold: var(--color-text, #d1954e);
   --bf-primary: var(--color-primary, #d1954e);
   /* The accent itself, not --color-accent-text: the theme lightens that
@@ -52,15 +54,27 @@
   --ease: cubic-bezier(0.22, 1, 0.36, 1);
 }
 
+/* From tablets up the header is the desktop one at the desktop's size, 170
+   at three-quarters (Luke, 6 Nov 2026), so it only changes where phones,
+   with the mobile design's 207, take over. */
+@media (min-width: 768px) {
+  :root {
+    --header-h: calc(170 * 0.75px);
+  }
+}
+
 @media (min-width: 1024px) {
   :root {
-    /* Stops at -160, the 1600 window, where the margins reach 18px. */
+    --u: 0.75px;
+    /* Stops at -160, the 1200 window, where the margins reach 18. */
     --bf-shift: max(calc(-160 * var(--u)), calc((100% - 1920 * var(--u)) / 2));
     /* The 1564 column, or the window less those margins when narrower. */
     --bf-column: min(calc(1564 * var(--u)), calc(100% - 36 * var(--u)));
     --bf-gutter: calc(193 * var(--u) + var(--bf-shift));
     --bf-text-gutter: calc(178 * var(--u) + var(--bf-shift));
-    --header-h: calc(270 * var(--u));
+    --header-h: calc(170 * var(--u));
+    /* The header never comes nearer either edge than the mobile design's 48. */
+    --bf-header-edge: calc(48 * var(--u));
   }
 }
 
@@ -85,9 +99,33 @@
     color: inherit;
   }
 
+  /* Emails in the copy: bold links (client, 6 Nov 2026). */
+  body.brodfest .bf-email {
+    font-weight: 700;
+    text-decoration: none;
+    transition: color 0.2s;
+  }
+
+  body.brodfest .bf-email:active {
+    color: var(--bf-white);
+  }
+
+  @media (hover: hover) {
+    body.brodfest .bf-email:hover {
+      color: var(--bf-white);
+    }
+  }
+
   body.brodfest :focus-visible {
     outline: 2px solid var(--bf-gold);
     outline-offset: 4px;
+  }
+
+  /* The ring is for keyboards: a tap or click never shows it, even where the
+     page moves focus itself, as the menu and the opening do (client, 6 Nov
+     2026). main.js marks the page while the keyboard is in use. */
+  html:not([data-bf-keys]) body.brodfest :focus-visible {
+    outline: none;
   }
 
   body.brodfest svg {
@@ -155,8 +193,10 @@
   color: var(--bf-bg);
 }
 
+/* 30% bigger than Figma's 20 on the mobile design (client, 6 Nov 2026);
+   desktop sets its own size below. */
 .bf-body {
-  font-size: calc(20 * var(--u));
+  font-size: calc(26 * var(--u));
   line-height: 1.85;
   letter-spacing: var(--track-body);
   text-align: center;
@@ -168,8 +208,14 @@
   transition: border-color 0.3s;
 }
 
-.bf-body a:hover {
+.bf-body a:active {
   border-bottom-color: currentColor;
+}
+
+@media (hover: hover) {
+  .bf-body a:hover {
+    border-bottom-color: currentColor;
+  }
 }
 
 /* The copy's own line breaks (brodfest_text()) are the desktop design's; the
@@ -183,7 +229,7 @@
 
 /* On a laptop the text is narrower than Figma's, so it wraps on its own too;
    only the hotel cards, which keep their size, keep the breaks. */
-@media (min-width: 1024px) and (max-width: 1599.98px) {
+@media (min-width: 1024px) and (max-width: 1199.98px) {
   :not(.bf-card__text) > :is(.bf-br, .bf-hy) {
     display: none;
   }
@@ -218,6 +264,11 @@
 
 /* ---- Buttons ------------------------------------------------------------ */
 
+/* Rollover colours, here and across the stylesheet, are for a pointer that
+   can hover. A touch screen leaves "hover" on whatever was last tapped, so a
+   tapped button kept its rollover colour; there the colour shows only while
+   the finger is down, with :active (Luke, 9 Nov 2026). */
+
 .bf-pill,
 .bf-button {
   display: inline-flex;
@@ -242,9 +293,15 @@
   text-indent: var(--track-pill);
 }
 
-.bf-pill:hover,
-.bf-pill.is-active {
+.bf-pill.is-active,
+.bf-pill:active {
   background: var(--bf-orange);
+}
+
+@media (hover: hover) {
+  .bf-pill:hover {
+    background: var(--bf-orange);
+  }
 }
 
 .bf-button--primary {
@@ -258,9 +315,16 @@
   letter-spacing: var(--track-body);
 }
 
-.bf-button--primary:hover {
+.bf-button--primary:active {
   background: var(--bf-orange);
   color: var(--bf-bg);
+}
+
+@media (hover: hover) {
+  .bf-button--primary:hover {
+    background: var(--bf-orange);
+    color: var(--bf-bg);
+  }
 }
 
 .bf-button--card {
@@ -275,8 +339,14 @@
   text-indent: var(--track-wide);
 }
 
-.bf-button--card:hover {
+.bf-button--card:active {
   background: var(--bf-gold);
+}
+
+@media (hover: hover) {
+  .bf-button--card:hover {
+    background: var(--bf-gold);
+  }
 }
 
 /* SEND takes the RSVP pill's Futura, per the design comment. */
@@ -292,8 +362,14 @@
   text-indent: var(--track-pill);
 }
 
-.bf-button--send:hover {
+.bf-button--send:active {
   background: var(--bf-orange);
+}
+
+@media (hover: hover) {
+  .bf-button--send:hover {
+    background: var(--bf-orange);
+  }
 }
 
 @media (min-width: 1024px) {
@@ -375,12 +451,14 @@ body.admin-bar .bf-header {
   transform: rotate(-90deg);
 }
 
-.is-menu-open .bf-header__icon--menu {
+.is-menu-open .bf-header__icon--menu,
+.is-rsvp-open .bf-header__icon--menu {
   opacity: 0;
   transform: rotate(90deg);
 }
 
-.is-menu-open .bf-header__icon--close {
+.is-menu-open .bf-header__icon--close,
+.is-rsvp-open .bf-header__icon--close {
   opacity: 1;
   transform: none;
 }
@@ -399,32 +477,52 @@ body.admin-bar .bf-header {
   top: calc(78 * var(--u));
 }
 
-@media (min-width: 1024px) {
-  .bf-header__toggle {
-    top: calc(125 * var(--u));
-  }
-
-  .bf-header__logo {
-    top: calc(104 * var(--u));
-    width: calc(430 * var(--u));
+/* Tablets and desktop: the desktop's 170 header, its logo a fifth smaller
+   than Figma's 430 (344 by 82.4), and the logo, button and pill all centred
+   in it, drawn at the desktop's three-quarters from 768 up, so a tablet's
+   header is the desktop's. The header carries the desktop's measures itself,
+   as a tablet's page keeps the mobile design's. */
+@media (min-width: 768px) {
+  .bf-header {
+    --u: 0.75px;
+    --bf-shift: max(calc(-160 * var(--u)), calc((100% - 1920 * var(--u)) / 2));
+    --bf-gutter: calc(193 * var(--u) + var(--bf-shift));
+    --bf-header-edge: calc(48 * var(--u));
   }
 
   .bf-header .bf-pill {
-    /* Never nearer the window edge than 18px. */
-    right: max(calc(109 * var(--u) + var(--bf-shift)), calc(18 * var(--u)));
-    top: calc(102 * var(--u));
+    width: calc(185 * var(--u));
+    height: calc(62 * var(--u));
+    font-size: calc(35 * var(--u));
+  }
+
+  .bf-header__toggle {
+    left: max(var(--bf-gutter), var(--bf-header-edge));
+    top: calc(68 * var(--u));
+  }
+
+  .bf-header__logo {
+    top: calc(43.8 * var(--u));
+    width: calc(344 * var(--u));
+  }
+
+  .bf-header .bf-pill {
+    right: max(calc(109 * var(--u) + var(--bf-shift)), var(--bf-header-edge));
+    top: calc(54 * var(--u));
   }
 }
 
 /* ---- Menu --------------------------------------------------------------- */
 
-/* Solid page colour, as in the design: a see-through panel takes on the
-   colour of whatever plays behind it. */
+/* The page shows through, blurred, at the client's request (5 Nov). Mostly
+   the page colour, so the video behind only tints it. */
 .bf-menu {
   position: fixed;
   inset: var(--header-h) 0 0 0;
   z-index: 40;
-  background: var(--bf-bg);
+  background: color-mix(in srgb, var(--bf-bg) 80%, transparent);
+  -webkit-backdrop-filter: blur(24px);
+  backdrop-filter: blur(24px);
   opacity: 0;
   transition: opacity 0.4s var(--ease);
 }
@@ -475,24 +573,33 @@ body.admin-bar .bf-menu {
   letter-spacing: var(--track-body);
   text-decoration: none;
   font-weight: 300;
-  transition: font-weight 0.2s, color 0.2s;
+  transition: color 0.2s;
 }
 
-/* Bolder on rollover, per the comments. */
-.bf-menu__items a:hover,
-.bf-menu__items a:focus-visible,
-.bf-menu__items a[aria-current="page"] {
-  font-weight: 400;
+/* White on rollover, not bolder (client, 5 Nov). On focus only while the
+   keyboard is in use: the menu moves focus to its first link as it opens, and
+   Safari showed that link white after a tap, as if it were the current page
+   (Luke, 9 Nov 2026). */
+html[data-bf-keys] .bf-menu__items a:focus-visible,
+.bf-menu__items a[aria-current="page"],
+.bf-menu__items a:active {
+  color: var(--bf-white);
 }
 
-.bf-menu__divider,
-.bf-menu__mountain {
+@media (hover: hover) {
+  .bf-menu__items a:hover {
+    color: var(--bf-white);
+  }
+}
+
+.bf-menu__divider {
   display: none;
 }
 
 @media (min-width: 1024px) {
+  /* 8 in from the menu button, as in Figma, wherever the button sits. */
   .bf-menu__items {
-    margin: calc(132 * var(--u)) 0 0 calc(185 * var(--u) + var(--bf-shift));
+    margin: calc(132 * var(--u)) 0 0 max(calc(185 * var(--u) + var(--bf-shift)), calc(var(--bf-header-edge) - 8 * var(--u)));
   }
 
   .bf-menu__items li + li {
@@ -520,15 +627,6 @@ body.admin-bar .bf-menu {
 
   .is-menu-open .bf-menu__divider {
     transform: scaleY(1);
-  }
-
-  .bf-menu__mountain {
-    display: block;
-    position: absolute;
-    left: 50%;
-    bottom: calc(138 * var(--u));
-    width: calc(116 * var(--u));
-    transform: translateX(-50%);
   }
 }
 
@@ -561,20 +659,36 @@ body.is-menu-open {
 
 /* ---- Home --------------------------------------------------------------- */
 
+/* The page colour behind the video, so nothing flashes while it loads
+   (client, 6 Nov 2026); Figma's stand-in colours only while there is none. */
 .bf-hero {
   position: relative;
   height: calc(767 * var(--u));
-  background: var(--bf-ph-std);
+  background: var(--bf-bg);
   overflow: hidden;
 }
 
+.bf-hero:has(.bf-hero__placeholder) {
+  background: var(--bf-ph-std);
+}
+
 .brodfest-site-invite .bf-hero {
-  background: var(--bf-ph-invite);
   border-bottom: 1px solid var(--bf-gold);
 }
 
-@media (min-width: 1024px) {
+.brodfest-site-invite .bf-hero:has(.bf-hero__placeholder) {
+  background: var(--bf-ph-invite);
+}
+
+/* From tablets up the video is the desktop one at the desktop's size, 840
+   at three-quarters, as the header is, so it only changes where phones take
+   over (Luke, 6 Nov 2026). The hero carries the desktop's measures itself,
+   for its buttons too. */
+@media (min-width: 768px) {
   .bf-hero {
+    --u: 0.75px;
+    --bf-shift: max(calc(-160 * var(--u)), calc((100% - 1920 * var(--u)) / 2));
+    --bf-gutter: calc(193 * var(--u) + var(--bf-shift));
     height: calc(840 * var(--u));
   }
 }
@@ -620,9 +734,62 @@ body.is-menu-open {
   transform: translate(-50%, -50%);
 }
 
-.bf-hero__play:hover {
+.bf-hero__play:active {
   transform: translate(-50%, -50%) scale(1.06);
   background: color-mix(in srgb, var(--bf-bg) 70%, transparent);
+}
+
+@media (hover: hover) {
+  .bf-hero__play:hover {
+    transform: translate(-50%, -50%) scale(1.06);
+    background: color-mix(in srgb, var(--bf-bg) 70%, transparent);
+  }
+}
+
+.bf-hero__sound {
+  position: absolute;
+  right: max(var(--bf-gutter), calc(48 * var(--u)));
+  bottom: calc(32 * var(--u));
+  z-index: 1;
+  width: calc(56 * var(--u));
+  height: calc(56 * var(--u));
+  display: grid;
+  place-items: center;
+  border-radius: 999px;
+  border: 1.5px solid var(--bf-gold);
+  background: color-mix(in srgb, var(--bf-bg) 45%, transparent);
+  color: var(--bf-gold);
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+
+.bf-hero__sound[hidden] {
+  display: none;
+}
+
+.bf-hero__sound:active {
+  background: color-mix(in srgb, var(--bf-bg) 70%, transparent);
+}
+
+@media (hover: hover) {
+  .bf-hero__sound:hover {
+    background: color-mix(in srgb, var(--bf-bg) 70%, transparent);
+  }
+}
+
+.bf-hero__sound svg {
+  grid-area: 1 / 1;
+  width: calc(26 * var(--u));
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.bf-hero__sound[aria-pressed="true"] .bf-hero__sound-off,
+.bf-hero__sound[aria-pressed="false"] .bf-hero__sound-on {
+  display: none;
 }
 
 .bf-home {
@@ -652,12 +819,56 @@ body.is-menu-open {
   width: calc(375 * var(--u));
 }
 
-.bf-home .bf-home__lettering--invite + .bf-button--primary {
+.bf-home .bf-home__lettering--invite + .bf-calendar {
   margin-top: calc(61 * var(--u));
 }
 
-.bf-home .bf-button--primary {
+.bf-home .bf-calendar {
   margin-top: calc(63 * var(--u));
+}
+
+/* Add to Calendar's choices: a row under the button (client, 6 Nov 2026), in
+   the page's flow, so the line below moves down for it rather than being
+   covered (Luke, 6 Nov 2026). Not in Figma. */
+.bf-calendar__menu {
+  display: flex;
+  justify-content: center;
+  gap: calc(12 * var(--u));
+  margin: calc(16 * var(--u)) 0 0;
+  padding: 0;
+  list-style: none;
+  animation: bf-enter-in 0.3s ease both;
+}
+
+.bf-calendar__menu[hidden] {
+  display: none;
+}
+
+.bf-calendar__menu a {
+  display: inline-flex;
+  align-items: center;
+  height: calc(46 * var(--u));
+  padding: 0 calc(26 * var(--u));
+  border: 1.5px solid var(--bf-gold);
+  border-radius: 999px;
+  color: var(--bf-gold);
+  font-size: calc(20 * var(--u));
+  letter-spacing: var(--track-body);
+  text-decoration: none;
+  white-space: nowrap;
+  transition: background-color 0.3s, color 0.3s;
+}
+
+.bf-calendar__menu a:active {
+  background: var(--bf-gold);
+  color: var(--bf-bg);
+}
+
+@media (hover: hover) {
+  .bf-calendar__menu a:hover {
+    background: var(--bf-gold);
+    color: var(--bf-bg);
+  }
 }
 
 .bf-home__note {
@@ -668,9 +879,29 @@ body.is-menu-open {
   letter-spacing: var(--track-body);
 }
 
-@media (min-width: 1024px) {
+/* While Add to Calendar is hidden the line takes its place, as far below the
+   lettering as the button was (Luke, 9 Nov 2026). */
+.bf-home--no-calendar .bf-home__note {
+  margin-top: calc(63 * var(--u));
+}
+
+/* From tablets up the block is the desktop one, as the header and video
+   above it are, so it only changes where phones take over, with no tablet
+   size in between (Luke, 9 Nov 2026). It carries the desktop's measures
+   itself, for its button and side margins too. */
+@media (min-width: 768px) {
+  /* 20% smaller than the rest of the desktop page (Luke, 6 Nov 2026). */
   .bf-home {
+    --u: calc(0.75px * 0.8);
+    --bf-shift: max(-120px, calc((100% - 1440px) / 2));
+    --bf-text-gutter: calc(133.5px + var(--bf-shift));
     padding-top: calc(103 * var(--u));
+  }
+
+  .bf-home .bf-button--primary {
+    width: calc(600 * var(--u));
+    height: calc(90 * var(--u));
+    font-size: calc(35 * var(--u));
   }
 
   .bf-home__date {
@@ -690,11 +921,11 @@ body.is-menu-open {
     margin-top: calc(87 * var(--u));
   }
 
-  .bf-home .bf-home__lettering--invite + .bf-button--primary {
+  .bf-home .bf-home__lettering--invite + .bf-calendar {
     margin-top: calc(82 * var(--u));
   }
 
-  .bf-home .bf-button--primary {
+  .bf-home .bf-calendar {
     margin-top: calc(84 * var(--u));
   }
 
@@ -703,11 +934,27 @@ body.is-menu-open {
     font-size: calc(25 * var(--u));
     line-height: 1;
   }
+
+  .bf-home--no-calendar .bf-home__note {
+    margin-top: calc(84 * var(--u));
+  }
 }
 
-/* ---- First-visit intro -------------------------------------------------- */
+/* ---- First-visit opening ------------------------------------------------ */
 
-.bf-intro {
+/* Black, the logo draws itself letter by letter and fills (Luke, 5 Nov 2026),
+   then Enter fades in under it, 2.6 seconds in all; the screen fades to the
+   page once it is pressed (Luke, 6 Nov 2026). Not in Figma. Anyone who asks
+   for less motion goes straight to the page. */
+.bf-opening {
+  display: none;
+}
+
+html.bf-is-opening {
+  overflow: hidden;
+}
+
+html.bf-is-opening .bf-opening {
   position: fixed;
   inset: 0;
   z-index: 200;
@@ -715,74 +962,76 @@ body.is-menu-open {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: calc(90 * var(--u));
+  gap: calc(115 * var(--u));
   background: var(--bf-bg);
-  transition: clip-path 1.1s var(--ease);
-  clip-path: inset(0 0 0 0);
 }
 
-.bf-intro.is-leaving {
-  clip-path: inset(0 0 100% 0);
+html.bf-is-opening .bf-opening.is-leaving {
+  animation: bf-opening-out 0.6s ease forwards;
 }
 
-.bf-intro__mark {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: calc(40 * var(--u));
+/* A little lower and smaller than the RSVP pill, as the client asked. The
+   browser puts focus on it as the screen opens. */
+.bf-opening__enter {
+  width: calc(105 * var(--u));
+  height: calc(46 * var(--u));
+  font-size: calc(22 * var(--u));
+  animation: bf-enter-in 0.6s ease 2s both;
 }
 
-.bf-intro__mountain {
-  width: calc(116 * var(--u));
-  animation: bf-rise 1.4s var(--ease) both;
+@media (min-width: 1024px) {
+  .bf-opening__enter {
+    width: calc(160 * var(--u));
+    height: calc(54 * var(--u));
+    font-size: calc(30 * var(--u));
+  }
 }
 
-.bf-intro__logo {
+.bf-opening__logo {
   width: calc(430 * var(--u));
+  color: var(--bf-primary);
 }
 
-/* Each letter of the logo arrives in turn. */
-.bf-intro__logo path {
-  animation: bf-letter 1.2s var(--ease) both;
-}
-
-.bf-intro__logo path:nth-child(1) { animation-delay: 0.5s; }
-.bf-intro__logo path:nth-child(2) { animation-delay: 0.58s; }
-.bf-intro__logo path:nth-child(3) { animation-delay: 0.66s; }
-.bf-intro__logo path:nth-child(4) { animation-delay: 0.74s; }
-.bf-intro__logo path:nth-child(5) { animation-delay: 0.82s; }
-.bf-intro__logo path:nth-child(6) { animation-delay: 0.9s; }
-.bf-intro__logo path:nth-child(7) { animation-delay: 0.98s; }
-.bf-intro__logo path:nth-child(8) { animation-delay: 1.06s; }
-.bf-intro__logo path:nth-child(n + 9) { animation-delay: 1.3s; }
-
-.bf-intro__line {
+.bf-opening__logo svg {
   display: block;
-  width: calc(430 * var(--u));
-  height: 1px;
-  background: var(--bf-gold);
-  transform-origin: center;
-  animation: bf-line 1.2s var(--ease) 1.5s both;
+  width: 100%;
+  height: auto;
 }
 
-.bf-intro__enter {
-  animation: bf-fade 0.9s var(--ease) 2.3s both;
+.bf-opening__logo path {
+  stroke: currentColor;
+  stroke-width: 0.6;
+  stroke-dasharray: 1;
+  fill-opacity: 0;
+  animation:
+    bf-draw 1.2s ease-in-out both,
+    bf-fill 0.5s ease 1.2s forwards;
 }
 
-@keyframes bf-rise {
-  from { opacity: 0; transform: translateY(calc(40 * var(--u))); }
+.bf-opening__logo path:nth-child(2) { animation-delay: 0.07s, 1.27s; }
+.bf-opening__logo path:nth-child(3) { animation-delay: 0.14s, 1.34s; }
+.bf-opening__logo path:nth-child(4) { animation-delay: 0.21s, 1.41s; }
+.bf-opening__logo path:nth-child(5) { animation-delay: 0.28s, 1.48s; }
+.bf-opening__logo path:nth-child(6) { animation-delay: 0.35s, 1.55s; }
+.bf-opening__logo path:nth-child(7) { animation-delay: 0.42s, 1.62s; }
+.bf-opening__logo path:nth-child(8) { animation-delay: 0.49s, 1.69s; }
+.bf-opening__logo path:nth-child(n + 9) { animation-delay: 0.56s, 1.76s; }
+
+@keyframes bf-draw {
+  from { stroke-dashoffset: 1; }
+  to { stroke-dashoffset: 0; }
 }
 
-@keyframes bf-letter {
-  from { opacity: 0; transform: translateY(calc(24 * var(--u))); }
+@keyframes bf-fill {
+  to { fill-opacity: 1; }
 }
 
-@keyframes bf-line {
-  from { transform: scaleX(0); }
+@keyframes bf-enter-in {
+  from { opacity: 0; }
 }
 
-@keyframes bf-fade {
-  from { opacity: 0; transform: translateY(calc(12 * var(--u))); }
+@keyframes bf-opening-out {
+  to { opacity: 0; visibility: hidden; }
 }
 
 /* ---- Text pages --------------------------------------------------------- */
@@ -791,8 +1040,14 @@ body.is-menu-open {
   padding: calc(48 * var(--u)) var(--bf-text-gutter) 0;
 }
 
-.bf-text .bf-title + .bf-body {
+.bf-text .bf-title + .bf-body,
+.bf-text .bf-area__name + .bf-body {
   margin-top: calc(39 * var(--u));
+}
+
+/* Celebration's subtitles: the area-header style, inside a text block. */
+.bf-text .bf-area__name {
+  padding-inline: 0;
 }
 
 .bf-text .bf-body + .bf-body {
@@ -825,7 +1080,8 @@ body.is-menu-open {
     margin-inline: auto;
   }
 
-  .bf-text .bf-title + .bf-body {
+  .bf-text .bf-title + .bf-body,
+  .bf-text .bf-area__name + .bf-body {
     margin-top: calc(53 * var(--u));
   }
 
@@ -852,7 +1108,7 @@ body.is-menu-open {
 }
 
 /* Copy with its own line breaks sets its width by its longest line. */
-@media (min-width: 1600px) {
+@media (min-width: 1200px) {
   .bf-text .bf-body:has(.bf-br),
   .bf-area__intro:has(.bf-br) {
     max-width: none;
@@ -901,6 +1157,12 @@ body.brodfest .bf-story-banner svg {
   overflow: hidden;
 }
 
+.bf-banner picture {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
 .bf-banner img,
 .bf-card__image img {
   width: 100%;
@@ -913,7 +1175,7 @@ body.brodfest .bf-story-banner svg {
   aspect-ratio: 1356 / 567;
 }
 
-/* Map SVG to come: same width as the area banners. */
+/* The map slot: same width as the area banners. */
 .bf-map {
   margin-top: calc(62 * var(--u));
   height: calc(384 * var(--u));
@@ -922,6 +1184,27 @@ body.brodfest .bf-story-banner svg {
 
 .bf-map .bf-placeholder-label {
   color: var(--bf-gold);
+}
+
+/* The map itself, on the page colour as the client drew it: their squarer
+   version filling the 767 width on mobile, its slot as tall as the map, and
+   their wide one filling the desktop slot, cropping at the sides on a laptop
+   (Luke, 6 Nov 2026). */
+.bf-map--image {
+  background: none;
+}
+
+@media (max-width: 1023.98px) {
+  .bf-map--image {
+    height: auto;
+  }
+
+  /* The mobile design's 767, centred on a wider window, so its height
+     never changes with the width. */
+  .bf-map--image img {
+    width: calc(767 * var(--u));
+    height: auto;
+  }
 }
 
 @media (min-width: 1024px) {
@@ -947,6 +1230,12 @@ body.brodfest .bf-story-banner svg {
     height: calc(782 * var(--u));
     margin: calc(79 * var(--u)) auto 0;
   }
+
+  .bf-map--image img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
 }
 
 /* ---- Areas, categories and cards ---------------------------------------- */
@@ -966,6 +1255,13 @@ body.brodfest .bf-story-banner svg {
 
 .bf-area__name {
   padding-inline: var(--bf-text-gutter);
+}
+
+/* How far the area is from Brodfest, on the line under its name. */
+.bf-area__distance {
+  margin-top: calc(12 * var(--u));
+  padding-inline: var(--bf-text-gutter);
+  text-align: center;
 }
 
 /* Banners run full-bleed on mobile. */
@@ -1025,7 +1321,10 @@ body.brodfest .bf-story-banner svg {
   margin-top: calc(25 * var(--u));
 }
 
+/* The text takes up the slack, so a row's buttons stay in line however long
+   each hotel's name and copy run. */
 .bf-card__text {
+  flex-grow: 1;
   margin-top: calc(20 * var(--u));
   font-size: calc(20 * var(--u));
   line-height: 1.85;
@@ -1044,7 +1343,9 @@ body.brodfest .bf-story-banner svg {
   letter-spacing: var(--track-body);
 }
 
-.bf-card__code {
+/* The code, and a hotel's own offer line, in white. */
+.bf-card__code,
+.bf-card__discount--offer {
   color: var(--bf-white);
 }
 
@@ -1110,17 +1411,24 @@ body.brodfest .bf-story-banner svg {
     margin-top: calc(57 * var(--u));
   }
 
-  /* Desktop: rows of three on the banner's margins; a short row is as wide
-     as its cards, centred. */
+  /* Desktop: the cards keep Figma's size in one row, centred. The moment
+     the window can no longer hold them, with 18px either side, the row
+     swipes from that margin and shows the dots (Luke, 6 Nov 2026):
+     carousel.js marks it, as only the browser knows when that is. */
   .bf-cards__track {
     width: fit-content;
-    max-width: calc(1564 * var(--u));
+    max-width: calc(100% - 36 * var(--u));
     margin: 0 auto;
     padding: 0;
-    flex-wrap: wrap;
-    justify-content: center;
     gap: calc(92 * var(--u));
-    overflow: visible;
+  }
+
+  .bf-cards.is-overflowing .bf-cards__track {
+    width: auto;
+    max-width: none;
+    margin: 0;
+    padding: 0 calc(18 * var(--u));
+    scroll-padding-inline: calc(18 * var(--u));
   }
 
   .bf-card {
@@ -1137,7 +1445,8 @@ body.brodfest .bf-story-banner svg {
 
   .bf-card__text {
     margin-top: calc(25 * var(--u));
-    font-size: calc(20 * var(--u));
+    /* 13 on screen, not Figma's 20 at three-quarters (Mark, 9 Nov 2026). */
+    font-size: 13px;
   }
 
   .bf-card .bf-button--card {
@@ -1146,38 +1455,15 @@ body.brodfest .bf-story-banner svg {
 
   .bf-card__discount {
     margin-top: calc(32 * var(--u));
-    font-size: calc(20 * var(--u));
+    /* 13 on screen, not Figma's 20 at three-quarters (Mark, 9 Nov 2026). */
+    font-size: 13px;
   }
 
   .bf-cards__dots {
     display: none;
   }
-}
 
-/* Laptop: the cards keep Figma's size in one row that swipes, from the 18px
-   margin. A row that fits stays centred (the auto margins give way once it
-   overflows). A row of three always overflows here, so it gets the dots. */
-@media (min-width: 1024px) and (max-width: 1599.98px) {
-  .bf-cards__track {
-    width: auto;
-    max-width: none;
-    margin: 0;
-    padding: 0 calc(18 * var(--u));
-    flex-wrap: nowrap;
-    justify-content: flex-start;
-    overflow-x: auto;
-    scroll-padding-inline: calc(18 * var(--u));
-  }
-
-  .bf-card:first-child {
-    margin-left: auto;
-  }
-
-  .bf-card:last-child {
-    margin-right: auto;
-  }
-
-  .bf-cards:has(.bf-card:nth-child(3)) .bf-cards__dots {
+  .bf-cards.is-overflowing .bf-cards__dots {
     display: flex;
   }
 }
@@ -1190,11 +1476,48 @@ body.brodfest .bf-story-banner svg {
   animation: bf-slide-down 0.9s var(--ease) both;
 }
 
+/* RSVP over the page the guest is on (client, 6 Nov 2026): it lowers from
+   under the header and goes back up, and the page behind keeps its place.
+   rsvp-panel.js fills it with the RSVP page's form. */
+.bf-rsvp-panel {
+  position: fixed;
+  inset: var(--header-h) 0 0;
+  z-index: 45;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding-bottom: calc(120 * var(--u));
+  background: var(--bf-bg);
+  transform: translateY(-100%);
+  transition: transform 0.7s var(--ease);
+}
+
+body.admin-bar .bf-rsvp-panel {
+  top: calc(var(--header-h) + var(--wp-admin--admin-bar--height, 0px));
+}
+
+.is-rsvp-open .bf-rsvp-panel {
+  transform: none;
+}
+
+.bf-rsvp-panel .bf-rsvp {
+  animation: none;
+}
+
+html.is-rsvp-locked {
+  overflow: hidden;
+}
+
 @keyframes bf-slide-down {
   from { opacity: 0; transform: translateY(calc(-160 * var(--u))); }
 }
 
 .bf-rsvp__message {
+  margin-top: calc(66 * var(--u));
+}
+
+.bf-rsvp__close {
+  display: flex;
+  justify-content: center;
   margin-top: calc(66 * var(--u));
 }
 
@@ -1255,8 +1578,63 @@ body.brodfest .bf-story-banner svg {
   opacity: 1;
 }
 
+/* An open list is the page colour with gold lettering in the form's font
+   (client, 5 Nov). Where the browser lets the list itself be styled, it is
+   drawn that way too, rather than as the system's menu. */
 .bf-field select option {
-  background: var(--bf-field);
+  background: var(--bf-bg);
+  color: var(--bf-gold);
+  font-family: var(--bf-sans);
+  font-weight: 300;
+}
+
+@supports (appearance: base-select) {
+  .bf-field select,
+  .bf-field select::picker(select) {
+    appearance: base-select;
+  }
+
+  /* Drawn this way the field lays its choice out as a row, which would sit
+     it at the top. */
+  .bf-field select {
+    justify-content: center;
+    align-items: center;
+  }
+
+  .bf-field select::picker-icon,
+  .bf-field select option::checkmark {
+    display: none;
+  }
+
+  .bf-field select::picker(select) {
+    background: var(--bf-bg);
+    border: 1px solid var(--bf-gold);
+    color: var(--bf-gold);
+    padding: calc(8 * var(--u)) 0;
+  }
+
+  .bf-field select option {
+    justify-content: center;
+    padding: calc(10 * var(--u)) calc(24 * var(--u));
+  }
+
+  .bf-field select option:focus-visible,
+  .bf-field select option:checked,
+  .bf-field select option:active {
+    background: var(--bf-rust);
+    outline: none;
+  }
+
+  @media (hover: hover) {
+    .bf-field select option:hover {
+      background: var(--bf-rust);
+      outline: none;
+    }
+  }
+
+  .bf-field .bf-field__prefix {
+    justify-content: flex-start;
+  }
 }
 
 .bf-field input:focus,
@@ -1274,9 +1652,11 @@ body.brodfest .bf-story-banner svg {
   text-align: left;
 }
 
+/* As much on the right as the code takes on the left, so the placeholder
+   sits in the middle of the field. */
 .bf-field--phone input:last-of-type {
   padding-left: 0;
-  padding-right: calc(110 * var(--u));
+  padding-right: calc(90 * var(--u));
 }
 
 .bf-field--select::after {
@@ -1366,7 +1746,8 @@ body.brodfest .bf-story-banner svg {
     padding-top: calc(60 * var(--u));
   }
 
-  .bf-rsvp__message {
+  .bf-rsvp__message,
+  .bf-rsvp__close {
     margin-top: calc(94 * var(--u));
   }
 

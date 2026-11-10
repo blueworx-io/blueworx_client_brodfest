@@ -77,6 +77,12 @@ function brodfest_sweep_foreign_assets() {
 		return;
 	}
 
+	// The theme's design system page is drawn at the home address, but it is
+	// the theme's page, not ours: it needs its own styles to show the design.
+	if ( function_exists( 'blueworx_design_reference_requested' ) && blueworx_design_reference_requested() ) {
+		return;
+	}
+
 	/**
 	 * Filters the stylesheet handles the sweep leaves alone on owned pages.
 	 *
@@ -97,3 +103,24 @@ function brodfest_sweep_foreign_assets() {
 	}
 }
 add_action( 'wp_enqueue_scripts', 'brodfest_sweep_foreign_assets', 100 );
+
+/**
+ * The browser-tab icon. The Site Icon chosen under Settings › General wins
+ * when there is one; until then, or on a copy of the site without one, the
+ * client's gold mark shipped with the plugin shows (Luke, 9 Nov 2026).
+ *
+ * @return void
+ */
+function brodfest_favicon() {
+	if ( has_site_icon() ) {
+		return;
+	}
+
+	printf(
+		'<link rel="icon" type="image/svg+xml" href="%s" />' . "\n",
+		esc_url( add_query_arg( 'ver', BRODFEST_VERSION, BRODFEST_URL . 'assets/img/favicon.svg' ) )
+	);
+}
+add_action( 'wp_head', 'brodfest_favicon' );
+add_action( 'login_head', 'brodfest_favicon' );
+add_action( 'admin_head', 'brodfest_favicon' );

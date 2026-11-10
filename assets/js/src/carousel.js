@@ -1,5 +1,6 @@
-// Keeps each mobile card carousel's dots in step with the card in view.
-// The swiping itself is plain CSS scroll-snap.
+// Keeps each card carousel's dots in step with the card in view, and marks a
+// desktop row that no longer fits the window, which then swipes and shows its
+// dots. The swiping itself is plain CSS scroll-snap.
 
 export function initCarousels() {
 	document.querySelectorAll('[data-bf-carousel]').forEach((carousel) => {
@@ -8,6 +9,10 @@ export function initCarousels() {
 		if (!track || dots.length === 0) {
 			return;
 		}
+
+		const fit = () => carousel.classList.toggle('is-overflowing', track.scrollWidth > track.clientWidth + 1);
+		new ResizeObserver(fit).observe(track);
+		fit();
 
 		const cards = [...track.children];
 		const observer = new IntersectionObserver(
