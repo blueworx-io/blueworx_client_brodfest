@@ -16,7 +16,9 @@ const pill = (page) => page.locator('.bf-header .bf-pill');
 
 async function open(page) {
   await pill(page).click();
-  await expect(panel(page).locator('[data-bf-rsvp]')).toBeVisible();
+  // The form arrives from the server once the panel opens; on CI's single
+  // PHP process that can queue behind the page's own assets.
+  await expect(panel(page).locator('[data-bf-rsvp]')).toBeVisible({ timeout: 30000 });
   // Lowered fully, under the header.
   await expect.poll(() => panel(page).evaluate((el) => Math.round(el.getBoundingClientRect().top))).toBe(
     Math.round(await page.locator('.bf-header').evaluate((el) => el.getBoundingClientRect().bottom)),
