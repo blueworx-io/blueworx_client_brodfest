@@ -3,7 +3,7 @@
  * Plugin Name:       BlueWorx Clients | Brodfest
  * Plugin URI:        https://github.com/blueworx-io/blueworx_client_brodfest
  * Description:       The Brodfest website, as a self-contained WordPress plugin on the BlueWorx Enhance theme.
- * Version:           0.2.0
+ * Version:           0.12.3
  * Requires at least: 6.4
  * Requires PHP:      8.1
  * Author:            BlueWorx
@@ -21,7 +21,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'BRODFEST_VERSION', '0.2.0' );
+define( 'BRODFEST_VERSION', '0.12.3' );
 define( 'BRODFEST_SLUG', 'blueworx-client-brodfest' );
 define( 'BRODFEST_FILE', __FILE__ );
 define( 'BRODFEST_DIR', plugin_dir_path( __FILE__ ) );
@@ -75,8 +75,10 @@ require_once BRODFEST_DIR . 'includes/pages.php';
 require_once BRODFEST_DIR . 'includes/content.php';
 require_once BRODFEST_DIR . 'includes/render.php';
 require_once BRODFEST_DIR . 'includes/assets.php';
+require_once BRODFEST_DIR . 'includes/design.php';
 require_once BRODFEST_DIR . 'includes/enhance.php';
 require_once BRODFEST_DIR . 'includes/rsvp.php';
+require_once BRODFEST_DIR . 'includes/guests.php';
 require_once BRODFEST_DIR . 'includes/calendar.php';
 require_once BRODFEST_DIR . 'includes/settings.php';
 

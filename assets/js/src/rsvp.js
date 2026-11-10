@@ -1,8 +1,9 @@
 // Shows the guest's fields only once the visitor says they are bringing one.
-// Without JavaScript every field shows, which still works.
+// Without JavaScript every field shows, which still works. Runs on the RSVP
+// page, and on the form each time the RSVP panel loads it.
 
-export function initRsvp() {
-	const form = document.querySelector('[data-bf-rsvp]');
+export function initRsvp(root = document) {
+	const form = root.querySelector('[data-bf-rsvp]');
 	const guest = form?.querySelector('[data-bf-guest]');
 	if (!guest) {
 		return;

@@ -46,7 +46,11 @@ $brodfest_id    = static function ( $field ) use ( $brodfest_p ) {
 	</p>
 	<p class="bf-field bf-field--phone">
 		<label class="sr-only" for="<?php echo esc_attr( $brodfest_id( 'phone_prefix' ) ); ?>"><?php esc_html_e( 'Country code', 'blueworx-client-brodfest' ); ?></label>
-		<input class="bf-field__prefix" id="<?php echo esc_attr( $brodfest_id( 'phone_prefix' ) ); ?>" name="<?php echo esc_attr( $brodfest_p . 'phone_prefix' ); ?>" type="text" inputmode="tel" value="+44" maxlength="5" />
+		<select class="bf-field__prefix" id="<?php echo esc_attr( $brodfest_id( 'phone_prefix' ) ); ?>" name="<?php echo esc_attr( $brodfest_p . 'phone_prefix' ); ?>">
+			<?php foreach ( brodfest_rsvp_dial_codes() as $brodfest_code ) : ?>
+				<option value="<?php echo esc_attr( $brodfest_code ); ?>"<?php selected( '+44', $brodfest_code ); ?>><?php echo esc_html( $brodfest_code ); ?></option>
+			<?php endforeach; ?>
+		</select>
 		<label class="sr-only" for="<?php echo esc_attr( $brodfest_id( 'phone' ) ); ?>"><?php echo esc_html( $brodfest_l['phone'] ); ?></label>
 		<input id="<?php echo esc_attr( $brodfest_id( 'phone' ) ); ?>" name="<?php echo esc_attr( $brodfest_p . 'phone' ); ?>" type="tel" autocomplete="<?php echo $brodfest_guest ? 'off' : 'tel-national'; ?>" placeholder="<?php echo esc_attr( $brodfest_l['phone'] ); ?>" maxlength="30" />
 	</p>

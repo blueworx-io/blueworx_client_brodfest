@@ -7,8 +7,10 @@
  * @package Brodfest
  *
  * @var array $args {
- *     @type array  $cards    Each: name, text, url, image.
- *     @type bool   $discount Show the discount code line.
+ *     @type array  $cards    Each: name, text, url, image, and optionally
+ *                            discount — that hotel's offer line, or '' for
+ *                            none. Without it the card shows the code line.
+ *     @type bool   $discount Show the discount line.
  *     @type string $label    What the row is, for screen readers.
  * }
  */
@@ -31,12 +33,16 @@ $brodfest_label    = (string) ( $args['label'] ?? '' );
 					<?php endif; ?>
 				</div>
 				<h3 class="bf-card__name"><?php echo esc_html( $brodfest_card['name'] ); ?></h3>
-				<p class="bf-card__text"><?php echo esc_html( $brodfest_card['text'] ); ?></p>
+				<p class="bf-card__text"><?php echo brodfest_text( $brodfest_card['text'] ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Escaped by brodfest_text(). ?></p>
 				<a class="bf-button bf-button--card" href="<?php echo esc_url( $brodfest_card['url'] ); ?>">
 					<?php esc_html_e( 'BOOK', 'blueworx-client-brodfest' ); ?>
 					<span class="sr-only"><?php echo esc_html( $brodfest_card['name'] ); ?></span>
 				</a>
-				<?php if ( $brodfest_discount ) : ?>
+				<?php if ( $brodfest_discount && isset( $brodfest_card['discount'] ) ) : ?>
+					<?php if ( '' !== $brodfest_card['discount'] ) : ?>
+						<p class="bf-card__discount bf-card__discount--offer"><?php echo esc_html( $brodfest_card['discount'] ); ?></p>
+					<?php endif; ?>
+				<?php elseif ( $brodfest_discount ) : ?>
 					<p class="bf-card__discount">
 						<?php esc_html_e( 'FOR DISCOUNTED RATE QUOTE:', 'blueworx-client-brodfest' ); ?><br />
 						<span class="bf-card__code">BRODFEST</span>

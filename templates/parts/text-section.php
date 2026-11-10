@@ -8,6 +8,8 @@
  * @var array $args {
  *     @type string   $title      Title text. Omitted for a body-only block.
  *     @type string   $heading    Heading element, 'h1' (default) or 'h2'.
+ *     @type bool     $subtitle   Style the title as an area header (TALAMANCA)
+ *                                rather than a page title.
  *     @type string[] $paragraphs Body paragraphs, plain text.
  *     @type string   $email      Optional email address, shown as a link.
  *     @type string   $note       Optional closing line, set slightly apart.
@@ -22,10 +24,10 @@ $brodfest_heading = isset( $args['heading'] ) && 'h2' === $args['heading'] ? 'h2
 ?>
 <section class="bf-text">
 	<?php if ( ! empty( $args['title'] ) ) : ?>
-		<<?php echo esc_html( $brodfest_heading ); ?> class="bf-title"><?php echo esc_html( $args['title'] ); ?></<?php echo esc_html( $brodfest_heading ); ?>>
+		<<?php echo esc_html( $brodfest_heading ); ?> class="<?php echo empty( $args['subtitle'] ) ? 'bf-title' : 'bf-area__name'; ?>"><?php echo esc_html( $args['title'] ); ?></<?php echo esc_html( $brodfest_heading ); ?>>
 	<?php endif; ?>
 	<?php foreach ( (array) ( $args['paragraphs'] ?? array() ) as $brodfest_p ) : ?>
-		<p class="bf-body"><?php echo esc_html( $brodfest_p ); ?></p>
+		<p class="bf-body"><?php echo brodfest_link_emails( brodfest_text( $brodfest_p ) ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Escaped by brodfest_text(); the links are built from addresses already in it. ?></p>
 	<?php endforeach; ?>
 	<?php if ( ! empty( $args['email'] ) ) : ?>
 		<p class="bf-body">

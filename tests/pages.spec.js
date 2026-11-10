@@ -48,7 +48,7 @@ test('the menu opens, lists the Save the Date pages without Transport, and close
   await expect(toggle).toHaveAttribute('aria-expanded', 'true');
 
   const items = page.locator('.bf-menu__items a');
-  await expect(items).toHaveText(['CELEBRATE', 'ACCOMMODATION', 'ENQUIRIES']);
+  await expect(items).toHaveText(['CELEBRATION', 'INFORMATION', 'ENQUIRIES']);
   await expect(page.locator('.bf-menu')).toBeVisible();
 
   await page.keyboard.press('Escape');
@@ -84,34 +84,56 @@ test('an editor can preview the Invite, which has its own pages and menu', async
   await expect(page.locator('.bf-menu__items a').first()).toHaveAttribute('href', /brodfest-site=invite/);
 });
 
-test('Accommodation shows each area with its hotels and the discount code', async ({ page }) => {
+test('Accommodation shows each area with its hotels', async ({ page }) => {
   await page.goto('/accommodation/');
   await expect(page.locator('.bf-area')).toHaveCount(3);
   await expect(page.locator('.bf-area').first().locator('.bf-card')).toHaveCount(3);
+});
+
+test('the Invite\'s placeholder hotels still carry the discount code', async ({ page }) => {
+  await loginAsAdmin(page);
+  await page.goto('/accommodation/?brodfest-site=invite');
   await expect(page.locator('.bf-card__code').first()).toHaveText('BRODFEST');
 });
 
-test('on a phone the hotels swipe, the dots follow, and nothing scrolls sideways', async ({ page }) => {
-  await page.setViewportSize({ width: 390, height: 844 });
-  await page.goto('/accommodation/');
+// A phone lays the page out 767 wide (the mobile design) and zooms it to fit.
+test.describe('on a phone', () => {
+  test.use({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true });
 
-  const carousel = page.locator('[data-bf-carousel]').first();
-  const dots = carousel.locator('.bf-cards__dot');
-  await expect(dots.first()).toHaveClass(/is-active/);
+  test('the hotels swipe, the dots follow, and nothing scrolls sideways', async ({ page }) => {
+    await page.goto('/accommodation/');
 
-  await carousel.locator('[data-bf-track]').evaluate((track) => track.scrollTo({ left: track.scrollWidth }));
-  await expect(dots.last()).toHaveClass(/is-active/);
+    const carousel = page.locator('[data-bf-carousel]').first();
+    const dots = carousel.locator('.bf-cards__dot');
+    await expect(dots.first()).toHaveClass(/is-active/);
 
-  const width = await page.evaluate(() => document.documentElement.scrollWidth);
-  expect(width).toBeLessThanOrEqual(390);
+    await carousel.locator('[data-bf-track]').evaluate((track) => track.scrollTo({ left: track.scrollWidth }));
+    await expect(dots.last()).toHaveClass(/is-active/);
+
+    const width = await page.evaluate(() => document.documentElement.scrollWidth);
+    expect(width).toBeLessThanOrEqual(767);
+  });
 });
 
-test('Add to Calendar downloads the event as an all-day calendar entry', async ({ page }) => {
+test('the calendar file holds the event as a calendar entry', async ({ page }) => {
   await page.goto('/');
-  const href = await page.locator('.bf-home .bf-button--primary').getAttribute('href');
-  const response = await page.request.get(href);
+  const response = await page.request.get('/?brodfest-calendar=1');
   expect(response.headers()['content-type']).toContain('text/calendar');
   const body = await response.text();
-  expect(body).toContain('DTSTART;VALUE=DATE:20270605');
+  expect(body).toContain('DTSTART:20270605T');
   expect(body).toContain('SUMMARY:Brodfest');
+});
+
+// The browser-tab icon is the client's gold mark, shipped with the plugin,
+// for as long as no Site Icon is chosen under Settings › General, as on the
+// test site (Luke, 9 Nov 2026).
+test('the site shows the Brodfest icon in the browser tab', async ({ page }) => {
+  await page.goto('/');
+  const icons = page.locator('link[rel="icon"]');
+  await expect(icons).toHaveCount(1);
+  const href = await icons.getAttribute('href');
+  expect(href).toContain('assets/img/favicon.svg');
+  const response = await page.request.get(href);
+  expect(response.status()).toBe(200);
+  expect(response.headers()['content-type']).toContain('image/svg+xml');
 });

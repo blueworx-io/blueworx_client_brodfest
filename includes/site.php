@@ -88,6 +88,26 @@ function brodfest_menu() {
 }
 
 /**
+ * A page's name in the menu. The Save the Date names two of its pages as the
+ * client asked; otherwise it is the page's title.
+ *
+ * @param string $slug Page slug.
+ * @return string
+ */
+function brodfest_menu_label( $slug ) {
+	$std = array(
+		'celebrate'     => __( 'Celebration', 'blueworx-client-brodfest' ),
+		'accommodation' => __( 'Information', 'blueworx-client-brodfest' ),
+	);
+
+	if ( ! brodfest_is_invite() && isset( $std[ $slug ] ) ) {
+		return $std[ $slug ];
+	}
+
+	return brodfest_pages()[ $slug ]['title'] ?? '';
+}
+
+/**
  * Sends a page the current site does not have to the home page.
  *
  * Invite-only pages exist all along so their links are stable, but while the
