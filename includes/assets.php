@@ -9,6 +9,9 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
+/** The client's Adobe Fonts kit id. */
+const BRODFEST_FONTS_KIT = 'vjw6kra';
+
 /**
  * Enqueues the built stylesheet and bundle on owned pages only.
  *
@@ -22,10 +25,30 @@ function brodfest_enqueue_assets() {
 		return;
 	}
 
+	// The client's Adobe Fonts kit: Futura PT and Aller. Adobe licenses them
+	// for the web only through its own host, so they are not shipped. No
+	// version on purpose — a ?ver= suffix breaks the kit's caching.
+	wp_enqueue_style(
+		'brodfest-fonts',
+		'https://use.typekit.net/' . BRODFEST_FONTS_KIT . '.css',
+		array(),
+		null // phpcs:ignore WordPress.WP.EnqueuedResourceParameters.MissingVersion
+	);
+
+	// The theme's named colours and fonts (BlueWorx › Design) come first when
+	// the Enhance theme is active. Only then: WordPress silently drops a
+	// stylesheet whose dependency is not registered, and without the theme the
+	// stylesheet falls back to the Brodfest values on its own.
+	$deps = array( 'brodfest-fonts' );
+
+	if ( wp_style_is( 'blueworx-design', 'registered' ) ) {
+		$deps[] = 'blueworx-design';
+	}
+
 	wp_enqueue_style(
 		'brodfest-public',
 		BRODFEST_URL . 'assets/css/public.css',
-		array(),
+		$deps,
 		BRODFEST_VERSION
 	);
 
@@ -43,12 +66,20 @@ add_action( 'wp_enqueue_scripts', 'brodfest_enqueue_assets', 20 );
  * Drops theme and third-party front-end styles on owned pages.
  *
  * The design is guaranteed only if nothing else can reach these pages. The
- * admin bar's own styles are kept, since a signed-in editor still needs it.
+ * admin bar's own styles are kept, since a signed-in editor still needs it,
+ * and so are the theme's named styles, which only define colours and fonts
+ * and style nothing. The theme's base site styles are dropped.
  *
  * @return void
  */
 function brodfest_sweep_foreign_assets() {
 	if ( ! brodfest_is_owned_request() ) {
+		return;
+	}
+
+	// The theme's design system page is drawn at the home address, but it is
+	// the theme's page, not ours: it needs its own styles to show the design.
+	if ( function_exists( 'blueworx_design_reference_requested' ) && blueworx_design_reference_requested() ) {
 		return;
 	}
 
@@ -62,7 +93,7 @@ function brodfest_sweep_foreign_assets() {
 	 */
 	$keep = (array) apply_filters(
 		'brodfest_keep_styles',
-		array( 'brodfest-public', 'admin-bar', 'dashicons' )
+		array( 'brodfest-fonts', 'brodfest-public', 'blueworx-design', 'admin-bar', 'dashicons' )
 	);
 
 	foreach ( wp_styles()->queue as $handle ) {
@@ -72,3 +103,24 @@ function brodfest_sweep_foreign_assets() {
 	}
 }
 add_action( 'wp_enqueue_scripts', 'brodfest_sweep_foreign_assets', 100 );
+
+/**
+ * The browser-tab icon. The Site Icon chosen under Settings › General wins
+ * when there is one; until then, or on a copy of the site without one, the
+ * client's gold mark shipped with the plugin shows (Luke, 9 Nov 2026).
+ *
+ * @return void
+ */
+function brodfest_favicon() {
+	if ( has_site_icon() ) {
+		return;
+	}
+
+	printf(
+		'<link rel="icon" type="image/svg+xml" href="%s" />' . "\n",
+		esc_url( add_query_arg( 'ver', BRODFEST_VERSION, BRODFEST_URL . 'assets/img/favicon.svg' ) )
+	);
+}
+add_action( 'wp_head', 'brodfest_favicon' );
+add_action( 'login_head', 'brodfest_favicon' );
+add_action( 'admin_head', 'brodfest_favicon' );
