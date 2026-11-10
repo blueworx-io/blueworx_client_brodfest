@@ -2,8 +2,9 @@
 /**
  * Celebrate. Figma: STD – Celebrate and Invite – Celebrate.
  *
- * The Save the Date version is a short note; the Invite opens with a photo
- * strip and adds the dress code.
+ * The Save the Date version is the welcome, then the dress code under an
+ * area-style subtitle (transport is on Information, at the client's request); the Invite opens with a photo strip and adds the
+ * dress code.
  *
  * @package Brodfest
  */
@@ -40,14 +41,29 @@ if ( brodfest_is_invite() ) {
 	</div>
 	<?php
 } else {
-	brodfest_part(
-		'text-section',
-		array(
-			'title'      => 'CELEBRATE',
-			'paragraphs' => array( brodfest_lorem( 3 ) ),
-			'note'       => __( 'Full invitation and information coming soon', 'blueworx-client-brodfest' ),
-		)
-	);
+	?>
+	<div class="bf-stack">
+		<?php
+		brodfest_part(
+			'text-section',
+			array(
+				'title'      => 'CELEBRATION',
+				'paragraphs' => brodfest_std_copy( 'celebrate' ),
+				'note'       => brodfest_std_copy( 'invitation' ),
+			)
+		);
+		brodfest_part(
+			'text-section',
+			array(
+				'title'      => 'DRESS CODE',
+				'heading'    => 'h2',
+				'subtitle'   => true,
+				'paragraphs' => array( brodfest_std_copy( 'dress_code' ) ),
+			)
+		);
+		?>
+	</div>
+	<?php
 }
 
 brodfest_document_close();

@@ -1,10 +1,9 @@
 <?php
 /**
- * RSVP replies: the form handler and where replies are kept.
+ * RSVP replies: the form and its handler.
  *
- * Each reply is a private "RSVP" record, listed under RSVPs in the admin with
- * who is coming, whether they bring a guest and how to reach them. The site's
- * admin email is told about each one.
+ * Each reply is kept as people in the WordPress Users list (guests.php), and
+ * the site's admin email is told about each one.
  *
  * @package Brodfest
  */
@@ -13,6 +12,8 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
+// Where replies were kept before they became users; guests.php carries any
+// still there across.
 const BRODFEST_RSVP_TYPE   = 'brodfest_rsvp';
 const BRODFEST_RSVP_ACTION = 'brodfest_rsvp';
 
@@ -28,53 +29,23 @@ function brodfest_rsvp_dietary_options() {
 		'vegan'       => __( 'Vegan', 'blueworx-client-brodfest' ),
 		'pescatarian' => __( 'Pescatarian', 'blueworx-client-brodfest' ),
 		'gluten-free' => __( 'Gluten free', 'blueworx-client-brodfest' ),
+		'dairy-free'  => __( 'Dairy Free', 'blueworx-client-brodfest' ),
 		'other'       => __( 'Other (tell us under allergies)', 'blueworx-client-brodfest' ),
 	);
 }
 
 /**
- * Registers the RSVP record type: private, admin-only, read-only in spirit.
+ * The country codes a phone number can start with, +44 first as most guests'
+ * and the rest in number order. One entry per code, as the field shows only
+ * the code.
  *
- * @return void
+ * @return string[]
  */
-function brodfest_register_rsvp_type() {
-	register_post_type(
-		BRODFEST_RSVP_TYPE,
-		array(
-			'labels'          => array(
-				'name'          => __( 'RSVPs', 'blueworx-client-brodfest' ),
-				'singular_name' => __( 'RSVP', 'blueworx-client-brodfest' ),
-				'all_items'     => __( 'All RSVPs', 'blueworx-client-brodfest' ),
-				'edit_item'     => __( 'RSVP', 'blueworx-client-brodfest' ),
-				'search_items'  => __( 'Search RSVPs', 'blueworx-client-brodfest' ),
-				'not_found'     => __( 'No RSVPs yet.', 'blueworx-client-brodfest' ),
-			),
-			'public'          => false,
-			'show_ui'         => true,
-			'show_in_menu'    => true,
-			'show_in_rest'    => false,
-			'menu_icon'       => 'dashicons-email-alt',
-			'supports'        => array( 'title', 'editor' ),
-			// Replies hold guests' phones, emails and allergies, so only
-			// administrators see them — not every editor on the site.
-			'capability_type' => 'post',
-			'capabilities'    => array(
-				'create_posts'         => 'do_not_allow',
-				'edit_posts'           => 'manage_options',
-				'edit_others_posts'    => 'manage_options',
-				'edit_private_posts'   => 'manage_options',
-				'edit_published_posts' => 'manage_options',
-				'read_private_posts'   => 'manage_options',
-				'delete_posts'         => 'manage_options',
-				'delete_others_posts'  => 'manage_options',
-				'delete_private_posts' => 'manage_options',
-				'publish_posts'        => 'manage_options',
-			),
-			'map_meta_cap'    => true,
-		)
-	);
+function brodfest_rsvp_dial_codes() {
+	$codes = array( 1, 7, 20, 27, 30, 31, 32, 33, 34, 36, 39, 40, 41, 43, 45, 46, 47, 48, 49, 51, 52, 54, 55, 56, 57, 60, 61, 62, 63, 64, 65, 66, 81, 82, 84, 86, 90, 91, 92, 94, 212, 216, 233, 234, 254, 255, 256, 260, 263, 351, 352, 353, 354, 356, 357, 358, 359, 370, 371, 372, 376, 377, 380, 381, 385, 386, 420, 421, 423, 852, 886, 961, 962, 965, 966, 968, 971, 972, 973, 974 );
+
+	return array_merge( array( '+44' ), array_map( static fn( $code ) => '+' . $code, $codes ) );
 }
-add_action( 'init', 'brodfest_register_rsvp_type' );
 
 /**
  * The person fields of one submission, cleaned.
@@ -123,7 +94,7 @@ function brodfest_rsvp_from_post( $source ) {
 }
 
 /**
- * The reply written out as plain lines, for the record and the email.
+ * The reply written out as plain lines, for the email.
  *
  * @param array $reply A reply from brodfest_rsvp_from_post().
  * @return string
@@ -240,25 +211,11 @@ function brodfest_handle_rsvp() {
 	}
 
 	$summary = brodfest_rsvp_summary( $reply );
-	$post_id = wp_insert_post(
-		array(
-			'post_type'    => BRODFEST_RSVP_TYPE,
-			'post_status'  => 'private',
-			'post_title'   => $reply['person']['name'],
-			'post_content' => $summary,
-		),
-		true
-	);
 
-	if ( is_wp_error( $post_id ) ) {
+	if ( is_wp_error( brodfest_guests_store_reply( $reply ) ) ) {
 		wp_safe_redirect( add_query_arg( 'rsvp', 'error', $back ) );
 		exit;
 	}
-
-	update_post_meta( $post_id, '_brodfest_attending', $reply['attending'] );
-	update_post_meta( $post_id, '_brodfest_with_guest', $reply['with_guest'] );
-	update_post_meta( $post_id, '_brodfest_email', $reply['person']['email'] );
-	update_post_meta( $post_id, '_brodfest_reply', $reply );
 
 	/**
 	 * Filters who is told about each RSVP. Return '' to send nothing.
@@ -276,46 +233,3 @@ function brodfest_handle_rsvp() {
 	exit;
 }
 add_action( 'template_redirect', 'brodfest_handle_rsvp', 5 );
-
-/**
- * The RSVP list's columns: who is coming and with whom, at a glance.
- *
- * @param array<string, string> $columns WordPress's columns.
- * @return array<string, string>
- */
-function brodfest_rsvp_columns( $columns ) {
-	return array(
-		'cb'                  => $columns['cb'] ?? '',
-		'title'               => __( 'Name', 'blueworx-client-brodfest' ),
-		'brodfest_attending'  => __( 'Attending', 'blueworx-client-brodfest' ),
-		'brodfest_with_guest' => __( 'Guest', 'blueworx-client-brodfest' ),
-		'brodfest_email'      => __( 'Email', 'blueworx-client-brodfest' ),
-		'date'                => __( 'Received', 'blueworx-client-brodfest' ),
-	);
-}
-add_filter( 'manage_' . BRODFEST_RSVP_TYPE . '_posts_columns', 'brodfest_rsvp_columns' );
-
-/**
- * Prints one RSVP column cell.
- *
- * @param string $column  Column key.
- * @param int    $post_id The RSVP.
- * @return void
- */
-function brodfest_rsvp_column( $column, $post_id ) {
-	$keys = array(
-		'brodfest_attending'  => '_brodfest_attending',
-		'brodfest_with_guest' => '_brodfest_with_guest',
-		'brodfest_email'      => '_brodfest_email',
-	);
-
-	if ( ! isset( $keys[ $column ] ) ) {
-		return;
-	}
-
-	$value = (string) get_post_meta( $post_id, $keys[ $column ], true );
-
-	// Yes / No read better capitalised; an email address must stay as typed.
-	echo esc_html( 'brodfest_email' === $column ? $value : ucfirst( $value ) );
-}
-add_action( 'manage_' . BRODFEST_RSVP_TYPE . '_posts_custom_column', 'brodfest_rsvp_column', 10, 2 );
