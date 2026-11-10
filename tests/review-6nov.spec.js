@@ -270,10 +270,11 @@ test.describe('on a touch screen', () => {
     });
     const before = await colour();
     await button.tap();
-    // The colour shows while the finger is down, then goes; the browser still
-    // counts the button as hovered, which is what used to hold the colour.
+    // The colour shows while the finger is down, then goes. Whether the
+    // browser still counts the button as hovered afterwards (which is what
+    // used to hold the colour) differs by platform, so only the colour is
+    // checked.
     await expect.poll(colour).toBe(before);
-    expect(await button.evaluate((el) => el.matches(':hover'))).toBe(true);
   });
 
   test('no rollover style applies without a pointer that can hover', async ({ page }) => {
