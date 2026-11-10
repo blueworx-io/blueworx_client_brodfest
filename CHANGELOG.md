@@ -5,6 +5,18 @@ All notable changes to this project are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.12.3] - 2026-11-10
+
+### Fixed
+
+- The automated checks pass again: the design measurements expect the shorter TRANSPORT heading on phones, and letters are placed the same way on the check machine as on a desktop.
+
+## [0.12.2] - 2026-11-10
+
+### Fixed
+
+- The theme's design system page shows with its styles again. The clean-up that keeps other stylesheets off Brodfest's pages was taking the theme's page along with them.
+
 ## [0.12.1] - 2026-11-10
 
 ### Changed
