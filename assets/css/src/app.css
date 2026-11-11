@@ -1729,11 +1729,21 @@ html.is-rsvp-locked {
   background: var(--bf-gold);
 }
 
+/* Closer to the fields than Figma's 75 and 99 (Mark, 11 Nov 2026). */
 .bf-check {
-  margin-top: calc(75 * var(--u));
+  margin-top: calc(50 * var(--u));
   align-self: stretch;
   font-size: calc(18 * var(--u));
   line-height: calc(28 * var(--u));
+}
+
+/* Who to email about more guests (Mark, 11 Nov 2026); not in Figma. */
+.bf-form__note {
+  margin-top: calc(40 * var(--u));
+  text-align: center;
+  font-size: calc(18 * var(--u));
+  line-height: calc(28 * var(--u));
+  letter-spacing: var(--track-body);
 }
 
 .bf-form .bf-button--send {
@@ -1821,10 +1831,16 @@ html.is-rsvp-locked {
   .bf-check {
     align-self: flex-start;
     width: max-content;
-    margin-top: calc(99 * var(--u));
+    margin-top: calc(66 * var(--u));
     font-size: calc(23 * var(--u));
     line-height: 1;
     white-space: nowrap;
+  }
+
+  .bf-form__note {
+    margin-top: calc(53 * var(--u));
+    font-size: calc(23 * var(--u));
+    line-height: calc(36 * var(--u));
   }
 
   .bf-form .bf-button--send {

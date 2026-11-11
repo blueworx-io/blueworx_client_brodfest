@@ -50,7 +50,7 @@ brodfest_document_open( array( 'close' => true ) );
 			</fieldset>
 
 			<fieldset class="bf-radios">
-				<legend><?php esc_html_e( 'Will you attend with a guest?', 'blueworx-client-brodfest' ); ?></legend>
+				<legend><?php esc_html_e( 'Will you attend with a partner?', 'blueworx-client-brodfest' ); ?></legend>
 				<label><input type="radio" name="with_guest" value="yes" data-bf-guest-toggle /> <?php esc_html_e( 'Yes', 'blueworx-client-brodfest' ); ?></label>
 				<label><input type="radio" name="with_guest" value="no" data-bf-guest-toggle /> <?php esc_html_e( 'No', 'blueworx-client-brodfest' ); ?></label>
 			</fieldset>
@@ -61,8 +61,10 @@ brodfest_document_open( array( 'close' => true ) );
 
 			<label class="bf-check">
 				<input type="checkbox" name="accessibility" value="1" />
-				<span><?php esc_html_e( 'Click here if you or your guests have any accessibility requirements', 'blueworx-client-brodfest' ); ?></span>
+				<span><?php esc_html_e( 'Click here if you or your partner have any accessibility requirements', 'blueworx-client-brodfest' ); ?></span>
 			</label>
+
+			<p class="bf-form__note"><?php echo wp_kses_post( brodfest_link_emails( esc_html__( 'If you are attending with more than one additional guest please email our guest liaison team at info@brodfest.net', 'blueworx-client-brodfest' ) ) ); ?></p>
 
 			<button class="bf-button bf-button--send" type="submit"><?php esc_html_e( 'SEND', 'blueworx-client-brodfest' ); ?></button>
 		</form>
