@@ -78,6 +78,8 @@ test('a reply becomes people in Users, a second reply changes them, and no real 
   await expect(row.locator('.column-brodfest_attending')).toHaveText('Yes');
   await expect(row.locator('.column-brodfest_contact')).toHaveText(email);
   await expect(row.locator('.column-brodfest_linked')).toHaveText(plusOne);
+  // Their username is their email (Luke, 11 Nov 2026).
+  await expect(row.locator('.column-username strong')).toHaveText(email);
 
   // The list keeps to who, whether and with whom (Luke, 9 Nov 2026): one
   // Email column, and the rest of the answers on the person's profile.
@@ -90,6 +92,8 @@ test('a reply becomes people in Users, a second reply changes them, and no real 
   await expect(guestRow.locator('.column-brodfest_attending')).toHaveText('Yes');
   await expect(guestRow.locator('.column-brodfest_linked')).toHaveText(name);
   await expect(guestRow.locator('.column-brodfest_contact')).toHaveText(adminEmail);
+  // An email that is somebody else's account is never taken as a username.
+  await expect(guestRow.locator('.column-username strong')).toHaveText(/^brodfest-[a-z0-9]+$/);
   const plusOneId = (await guestRow.getAttribute('id')).replace('user-', '');
 
   // Every answer from the form is on the person's profile.
@@ -147,5 +151,6 @@ test('a reply becomes people in Users, a second reply changes them, and no real 
   await expect(again).toHaveCount(1);
   await expect(again.locator('.column-brodfest_attending')).toHaveText('No');
   await expect(again.locator('.column-brodfest_linked')).toHaveText('—');
+  await expect(again.locator('.column-username strong')).toHaveText(email);
   await expect(page.locator('#the-list tr', { hasText: plusOne })).toHaveCount(0);
 });
