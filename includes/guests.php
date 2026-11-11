@@ -148,6 +148,8 @@ function brodfest_guest_save( $person, $answers, $user_id, $when ) {
 		return $saved;
 	}
 
+	brodfest_guest_login_from_email( (int) $saved );
+
 	$answers['brodfest_email']     = $email;
 	$answers['brodfest_phone']     = $person['phone'];
 	$answers['brodfest_dietary']   = $person['dietary'];
@@ -160,6 +162,69 @@ function brodfest_guest_save( $person, $answers, $user_id, $when ) {
 
 	return (int) $saved;
 }
+
+/**
+ * Makes a guest's username their account email (Luke, 11 Nov 2026).
+ *
+ * Only for an email the account itself holds, so somebody else's address is
+ * never taken, and never over a username already in use. A guest with no
+ * email of their own keeps, or goes back to, a made-up one.
+ *
+ * WordPress has no way to rename a user, so the one column is written
+ * directly. Guests cannot sign in, so nothing depends on the old name.
+ *
+ * @param int $user_id The guest.
+ * @return void
+ */
+function brodfest_guest_login_from_email( $user_id ) {
+	global $wpdb;
+
+	$user = get_userdata( $user_id );
+
+	if ( ! brodfest_is_guest( $user ) ) {
+		return;
+	}
+
+	// As WordPress itself would store it for a new user.
+	$login = sanitize_user( $user->user_email, true );
+
+	if ( '' === $login && false !== strpos( $user->user_login, '@' ) ) {
+		$login = 'brodfest-' . strtolower( wp_generate_password( 14, false ) );
+	}
+
+	if ( '' === $login || $login === $user->user_login || strlen( $login ) > 60 || username_exists( $login ) ) {
+		return;
+	}
+
+	// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- No API renames a user; the cache is cleared below.
+	$wpdb->update( $wpdb->users, array( 'user_login' => $login ), array( 'ID' => $user->ID ) );
+	clean_user_cache( $user );
+}
+
+/**
+ * Renames the guests made before usernames were emails. Once.
+ *
+ * @return void
+ */
+function brodfest_guests_rename_to_email() {
+	if ( '1' === get_option( 'brodfest_guests_renamed_to_email' ) ) {
+		return;
+	}
+
+	update_option( 'brodfest_guests_renamed_to_email', '1', false );
+
+	$guests = get_users(
+		array(
+			'role'   => BRODFEST_GUEST_ROLE,
+			'fields' => 'ID',
+		)
+	);
+
+	foreach ( $guests as $guest_id ) {
+		brodfest_guest_login_from_email( (int) $guest_id );
+	}
+}
+add_action( 'init', 'brodfest_guests_rename_to_email', 30 );
 
 /**
  * The plus-one linked to a primary guest, or 0. Only ever a guest who points
