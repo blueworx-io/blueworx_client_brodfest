@@ -1,5 +1,6 @@
 import { test, expect } from '@playwright/test';
 import { loginAsAdmin } from './helpers/wp.js';
+import { fillInvitee, attendingRadio, partnerRadio, comingAlone } from './helpers/rsvp.js';
 
 test('the RSVP page shows a close button in place of the menu, and an active RSVP pill', async ({ page }) => {
   await page.goto('/rsvp/');
@@ -12,10 +13,42 @@ test('guest fields appear only when bringing a guest', async ({ page }) => {
   await page.goto('/rsvp/');
   const guest = page.locator('[data-bf-guest]');
   await expect(guest).toBeHidden();
-  await page.getByLabel('Yes').nth(1).check();
+  await attendingRadio(page, 'yes').check();
+  await partnerRadio(page, 'yes').check();
   await expect(guest).toBeVisible();
-  await page.getByLabel('No').nth(1).check();
+  await partnerRadio(page, 'no').check();
   await expect(guest).toBeHidden();
+});
+
+// The partner question, the partner and the accessibility tick are only for
+// someone who is coming (Mark, 12 Nov 2026).
+test('the partner question and accessibility tick show only once attending is Yes', async ({ page }) => {
+  await page.goto('/rsvp/');
+  const extra = page.locator('[data-bf-attending]');
+  await expect(extra).toBeHidden();
+  await expect(page.locator('.bf-check')).toBeHidden();
+  await attendingRadio(page, 'yes').check();
+  await expect(extra).toBeVisible();
+  await expect(page.locator('.bf-check')).toBeVisible();
+  await partnerRadio(page, 'yes').check();
+  await expect(page.locator('#bf-guest_name')).toBeVisible();
+  // Saying no hides the lot, partner included.
+  await attendingRadio(page, 'no').check();
+  await expect(extra).toBeHidden();
+  await expect(page.locator('#bf-guest_name')).toBeHidden();
+});
+
+test('every field must be filled in, the partner’s too when they come', async ({ page }) => {
+  await page.goto('/rsvp/');
+  for (const id of ['#bf-name', '#bf-phone', '#bf-email', '#bf-dietary', '#bf-allergies']) {
+    await expect(page.locator(id), id).toHaveAttribute('required', '');
+  }
+  await attendingRadio(page, 'yes').check();
+  await expect(partnerRadio(page, 'yes')).toHaveJSProperty('required', true);
+  await partnerRadio(page, 'yes').check();
+  for (const id of ['#bf-guest_name', '#bf-guest_phone', '#bf-guest_email', '#bf-guest_dietary', '#bf-guest_allergies']) {
+    await expect(page.locator(id), id).toHaveJSProperty('required', true);
+  }
 });
 
 test('an incomplete RSVP is refused with a message', async ({ page }) => {
@@ -24,32 +57,72 @@ test('an incomplete RSVP is refused with a message', async ({ page }) => {
   await page.locator('[data-bf-rsvp]').evaluate((form) => form.setAttribute('novalidate', ''));
   await page.locator('#bf-name').fill('No Email');
   await page.getByRole('button', { name: 'SEND' }).click();
-  await expect(page.getByRole('alert')).toContainText('Please add your name');
+  await expect(page.getByRole('alert')).toContainText('Please fill in every field');
+});
+
+test('a reply missing only the phone number is refused by the server', async ({ page }) => {
+  await page.goto('/rsvp/');
+  await page.locator('[data-bf-rsvp]').evaluate((form) => form.setAttribute('novalidate', ''));
+  await fillInvitee(page, { name: `No Phone ${Date.now()}`, email: 'nophone@example.com', phone: '' });
+  await comingAlone(page);
+  await page.getByRole('button', { name: 'SEND' }).click();
+  await expect(page.getByRole('alert')).toContainText('Please fill in every field');
+});
+
+test('a partner missing their details is refused by the server', async ({ page }) => {
+  await page.goto('/rsvp/');
+  await page.locator('[data-bf-rsvp]').evaluate((form) => form.setAttribute('novalidate', ''));
+  await fillInvitee(page, { name: `Half Partner ${Date.now()}`, email: 'halfpartner@example.com' });
+  await attendingRadio(page, 'yes').check();
+  await partnerRadio(page, 'yes').check();
+  await page.locator('#bf-guest_name').fill('Partner Without Email');
+  await page.getByRole('button', { name: 'SEND' }).click();
+  await expect(page.getByRole('alert')).toContainText('Please fill in every field');
+});
+
+// Mark sent eight test replies and three arrived (12 Nov 2026): past five an
+// hour from one connection the form threw replies away and still said thank
+// you. Eight in a row from one browser must all be kept.
+test('eight replies in a row from one visitor are all kept', async ({ page, browser }) => {
+  test.setTimeout(240000);
+  const stamp = Date.now();
+  const visitor = await (await browser.newContext({ baseURL: test.info().project.use.baseURL })).newPage();
+  for (let i = 1; i <= 8; i++) {
+    await visitor.goto('/rsvp/');
+    await fillInvitee(visitor, { name: `Burst ${stamp} ${i}`, email: `burst${stamp}-${i}@example.com` });
+    await comingAlone(visitor);
+    await visitor.getByRole('button', { name: 'SEND' }).click();
+    await expect(visitor.getByRole('status')).toContainText('Thank you for your RSVP');
+  }
+  await visitor.context().close();
+
+  await loginAsAdmin(page);
+  await page.goto(`/wp-admin/users.php?role=brodfest_guest&s=${encodeURIComponent(`burst${stamp}`)}`);
+  await expect(page.locator('#the-list tr', { hasText: `Burst ${stamp}` })).toHaveCount(8);
 });
 
 // Replies are people in the WordPress Users list, not a list of their own
 // (Luke, 9 Nov 2026): one "Brodfest guest" per person, the plus-one linked to
 // whoever brought them, with every answer from the form on show.
 //
-// One test, two replies: the form takes five an hour from one visitor, and
-// the other specs send three.
+// One test, two replies.
 const GUESTS = '/wp-admin/users.php?role=brodfest_guest&orderby=registered&order=desc';
 
 async function reply(page, { name, email, attending = 'Yes', guest = null }) {
   await page.goto('/rsvp/');
-  await page.locator('#bf-name').fill(name);
-  await page.locator('#bf-email').fill(email);
-  await page.locator('#bf-phone').fill('7700 900123');
-  await page.locator('#bf-dietary').selectOption('vegetarian');
-  await page.locator('#bf-allergies').fill('Peanuts');
-  await page.getByLabel(attending).first().check();
-  if (guest) {
-    await page.getByLabel('Yes').nth(1).check();
-    await page.locator('#bf-guest_name').fill(guest.name);
-    await page.locator('#bf-guest_email').fill(guest.email);
-    await page.locator('#bf-guest_dietary').selectOption('vegan');
+  await fillInvitee(page, { name, email, dietary: 'vegetarian', allergies: 'Peanuts' });
+  await attendingRadio(page, attending.toLowerCase()).check();
+  if ('Yes' === attending) {
+    await partnerRadio(page, guest ? 'yes' : 'no').check();
+    if (guest) {
+      await page.locator('#bf-guest_name').fill(guest.name);
+      await page.locator('#bf-guest_phone').fill('7700 900456');
+      await page.locator('#bf-guest_email').fill(guest.email);
+      await page.locator('#bf-guest_dietary').selectOption('vegan');
+      await page.locator('#bf-guest_allergies').fill('None');
+    }
+    await page.locator('input[name="accessibility"]').check();
   }
-  await page.locator('input[name="accessibility"]').check();
   await page.getByRole('button', { name: 'SEND' }).click();
   await expect(page.getByRole('status')).toContainText('Thank you for your RSVP');
 }

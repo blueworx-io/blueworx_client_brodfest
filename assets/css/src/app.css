@@ -1541,6 +1541,16 @@ html.is-rsvp-locked {
   gap: calc(22 * var(--u));
 }
 
+/* What only matters to someone coming (Mark, 12 Nov 2026). Lays out as if
+   its contents were the form's own, so the spacing is as before. */
+[data-bf-attending] {
+  display: contents;
+}
+
+[data-bf-attending][hidden] {
+  display: none;
+}
+
 [data-bf-guest] {
   width: 100%;
   margin-top: calc(45 * var(--u));
