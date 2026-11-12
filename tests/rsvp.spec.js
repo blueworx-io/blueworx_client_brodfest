@@ -24,7 +24,7 @@ test('guest fields appear only when bringing a guest', async ({ page }) => {
 // someone who is coming (Mark, 12 Nov 2026).
 test('the partner question and accessibility tick show only once attending is Yes', async ({ page }) => {
   await page.goto('/rsvp/');
-  const extra = page.locator('[data-bf-attending]');
+  const extra = page.locator('fieldset[data-bf-attending]');
   await expect(extra).toBeHidden();
   await expect(page.locator('.bf-check')).toBeHidden();
   await attendingRadio(page, 'yes').check();

@@ -279,6 +279,8 @@ test.describe('RSVP form details at 1920', () => {
   });
 
   test('the accessibility line stays on one line', async ({ page }) => {
+    // The tick shows once the guest says they are coming.
+    await page.locator('input[name="attending"][value="yes"]').check();
     const lines = await page.locator('.bf-check span').first().evaluate((el) => {
       const range = document.createRange();
       range.selectNodeContents(el);

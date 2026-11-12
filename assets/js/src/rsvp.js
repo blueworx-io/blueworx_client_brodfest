@@ -8,9 +8,11 @@
 
 export function initRsvp(root = document) {
 	const form = root.querySelector('[data-bf-rsvp]');
-	const attending = form?.querySelector('[data-bf-attending]');
+	// The partner question and the accessibility tick. The partner's fields
+	// are [data-bf-guest], which only shows to someone coming anyway.
+	const attending = form ? [...form.querySelectorAll('[data-bf-attending]')] : [];
 	const guest = form?.querySelector('[data-bf-guest]');
-	if (!attending || !guest) {
+	if (!attending.length || !guest) {
 		return;
 	}
 
@@ -20,9 +22,11 @@ export function initRsvp(root = document) {
 		const coming = checked('[data-bf-attending-toggle][value="yes"]');
 		const bringing = coming && checked('[data-bf-guest-toggle][value="yes"]');
 
-		attending.hidden = !coming;
-		attending.querySelectorAll('input, select').forEach((field) => {
-			field.disabled = !coming;
+		attending.forEach((part) => {
+			part.hidden = !coming;
+			part.querySelectorAll('input, select').forEach((field) => {
+				field.disabled = !coming;
+			});
 		});
 		form.querySelectorAll('[data-bf-guest-toggle]').forEach((radio) => {
 			radio.required = coming;
