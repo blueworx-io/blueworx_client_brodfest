@@ -28,14 +28,14 @@ $brodfest_l     = $brodfest_guest
 		'phone'     => __( 'Partner’s Mobile phone number', 'blueworx-client-brodfest' ),
 		'email'     => __( 'Partner’s Email address', 'blueworx-client-brodfest' ),
 		'dietary'   => __( 'Partner’s Dietary requirements', 'blueworx-client-brodfest' ),
-		'allergies' => __( 'Partner’s Allergies', 'blueworx-client-brodfest' ),
+		'allergies' => __( 'Partner’s Allergies (Please type details)', 'blueworx-client-brodfest' ),
 	)
 	: array(
 		'name'      => __( 'Full Name', 'blueworx-client-brodfest' ),
 		'phone'     => __( 'Mobile phone number', 'blueworx-client-brodfest' ),
 		'email'     => __( 'Email address', 'blueworx-client-brodfest' ),
 		'dietary'   => __( 'Dietary requirements', 'blueworx-client-brodfest' ),
-		'allergies' => __( 'Allergies', 'blueworx-client-brodfest' ),
+		'allergies' => __( 'Allergies (Please type details)', 'blueworx-client-brodfest' ),
 	);
 $brodfest_id    = static function ( $field ) use ( $brodfest_p ) {
 	return 'bf-' . $brodfest_p . $field;

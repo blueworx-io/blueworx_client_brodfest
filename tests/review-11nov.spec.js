@@ -17,7 +17,7 @@ test('the plus-one is called a partner throughout the form', async ({ page }) =>
   await expect(page.locator('#bf-guest_phone')).toHaveAttribute('placeholder', 'Partner’s Mobile phone number');
   await expect(page.locator('#bf-guest_email')).toHaveAttribute('placeholder', 'Partner’s Email address');
   await expect(page.locator('#bf-guest_dietary option').first()).toHaveText('Partner’s Dietary requirements');
-  await expect(page.locator('#bf-guest_allergies')).toHaveAttribute('placeholder', 'Partner’s Allergies');
+  await expect(page.locator('#bf-guest_allergies')).toHaveAttribute('placeholder', 'Partner’s Allergies (Please type details)');
   await expect(page.locator('.bf-check span')).toHaveText('Click here if you or your partner have any accessibility requirements');
   await expect(page.getByLabel('Partner Full Name')).toBeVisible();
 });
