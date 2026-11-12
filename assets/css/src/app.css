@@ -1541,6 +1541,12 @@ html.is-rsvp-locked {
   gap: calc(22 * var(--u));
 }
 
+/* What only matters to someone coming (Mark, 12 Nov 2026): the partner
+   question and the accessibility tick, each marked on its own. */
+[data-bf-attending][hidden] {
+  display: none;
+}
+
 [data-bf-guest] {
   width: 100%;
   margin-top: calc(45 * var(--u));

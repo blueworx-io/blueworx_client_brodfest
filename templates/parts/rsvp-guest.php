@@ -19,23 +19,25 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 $brodfest_p     = 'guest_' === ( $args['prefix'] ?? '' ) ? 'guest_' : '';
 $brodfest_guest = 'guest_' === $brodfest_p;
-$brodfest_req   = $brodfest_guest ? '' : ' required';
-$brodfest_l     = $brodfest_guest
+// Every field is needed (Mark, 12 Nov 2026). The partner's are marked as
+// needed by the page's script, and only while they show.
+$brodfest_req = $brodfest_guest ? '' : ' required';
+$brodfest_l   = $brodfest_guest
 	? array(
 		'name'      => __( 'Partner Full Name', 'blueworx-client-brodfest' ),
 		'phone'     => __( 'Partner’s Mobile phone number', 'blueworx-client-brodfest' ),
 		'email'     => __( 'Partner’s Email address', 'blueworx-client-brodfest' ),
 		'dietary'   => __( 'Partner’s Dietary requirements', 'blueworx-client-brodfest' ),
-		'allergies' => __( 'Partner’s Allergies', 'blueworx-client-brodfest' ),
+		'allergies' => __( 'Partner’s Allergies (Please type details)', 'blueworx-client-brodfest' ),
 	)
 	: array(
 		'name'      => __( 'Full Name', 'blueworx-client-brodfest' ),
 		'phone'     => __( 'Mobile phone number', 'blueworx-client-brodfest' ),
 		'email'     => __( 'Email address', 'blueworx-client-brodfest' ),
 		'dietary'   => __( 'Dietary requirements', 'blueworx-client-brodfest' ),
-		'allergies' => __( 'Allergies', 'blueworx-client-brodfest' ),
+		'allergies' => __( 'Allergies (Please type details)', 'blueworx-client-brodfest' ),
 	);
-$brodfest_id    = static function ( $field ) use ( $brodfest_p ) {
+$brodfest_id  = static function ( $field ) use ( $brodfest_p ) {
 	return 'bf-' . $brodfest_p . $field;
 };
 ?>
@@ -52,7 +54,7 @@ $brodfest_id    = static function ( $field ) use ( $brodfest_p ) {
 			<?php endforeach; ?>
 		</select>
 		<label class="sr-only" for="<?php echo esc_attr( $brodfest_id( 'phone' ) ); ?>"><?php echo esc_html( $brodfest_l['phone'] ); ?></label>
-		<input id="<?php echo esc_attr( $brodfest_id( 'phone' ) ); ?>" name="<?php echo esc_attr( $brodfest_p . 'phone' ); ?>" type="tel" autocomplete="<?php echo $brodfest_guest ? 'off' : 'tel-national'; ?>" placeholder="<?php echo esc_attr( $brodfest_l['phone'] ); ?>" maxlength="30" />
+		<input id="<?php echo esc_attr( $brodfest_id( 'phone' ) ); ?>" name="<?php echo esc_attr( $brodfest_p . 'phone' ); ?>" type="tel" autocomplete="<?php echo $brodfest_guest ? 'off' : 'tel-national'; ?>" placeholder="<?php echo esc_attr( $brodfest_l['phone'] ); ?>" maxlength="30"<?php echo esc_attr( $brodfest_req ); ?> />
 	</p>
 	<p class="bf-field">
 		<label class="sr-only" for="<?php echo esc_attr( $brodfest_id( 'email' ) ); ?>"><?php echo esc_html( $brodfest_l['email'] ); ?></label>
@@ -60,7 +62,7 @@ $brodfest_id    = static function ( $field ) use ( $brodfest_p ) {
 	</p>
 	<p class="bf-field bf-field--select">
 		<label class="sr-only" for="<?php echo esc_attr( $brodfest_id( 'dietary' ) ); ?>"><?php echo esc_html( $brodfest_l['dietary'] ); ?></label>
-		<select id="<?php echo esc_attr( $brodfest_id( 'dietary' ) ); ?>" name="<?php echo esc_attr( $brodfest_p . 'dietary' ); ?>">
+		<select id="<?php echo esc_attr( $brodfest_id( 'dietary' ) ); ?>" name="<?php echo esc_attr( $brodfest_p . 'dietary' ); ?>"<?php echo esc_attr( $brodfest_req ); ?>>
 			<option value=""><?php echo esc_html( $brodfest_l['dietary'] ); ?></option>
 			<?php foreach ( brodfest_rsvp_dietary_options() as $brodfest_value => $brodfest_option ) : ?>
 				<option value="<?php echo esc_attr( $brodfest_value ); ?>"><?php echo esc_html( $brodfest_option ); ?></option>
@@ -69,6 +71,6 @@ $brodfest_id    = static function ( $field ) use ( $brodfest_p ) {
 	</p>
 	<p class="bf-field">
 		<label class="sr-only" for="<?php echo esc_attr( $brodfest_id( 'allergies' ) ); ?>"><?php echo esc_html( $brodfest_l['allergies'] ); ?></label>
-		<input id="<?php echo esc_attr( $brodfest_id( 'allergies' ) ); ?>" name="<?php echo esc_attr( $brodfest_p . 'allergies' ); ?>" type="text" autocomplete="off" placeholder="<?php echo esc_attr( $brodfest_l['allergies'] ); ?>" maxlength="300" />
+		<input id="<?php echo esc_attr( $brodfest_id( 'allergies' ) ); ?>" name="<?php echo esc_attr( $brodfest_p . 'allergies' ); ?>" type="text" autocomplete="off" placeholder="<?php echo esc_attr( $brodfest_l['allergies'] ); ?>" maxlength="300"<?php echo esc_attr( $brodfest_req ); ?> />
 	</p>
 </div>

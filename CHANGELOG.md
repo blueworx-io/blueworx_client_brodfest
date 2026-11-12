@@ -5,6 +5,22 @@ All notable changes to this project are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.15.0] - 2026-11-12
+
+### Added
+
+- A "Download guest list" button above the Users list. The spreadsheet has exactly Mark's 19 columns in his order, one row per reply with the partner on the same row, and nothing else. Extra Guests, Hotel, Transport and Concierge are left empty for the client to fill in.
+
+### Fixed
+
+- RSVP replies are no longer lost. The form kept only five replies an hour from one internet connection and quietly dropped the rest while still saying "Thank you", which is why only three of Mark's eight test replies arrived. It now keeps up to thirty an hour, and anyone past that is told to try again rather than thanked.
+
+### Changed
+
+- Every field on the RSVP form must be filled in, the partner's too when a partner is coming.
+- "Allergies" on the RSVP form now reads "Allergies (Please type details)".
+- The partner question, the partner's details, the accessibility tick and the line about extra guests only show once "Will you be attending?" is answered Yes.
+
 ## [0.14.0] - 2026-11-11
 
 ### Added

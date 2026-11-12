@@ -112,7 +112,11 @@ async function open(page, frame, path, mode) {
     await expect(page.locator('body')).toHaveClass(/is-menu-open/);
     await page.evaluate(() => new Promise((done) => requestAnimationFrame(() => requestAnimationFrame(done))));
   }
-  if (frame.includes('rsvp')) await page.locator('input[name="with_guest"][value="yes"]').check();
+  if (frame.includes('rsvp')) {
+    // The partner question shows once the guest says they are coming.
+    await page.locator('input[name="attending"][value="yes"]').check();
+    await page.locator('input[name="with_guest"][value="yes"]').check();
+  }
 }
 
 for (const frame of frames) for (const V of WIDTHS[frame.endsWith('_767') ? 767 : 1920]) {
@@ -275,6 +279,8 @@ test.describe('RSVP form details at 1920', () => {
   });
 
   test('the accessibility line stays on one line', async ({ page }) => {
+    // The tick shows once the guest says they are coming.
+    await page.locator('input[name="attending"][value="yes"]').check();
     const lines = await page.locator('.bf-check span').first().evaluate((el) => {
       const range = document.createRange();
       range.selectNodeContents(el);

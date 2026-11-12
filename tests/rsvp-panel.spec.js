@@ -1,5 +1,6 @@
 import { test, expect } from '@playwright/test';
 import { skipIntro } from './helpers/wp.js';
+import { fillInvitee, comingAlone } from './helpers/rsvp.js';
 
 // RSVP lowers over the page the guest is on and goes back up when they close
 // it or have replied, rather than opening a page of its own and closing to
@@ -61,10 +62,8 @@ test('the header close button and Esc close it', async ({ page }) => {
 
 test('a reply is sent from the panel, thanked there, and CLOSE goes back up to the page', async ({ page }) => {
   await open(page);
-  await page.locator('#bf-name').fill(`Panel Guest ${Date.now()}`);
-  await page.locator('#bf-email').fill('panel@example.com');
-  await page.getByLabel('Yes').first().check();
-  await page.getByLabel('No').nth(1).check();
+  await fillInvitee(panel(page), { name: `Panel Guest ${Date.now()}`, email: 'panel@example.com' });
+  await comingAlone(panel(page));
   await panel(page).getByRole('button', { name: 'SEND' }).click();
   await expect(panel(page).getByRole('status')).toContainText('Thank you for your RSVP');
   expect(new URL(page.url()).pathname).toBe('/celebrate/');
@@ -77,7 +76,7 @@ test('an incomplete reply is refused in the panel', async ({ page }) => {
   await panel(page).locator('[data-bf-rsvp]').evaluate((form) => form.setAttribute('novalidate', ''));
   await page.locator('#bf-name').fill('No Email');
   await panel(page).getByRole('button', { name: 'SEND' }).click();
-  await expect(panel(page).getByRole('alert')).toContainText('Please add your name');
+  await expect(panel(page).getByRole('alert')).toContainText('Please fill in every field');
   expect(new URL(page.url()).pathname).toBe('/celebrate/');
 });
 
@@ -96,9 +95,8 @@ test('on the RSVP page itself, close and the pill go back to the page before', a
 test('on the RSVP page itself, CLOSE after sending goes back to the page before, not the form', async ({ page }) => {
   await page.evaluate(() => { window.location.href = '/rsvp/'; });
   await page.waitForURL('**/rsvp/');
-  await page.locator('#bf-name').fill(`Return Guest ${Date.now()}`);
-  await page.locator('#bf-email').fill('return@example.com');
-  await page.getByLabel('Yes').first().check();
+  await fillInvitee(page, { name: `Return Guest ${Date.now()}`, email: 'return@example.com' });
+  await comingAlone(page);
   await page.getByRole('button', { name: 'SEND' }).click();
   await expect(page.getByRole('status')).toContainText('Thank you for your RSVP');
   await page.getByRole('link', { name: 'CLOSE', exact: true }).click();

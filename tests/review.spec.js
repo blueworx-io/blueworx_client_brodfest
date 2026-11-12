@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { fillInvitee, comingAlone } from './helpers/rsvp.js';
 import { loginAsAdmin, skipIntro } from './helpers/wp.js';
 
 // Mark's review of the Save the Date site (Pastel, 5 Nov 2026) and the copy
@@ -242,10 +243,8 @@ test.describe('RSVP', () => {
 
   test('a sent reply keeps the RSVP title, thanks the guest and offers Close', async ({ page }) => {
     await page.goto('/rsvp/');
-    await page.locator('#bf-name').fill(`Thanks Test ${Date.now()}`);
-    await page.locator('#bf-email').fill('thanks@example.com');
-    await page.locator('#bf-dietary').selectOption('dairy-free');
-    await page.getByLabel('Yes').first().check();
+    await fillInvitee(page, { name: `Thanks Test ${Date.now()}`, email: 'thanks@example.com', dietary: 'dairy-free' });
+    await comingAlone(page);
     await page.getByRole('button', { name: 'SEND' }).click();
 
     await expect(page.locator('h1')).toHaveText('RSVP');

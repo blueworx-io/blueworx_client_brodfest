@@ -59,10 +59,12 @@ function brodfest_rsvp_person( $source, $prefix ) {
 		return isset( $source[ $prefix . $key ] ) ? sanitize_text_field( wp_unslash( $source[ $prefix . $key ] ) ) : '';
 	};
 	$dietary = $get( 'dietary' );
+	$number  = trim( preg_replace( '/[^0-9 ]/', '', $get( 'phone' ) ) );
 
 	return array(
 		'name'      => mb_substr( $get( 'name' ), 0, 120 ),
-		'phone'     => trim( preg_replace( '/[^0-9+ ]/', '', $get( 'phone_prefix' ) . ' ' . $get( 'phone' ) ) ),
+		// No number, no phone: a country code on its own is not an answer.
+		'phone'     => '' === $number ? '' : trim( preg_replace( '/[^0-9+ ]/', '', $get( 'phone_prefix' ) . ' ' . $number ) ),
 		'email'     => sanitize_email( $get( 'email' ) ),
 		'dietary'   => isset( brodfest_rsvp_dietary_options()[ $dietary ] ) ? $dietary : '',
 		'allergies' => mb_substr( $get( 'allergies' ), 0, 300 ),
@@ -70,23 +72,49 @@ function brodfest_rsvp_person( $source, $prefix ) {
 }
 
 /**
+ * Whether every one of a person's answers is filled in (Mark, 12 Nov 2026).
+ *
+ * @param array<string, string> $person From brodfest_rsvp_person().
+ * @return bool
+ */
+function brodfest_rsvp_person_complete( $person ) {
+	foreach ( array( 'name', 'phone', 'email', 'dietary', 'allergies' ) as $key ) {
+		if ( '' === $person[ $key ] ) {
+			return false;
+		}
+	}
+
+	return (bool) is_email( $person['email'] );
+}
+
+/**
  * Turns a posted form into a reply, or null when it is incomplete.
  * Pure, so it can be tested without WordPress saving anything.
+ *
+ * Every field is needed. The partner question, the partner and the
+ * accessibility tick are only asked of someone who is coming, so a "no"
+ * carries none of them (Mark, 12 Nov 2026).
  *
  * @param array $source The posted data.
  * @return array|null
  */
 function brodfest_rsvp_from_post( $source ) {
-	$guest_yes = isset( $source['with_guest'] ) && 'yes' === $source['with_guest'];
+	$attending = isset( $source['attending'] ) && in_array( $source['attending'], array( 'yes', 'no' ), true ) ? $source['attending'] : '';
+	$coming    = 'yes' === $attending;
+	$with      = $coming && isset( $source['with_guest'] ) && in_array( $source['with_guest'], array( 'yes', 'no' ), true ) ? $source['with_guest'] : '';
 	$reply     = array(
 		'person'        => brodfest_rsvp_person( $source, '' ),
-		'attending'     => isset( $source['attending'] ) && in_array( $source['attending'], array( 'yes', 'no' ), true ) ? $source['attending'] : '',
-		'with_guest'    => $guest_yes ? 'yes' : 'no',
-		'guest'         => $guest_yes ? brodfest_rsvp_person( $source, 'guest_' ) : null,
-		'accessibility' => ! empty( $source['accessibility'] ),
+		'attending'     => $attending,
+		'with_guest'    => 'yes' === $with ? 'yes' : 'no',
+		'guest'         => 'yes' === $with ? brodfest_rsvp_person( $source, 'guest_' ) : null,
+		'accessibility' => $coming && ! empty( $source['accessibility'] ),
 	);
 
-	if ( '' === $reply['person']['name'] || ! is_email( $reply['person']['email'] ) || '' === $reply['attending'] ) {
+	if ( '' === $attending || ! brodfest_rsvp_person_complete( $reply['person'] ) ) {
+		return null;
+	}
+
+	if ( $coming && ( '' === $with || ( $reply['guest'] && ! brodfest_rsvp_person_complete( $reply['guest'] ) ) ) ) {
 		return null;
 	}
 
@@ -136,11 +164,14 @@ function brodfest_rsvp_rate_limited() {
 	$count = (int) get_transient( $key );
 
 	/**
-	 * Filters how many replies one address may send in an hour.
+	 * Filters how many replies one address may send in an hour. It was five,
+	 * which quietly dropped replies past the fifth while thanking the guest
+	 * for them: eight test replies from one office left three people
+	 * (12 Nov 2026). A household, or a venue's shared connection, sends more.
 	 *
 	 * @param int $limit Replies per hour.
 	 */
-	if ( $count >= (int) apply_filters( 'brodfest_rsvp_hourly_limit', 5 ) ) {
+	if ( $count >= (int) apply_filters( 'brodfest_rsvp_hourly_limit', 30 ) ) {
 		return true;
 	}
 
@@ -189,8 +220,7 @@ function brodfest_handle_rsvp() {
 		exit;
 	}
 
-	// Filled in only by bots, as is a flood from one address. Pretend it
-	// worked so they learn nothing.
+	// Filled in only by bots. Pretend it worked so they learn nothing.
 	if ( ! empty( $_POST['website'] ) ) {
 		wp_safe_redirect( add_query_arg( 'rsvp', 'sent', $back ) );
 		exit;
@@ -204,9 +234,10 @@ function brodfest_handle_rsvp() {
 	}
 
 	// Only complete replies count towards the limit, so a guest fixing a
-	// mistake is never locked out.
+	// mistake is never locked out. A real guest past it is told so, never
+	// thanked for a reply that was not kept.
 	if ( brodfest_rsvp_rate_limited() ) {
-		wp_safe_redirect( add_query_arg( 'rsvp', 'sent', $back ) );
+		wp_safe_redirect( add_query_arg( 'rsvp', 'busy', $back ) );
 		exit;
 	}
 
