@@ -21,8 +21,8 @@ $brodfest_p     = 'guest_' === ( $args['prefix'] ?? '' ) ? 'guest_' : '';
 $brodfest_guest = 'guest_' === $brodfest_p;
 // Every field is needed (Mark, 12 Nov 2026). The partner's are marked as
 // needed by the page's script, and only while they show.
-$brodfest_req   = $brodfest_guest ? '' : ' required';
-$brodfest_l     = $brodfest_guest
+$brodfest_req = $brodfest_guest ? '' : ' required';
+$brodfest_l   = $brodfest_guest
 	? array(
 		'name'      => __( 'Partner Full Name', 'blueworx-client-brodfest' ),
 		'phone'     => __( 'Partner’s Mobile phone number', 'blueworx-client-brodfest' ),
@@ -37,7 +37,7 @@ $brodfest_l     = $brodfest_guest
 		'dietary'   => __( 'Dietary requirements', 'blueworx-client-brodfest' ),
 		'allergies' => __( 'Allergies (Please type details)', 'blueworx-client-brodfest' ),
 	);
-$brodfest_id    = static function ( $field ) use ( $brodfest_p ) {
+$brodfest_id  = static function ( $field ) use ( $brodfest_p ) {
 	return 'bf-' . $brodfest_p . $field;
 };
 ?>
