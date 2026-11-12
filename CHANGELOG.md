@@ -5,6 +5,12 @@ All notable changes to this project are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.15.1] - 2026-11-12
+
+### Changed
+
+- RSVP form wording now uses lower case after the first word ("Full name", "Partner’s email address", "Dairy free" and so on), and the home page line about the invitation no longer ends in a full stop. From Mark’s Pastel comments, 12 Nov.
+
 ## [0.15.0] - 2026-11-12
 
 ### Added

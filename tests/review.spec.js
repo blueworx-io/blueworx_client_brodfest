@@ -79,7 +79,7 @@ test('the home page plays the Save the Date video, wide from tablets up and squa
 test('the home page uses the copy document line about the invitation', async ({ page }) => {
   await page.goto('/');
   // On two lines, breaking after "Ibiza" (review-6nov-pm.spec.js).
-  await expect(page.locator('.bf-home__note')).toHaveText(/Your invitation and the full Brodfest Ibiza\s*website will land before Christmas\./);
+  await expect(page.locator('.bf-home__note')).toHaveText(/Your invitation and the full Brodfest Ibiza\s*website will land before Christmas/);
 });
 
 test('Celebration has the new copy and the dress code; transport has moved to Information', async ({ page }) => {
@@ -88,7 +88,7 @@ test('Celebration has the new copy and the dress code; transport has moved to In
   await expect(page.locator('.bf-body').first()).toContainText('Ibiza is calling.');
   await expect(page.locator('h2')).toHaveText(['DRESS CODE']);
   await expect(page.locator('main')).toContainText('Black, Gold & Ibiza Bold');
-  await expect(page.locator('main')).toContainText('will land before Christmas.');
+  await expect(page.locator('main')).toContainText('will land before Christmas');
   // The subtitles take the area-header style (as TALAMANCA).
   await expect(page.locator('h2').first()).toHaveClass(/bf-area__name/);
 });
@@ -230,7 +230,7 @@ test.describe('RSVP', () => {
     await page.goto('/rsvp/');
     const options = page.locator('#bf-dietary option');
     await expect(options.last()).toHaveText('Other (tell us under allergies)');
-    await expect(options.nth(-2)).toHaveText('Dairy Free');
+    await expect(options.nth(-2)).toHaveText('Dairy free');
     const style = await page.locator('#bf-dietary option').last().evaluate((el) => {
       const s = getComputedStyle(el);
       return { bg: s.backgroundColor, color: s.color, font: s.fontFamily };

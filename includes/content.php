@@ -155,7 +155,7 @@ function brodfest_std_copy( $key ) {
 			'Ibiza is calling. From Surrey to the Mediterranean…welcome to Brodfest, the Ibiza edition.',
 			'To celebrate Peter’s birthday in 2027, Brodfest arrives at Can Sakhara, his home on the iconic island of Ibiza. A stunningly contemporary villa, Can Sakhara carries a quiet echo of something far more historic, with subtle design references drawn from ancient cultures. The night will be a glorious celebration of your host, the island’s vibrant spirit and Can Sakhara’s timeless roots.',
 		),
-		'invitation' => 'Your invitation and the full Brodfest Ibiza website will land before Christmas.',
+		'invitation' => 'Your invitation and the full Brodfest Ibiza website will land before Christmas',
 		// The calendar entry's note (client, 6 Nov 2026), with the times as the
 		// client worded them (Luke, 9 Nov 2026).
 		'calendar'   => 'To celebrate Peter’s birthday in 2027, Brodfest arrives at Can Sakhara, his home on the iconic island of Ibiza. (7pm to 4am CEST)',
