@@ -13,13 +13,13 @@ test('the plus-one is called a partner throughout the form', async ({ page }) =>
   await attendingRadio(page, 'yes').check();
   await expect(page.locator('.bf-radios legend').nth(1)).toHaveText('Will you attend with a partner?');
   await page.locator('input[name="with_guest"][value="yes"]').check();
-  await expect(page.locator('#bf-guest_name')).toHaveAttribute('placeholder', 'Partner Full Name');
-  await expect(page.locator('#bf-guest_phone')).toHaveAttribute('placeholder', 'Partner’s Mobile phone number');
-  await expect(page.locator('#bf-guest_email')).toHaveAttribute('placeholder', 'Partner’s Email address');
-  await expect(page.locator('#bf-guest_dietary option').first()).toHaveText('Partner’s Dietary requirements');
-  await expect(page.locator('#bf-guest_allergies')).toHaveAttribute('placeholder', 'Partner’s Allergies (Please type details)');
+  await expect(page.locator('#bf-guest_name')).toHaveAttribute('placeholder', 'Partner full name');
+  await expect(page.locator('#bf-guest_phone')).toHaveAttribute('placeholder', 'Partner’s mobile phone number');
+  await expect(page.locator('#bf-guest_email')).toHaveAttribute('placeholder', 'Partner’s email address');
+  await expect(page.locator('#bf-guest_dietary option').first()).toHaveText('Partner’s dietary requirements');
+  await expect(page.locator('#bf-guest_allergies')).toHaveAttribute('placeholder', 'Partner’s allergies (Please type details)');
   await expect(page.locator('.bf-check span')).toHaveText('Click here if you or your partner have any accessibility requirements');
-  await expect(page.getByLabel('Partner Full Name')).toBeVisible();
+  await expect(page.getByLabel('Partner full name')).toBeVisible();
 });
 
 test('a line under the accessibility tick says who to email about more guests', async ({ page }) => {
@@ -44,4 +44,10 @@ test('the accessibility tick sits closer to the fields above it', async ({ page 
   // Was 74 on screen (Figma's 99 at three-quarters).
   expect(gap).toBeGreaterThan(40);
   expect(gap).toBeLessThan(56);
+});
+
+// Mark's lower-case pass (Pastel, 12 Nov 2026).
+test('the form labels use lower case after the first word', async ({ page }) => {
+  await expect(page.locator('#bf-name')).toHaveAttribute('placeholder', 'Full name');
+  await expect(page.locator('#bf-dietary option').filter({ hasText: /^Dairy/ })).toHaveText('Dairy free');
 });

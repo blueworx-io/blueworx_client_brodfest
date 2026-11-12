@@ -24,14 +24,14 @@ $brodfest_guest = 'guest_' === $brodfest_p;
 $brodfest_req = $brodfest_guest ? '' : ' required';
 $brodfest_l   = $brodfest_guest
 	? array(
-		'name'      => __( 'Partner Full Name', 'blueworx-client-brodfest' ),
-		'phone'     => __( 'Partner’s Mobile phone number', 'blueworx-client-brodfest' ),
-		'email'     => __( 'Partner’s Email address', 'blueworx-client-brodfest' ),
-		'dietary'   => __( 'Partner’s Dietary requirements', 'blueworx-client-brodfest' ),
-		'allergies' => __( 'Partner’s Allergies (Please type details)', 'blueworx-client-brodfest' ),
+		'name'      => __( 'Partner full name', 'blueworx-client-brodfest' ),
+		'phone'     => __( 'Partner’s mobile phone number', 'blueworx-client-brodfest' ),
+		'email'     => __( 'Partner’s email address', 'blueworx-client-brodfest' ),
+		'dietary'   => __( 'Partner’s dietary requirements', 'blueworx-client-brodfest' ),
+		'allergies' => __( 'Partner’s allergies (Please type details)', 'blueworx-client-brodfest' ),
 	)
 	: array(
-		'name'      => __( 'Full Name', 'blueworx-client-brodfest' ),
+		'name'      => __( 'Full name', 'blueworx-client-brodfest' ),
 		'phone'     => __( 'Mobile phone number', 'blueworx-client-brodfest' ),
 		'email'     => __( 'Email address', 'blueworx-client-brodfest' ),
 		'dietary'   => __( 'Dietary requirements', 'blueworx-client-brodfest' ),

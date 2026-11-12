@@ -35,7 +35,7 @@ test('Allergies asks for details, for the guest and the partner', async ({ page 
   await expect(page.locator('#bf-allergies')).toHaveAttribute('placeholder', 'Allergies (Please type details)');
   await attendingRadio(page, 'yes').check();
   await partnerRadio(page, 'yes').check();
-  await expect(page.locator('#bf-guest_allergies')).toHaveAttribute('placeholder', 'Partner’s Allergies (Please type details)');
+  await expect(page.locator('#bf-guest_allergies')).toHaveAttribute('placeholder', 'Partner’s allergies (Please type details)');
 });
 
 test('the guest list downloads with Mark’s columns, partner on the same row', async ({ page, browser }) => {
