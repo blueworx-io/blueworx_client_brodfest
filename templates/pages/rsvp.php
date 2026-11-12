@@ -67,7 +67,7 @@ brodfest_document_open( array( 'close' => true ) );
 				<span><?php esc_html_e( 'Click here if you or your partner have any accessibility requirements', 'blueworx-client-brodfest' ); ?></span>
 			</label>
 
-			<p class="bf-form__note"><?php echo wp_kses_post( brodfest_link_emails( esc_html__( 'If you are attending with more than one additional guest please email our guest liaison team at info@brodfest.net', 'blueworx-client-brodfest' ) ) ); ?></p>
+			<p class="bf-form__note" data-bf-attending><?php echo wp_kses_post( brodfest_link_emails( esc_html__( 'If you are attending with more than one additional guest please email our guest liaison team at info@brodfest.net', 'blueworx-client-brodfest' ) ) ); ?></p>
 
 			<button class="bf-button bf-button--send" type="submit"><?php esc_html_e( 'SEND', 'blueworx-client-brodfest' ); ?></button>
 		</form>

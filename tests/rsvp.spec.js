@@ -27,14 +27,18 @@ test('the partner question and accessibility tick show only once attending is Ye
   const extra = page.locator('fieldset[data-bf-attending]');
   await expect(extra).toBeHidden();
   await expect(page.locator('.bf-check')).toBeHidden();
+  // The line about more guests is part of the same section in Mark's screenshot.
+  await expect(page.locator('.bf-form__note')).toBeHidden();
   await attendingRadio(page, 'yes').check();
   await expect(extra).toBeVisible();
   await expect(page.locator('.bf-check')).toBeVisible();
+  await expect(page.locator('.bf-form__note')).toBeVisible();
   await partnerRadio(page, 'yes').check();
   await expect(page.locator('#bf-guest_name')).toBeVisible();
   // Saying no hides the lot, partner included.
   await attendingRadio(page, 'no').check();
   await expect(extra).toBeHidden();
+  await expect(page.locator('.bf-form__note')).toBeHidden();
   await expect(page.locator('#bf-guest_name')).toBeHidden();
 });
 
