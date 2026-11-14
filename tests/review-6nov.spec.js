@@ -45,7 +45,9 @@ test('Bless Ibiza has lost The Site', async ({ page }) => {
 
 test('each area says how far away it is, on the line under its name', async ({ page }) => {
   await page.goto('/accommodation/');
-  await expect(page.locator('.bf-area__distance')).toHaveText(['(15 mins away)', '(20 mins away)', '(20 mins away)']);
+  // Cala Llonga is 25 minutes, not 20 (Mark, Pastel, 13 Nov 2026).
+  await expect(page.locator('.bf-area__distance')).toHaveText(['(15 mins away)', '(20 mins away)', '(25 mins away)']);
+  await expect(page.locator('.bf-area').filter({ hasText: 'CALA LLONGA' }).locator('.bf-area__distance')).toHaveText('(25 mins away)');
   const gap = await page.locator('.bf-area').first().evaluate((area) => {
     const name = area.querySelector('.bf-area__name').getBoundingClientRect();
     const distance = area.querySelector('.bf-area__distance').getBoundingClientRect();
