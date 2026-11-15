@@ -191,7 +191,7 @@ function brodfest_std_copy( $key ) {
 			),
 			array(
 				'name'        => 'CALA LLONGA',
-				'distance'    => '(20 mins away)',
+				'distance'    => '(25 mins away)',
 				'image'       => brodfest_img( 'areas/cala-llonga-desktop.jpg' ),
 				'image_phone' => brodfest_img( 'areas/cala-llonga-mobile.jpg' ),
 				'image_label' => 'PICTURE OF CL',
