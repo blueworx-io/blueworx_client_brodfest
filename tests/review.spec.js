@@ -155,12 +155,14 @@ test('Enquiries has the new copy and brodfest.net addresses', async ({ page }) =
   await expect(page.locator('main')).toContainText('Concierge services are offered privately');
 });
 
-test('the Invite keeps its own copy until it has its own review', async ({ page }) => {
+test('the Invite Celebrate page is laid out as the Save the Date one, with its own welcome to come', async ({ page }) => {
   await loginAsAdmin(page);
-  await page.goto('/accommodation/?brodfest-site=invite');
-  await expect(page.locator('h1')).toHaveText('ACCOMMODATION');
   await page.goto('/celebrate/?brodfest-site=invite');
-  await expect(page.locator('h1')).toHaveText('CELEBRATE');
+  await expect(page.locator('.bf-strip')).toBeVisible();
+  await expect(page.locator('h1')).toHaveText('CELEBRATION');
+  await expect(page.locator('h2.bf-area__name')).toHaveText('DRESS CODE');
+  await expect(page.locator('main')).toContainText('Black, Gold & Ibiza Bold');
+  await expect(page.locator('main')).toContainText('Lorem ipsum');
 });
 
 test.describe('RSVP', () => {

@@ -88,20 +88,20 @@ function brodfest_menu() {
 }
 
 /**
- * A page's name in the menu. The Save the Date names two of its pages as the
- * client asked; otherwise it is the page's title.
+ * A page's name in the menu. Two pages are named as the client asked, on both
+ * sites (Luke, 15 Nov 2026); otherwise it is the page's title.
  *
  * @param string $slug Page slug.
  * @return string
  */
 function brodfest_menu_label( $slug ) {
-	$std = array(
+	$named = array(
 		'celebrate'     => __( 'Celebration', 'blueworx-client-brodfest' ),
 		'accommodation' => __( 'Information', 'blueworx-client-brodfest' ),
 	);
 
-	if ( ! brodfest_is_invite() && isset( $std[ $slug ] ) ) {
-		return $std[ $slug ];
+	if ( isset( $named[ $slug ] ) ) {
+		return $named[ $slug ];
 	}
 
 	return brodfest_pages()[ $slug ]['title'] ?? '';

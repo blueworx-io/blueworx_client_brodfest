@@ -5,6 +5,12 @@ All notable changes to this project are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.16.0] - 2026-11-15
+
+### Changed
+
+- The Invite now matches the Save the Date wherever the pages are the same: Information (transport, where to stay, the map and all eight hotels with their photos), Enquiries, and the menu names Celebration and Information. Its Celebrate page takes the Save the Date's title and dress code; its own welcome, the Can Sakhara Story and Recommendations stay as placeholders until the client sends them. Visitors still see only the Save the Date.
+
 ## [0.15.2] - 2026-11-14
 
 ### Changed

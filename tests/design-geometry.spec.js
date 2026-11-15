@@ -235,12 +235,12 @@ for (const frame of frames.filter((f) => f.endsWith('_1920'))) for (const V of L
 
 // Placeholder copy carries Figma's desktop line breaks; on a phone the text
 // wraps on its own, so the breaks and their hyphens must not show. The
-// Invite still has placeholder hotels.
+// Invite's recommendations still have placeholder cards.
 test('placeholder line breaks show on desktop only', async ({ page }) => {
   await skipIntro(page);
   await loginAsAdmin(page);
   await page.setViewportSize({ width: 1920, height: 1080 });
-  await page.goto('/accommodation/?brodfest-site=invite');
+  await page.goto('/recommendations/?brodfest-site=invite');
   const desktop = await page.locator('.bf-card__text').first().innerText();
   expect(desktop).toContain('adip-\niscing');
 
@@ -330,8 +330,8 @@ test('on a laptop only the hotel cards keep Figma\'s line breaks', async ({ page
   await loginAsAdmin(page);
   for (const width of LAPTOPS) {
     await page.setViewportSize({ width, height: 900 });
-    await page.goto('/accommodation/?brodfest-site=invite');
+    await page.goto('/recommendations/?brodfest-site=invite');
     expect(await page.locator('.bf-card__text').first().innerText()).toContain('adip-\niscing');
-    expect(await page.locator('.bf-area__intro').first().innerText()).not.toContain('\n');
+    expect(await page.locator('.bf-text .bf-body').first().innerText()).not.toContain('\n');
   }
 });
