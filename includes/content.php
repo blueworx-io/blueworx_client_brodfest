@@ -7,8 +7,10 @@
  * becomes a block whose attributes default to the same values — so nothing in
  * templates/parts/ has to change.
  *
- * The Save the Date copy is the client's (brodfest_std_copy()); the Invite's is
- * placeholder until the client supplies it.
+ * The Save the Date copy is the client's (brodfest_std_copy()). The Invite
+ * shares it wherever the pages are the same (Information, Enquiries); its own
+ * pages (Celebrate, the story, Recommendations) are placeholder until the
+ * client supplies them.
  *
  * @package Brodfest
  */
@@ -221,34 +223,13 @@ function brodfest_std_copy( $key ) {
 }
 
 /**
- * The accommodation areas, each with its banner, intro and hotels.
+ * The accommodation areas, each with its banner, intro and hotels. The same
+ * on both sites: the Invite reuses the Save the Date's (Luke, 15 Nov 2026).
  *
  * @return array<int, array{name: string, image: string, image_label: string, intro: string, cards: array}>
  */
 function brodfest_accommodation_areas() {
-	if ( ! brodfest_is_invite() ) {
-		return brodfest_std_copy( 'areas' );
-	}
-
-	// Name, short name, banner label and card count, as in the Figma file.
-	$areas = array(
-		array( 'PLAYA D’EN BOSSA', 'BOSSA', 'BOSSA', 3 ),
-		array( 'TALAMANCA', 'TALAMANCA', 'TALAMANCA', 3 ),
-		array( 'CALA LLONGA', 'CALA LLONGA', 'CL', 2 ),
-	);
-
-	return array_map(
-		static function ( $area ) {
-			return array(
-				'name'        => $area[0],
-				'image'       => '',
-				'image_label' => 'PICTURE OF ' . $area[2],
-				'intro'       => 'INFO ON ' . $area[1] . " AREA... Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut\nlabore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea",
-				'cards'       => brodfest_placeholder_cards( $area[3], 'HOTEL NAME' ),
-			);
-		},
-		$areas
-	);
+	return brodfest_std_copy( 'areas' );
 }
 
 /**
@@ -271,25 +252,10 @@ function brodfest_recommendation_categories() {
 }
 
 /**
- * The two enquiry contacts.
+ * The two enquiry contacts. The same on both sites (Luke, 15 Nov 2026).
  *
  * @return array<int, array{title: string, text: string, email: string}>
  */
 function brodfest_enquiry_contacts() {
-	if ( ! brodfest_is_invite() ) {
-		return brodfest_std_copy( 'enquiries' );
-	}
-
-	return array(
-		array(
-			'title' => 'GENERAL ENQUIRIES',
-			'text'  => brodfest_lorem( 2 ),
-			'email' => 'info@brodfest.net',
-		),
-		array(
-			'title' => 'PRIVATE CONCIERGE',
-			'text'  => brodfest_lorem( 3 ),
-			'email' => 'concierge@brodfest.net',
-		),
-	);
+	return brodfest_std_copy( 'enquiries' );
 }

@@ -2,9 +2,9 @@
 /**
  * Celebrate. Figma: STD – Celebrate and Invite – Celebrate.
  *
- * The Save the Date version is the welcome, then the dress code under an
- * area-style subtitle (transport is on Information, at the client's request); the Invite opens with a photo strip and adds the
- * dress code.
+ * The welcome, then the dress code under an area-style subtitle (transport is
+ * on Information, at the client's request). The Invite opens with a photo
+ * strip, and its welcome stays placeholder until the client sends it.
  *
  * @package Brodfest
  */
@@ -20,12 +20,15 @@ if ( brodfest_is_invite() ) {
 	<div class="bf-strip">
 		<img src="<?php echo esc_url( brodfest_img( 'celebrate-strip.jpg' ) ); ?>" alt="" />
 	</div>
-	<div class="bf-after-media">
+	<div class="bf-after-media bf-stack">
 		<?php
+		// Titled and laid out as the Save the Date's, with its dress code; the
+		// welcome stays placeholder until the client sends the Invite's (Luke,
+		// 15 Nov 2026).
 		brodfest_part(
 			'text-section',
 			array(
-				'title'      => 'CELEBRATE',
+				'title'      => 'CELEBRATION',
 				'paragraphs' => array( brodfest_lorem( 3 ), brodfest_lorem( 3 ) ),
 			)
 		);
@@ -34,7 +37,8 @@ if ( brodfest_is_invite() ) {
 			array(
 				'title'      => 'DRESS CODE',
 				'heading'    => 'h2',
-				'paragraphs' => array( 'Black, gold Ibiza bold' ),
+				'subtitle'   => true,
+				'paragraphs' => array( brodfest_std_copy( 'dress_code' ) ),
 			)
 		);
 		?>

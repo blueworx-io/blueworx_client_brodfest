@@ -1066,6 +1066,12 @@ html.bf-is-opening .bf-opening.is-leaving {
   padding-top: calc(84 * var(--u));
 }
 
+/* Sections under a photo that sit together, as the Invite's Celebration and
+   its dress code subtitle do on the Save the Date (Luke, 15 Nov 2026). */
+.bf-after-media.bf-stack .bf-text + .bf-text {
+  padding-top: calc(84 * var(--u));
+}
+
 .bf-section-gap {
   padding-top: calc(84 * var(--u));
 }
@@ -1104,6 +1110,10 @@ html.bf-is-opening .bf-opening.is-leaving {
 
   .bf-after-media .bf-text:first-child {
     padding-top: calc(107 * var(--u));
+  }
+
+  .bf-after-media.bf-stack .bf-text + .bf-text {
+    padding-top: calc(110 * var(--u));
   }
 }
 

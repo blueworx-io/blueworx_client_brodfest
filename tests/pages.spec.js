@@ -74,9 +74,9 @@ test('an editor can preview the Invite, which has its own pages and menu', async
 
   await page.locator('[data-bf-menu-toggle]').click();
   await expect(page.locator('.bf-menu__items a')).toHaveText([
-    'CELEBRATE',
+    'CELEBRATION',
     'CAN SAKHARA STORY',
-    'ACCOMMODATION',
+    'INFORMATION',
     'IBIZA RECOMMENDATIONS',
     'ENQUIRIES',
   ]);
@@ -90,10 +90,17 @@ test('Accommodation shows each area with its hotels', async ({ page }) => {
   await expect(page.locator('.bf-area').first().locator('.bf-card')).toHaveCount(3);
 });
 
-test('the Invite\'s placeholder hotels still carry the discount code', async ({ page }) => {
-  await loginAsAdmin(page);
-  await page.goto('/accommodation/?brodfest-site=invite');
-  await expect(page.locator('.bf-card__code').first()).toHaveText('BRODFEST');
+// The Invite shares the Save the Date's Information and Enquiries pages (Luke,
+// 15 Nov 2026), so the two must show the same thing.
+test('the Invite shows the same Information and Enquiries as the Save the Date', async ({ page }) => {
+  for (const path of ['/accommodation/', '/enquiries/']) {
+    await page.goto(path);
+    const std = await page.locator('main').innerText();
+    await loginAsAdmin(page);
+    await page.goto(path + '?brodfest-site=invite');
+    expect(await page.locator('main').innerText()).toBe(std);
+    await page.context().clearCookies();
+  }
 });
 
 // A phone lays the page out 767 wide (the mobile design) and zooms it to fit.

@@ -11,3 +11,4 @@ dist/
 .DS_Store
 .env*
 .claude/settings.local.json
+.figma-capture/
