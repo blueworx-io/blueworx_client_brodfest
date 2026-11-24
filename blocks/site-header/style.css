@@ -1,0 +1,243 @@
+/*
+ * The site header and the menu it opens.
+ *
+ * Every font and size is one of the theme's named styles (--font-*, --text-*),
+ * with today's value behind it until the theme has the name; colours are the
+ * theme's, through the --bf-* names in assets/css/src/app.css.
+ */
+
+/* ---- Header ------------------------------------------------------------- */
+
+.bf-header {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  height: var(--header-h);
+  background: var(--bf-bg);
+  transition: transform 0.5s var(--ease);
+}
+
+body.admin-bar .bf-header {
+  top: var(--wp-admin--admin-bar--height, 0px);
+}
+
+.bf-header.is-hidden {
+  transform: translateY(-100%);
+}
+
+.bf-header__toggle {
+  position: absolute;
+  left: var(--bf-gutter);
+  top: calc(87 * var(--u));
+  width: calc(46 * var(--u));
+  height: calc(34 * var(--u));
+  display: grid;
+  place-items: center;
+  background: none;
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+}
+
+.bf-header__toggle svg {
+  width: calc(34 * var(--u));
+}
+
+.bf-header__icon {
+  grid-area: 1 / 1;
+  display: grid;
+  place-items: center;
+  transition: opacity 0.3s, transform 0.4s var(--ease);
+}
+
+.bf-header__icon--menu svg {
+  width: calc(46 * var(--u));
+}
+
+.bf-header__icon--close {
+  opacity: 0;
+  transform: rotate(-90deg);
+}
+
+.is-menu-open .bf-header__icon--menu,
+.is-rsvp-open .bf-header__icon--menu {
+  opacity: 0;
+  transform: rotate(90deg);
+}
+
+.is-menu-open .bf-header__icon--close,
+.is-rsvp-open .bf-header__icon--close {
+  opacity: 1;
+  transform: none;
+}
+
+.bf-header__logo {
+  position: absolute;
+  left: 50%;
+  top: calc(79 * var(--u));
+  width: calc(327 * var(--u));
+  transform: translateX(-50%);
+}
+
+.bf-header .bf-pill {
+  position: absolute;
+  right: calc(29 * var(--u) + var(--bf-shift));
+  top: calc(78 * var(--u));
+}
+
+/* Tablets and desktop: the desktop's 170 header, its logo a fifth smaller
+   than Figma's 430 (344 by 82.4), and the logo, button and pill all centred
+   in it, drawn at the desktop's three-quarters from 768 up, so a tablet's
+   header is the desktop's. The header carries the desktop's measures itself,
+   as a tablet's page keeps the mobile design's. */
+@media (min-width: 768px) {
+  .bf-header {
+    --u: 0.75px;
+    --bf-shift: max(calc(-160 * var(--u)), calc((100% - 1920 * var(--u)) / 2));
+    --bf-gutter: calc(193 * var(--u) + var(--bf-shift));
+    --bf-header-edge: calc(48 * var(--u));
+  }
+
+  .bf-header .bf-pill {
+    width: calc(185 * var(--u));
+    height: calc(62 * var(--u));
+    font-size: var(--text-35, calc(35 * var(--u)));
+  }
+
+  .bf-header__toggle {
+    left: max(var(--bf-gutter), var(--bf-header-edge));
+    top: calc(68 * var(--u));
+  }
+
+  .bf-header__logo {
+    top: calc(43.8 * var(--u));
+    width: calc(344 * var(--u));
+  }
+
+  .bf-header .bf-pill {
+    right: max(calc(109 * var(--u) + var(--bf-shift)), var(--bf-header-edge));
+    top: calc(54 * var(--u));
+  }
+}
+
+/* ---- Menu --------------------------------------------------------------- */
+
+/* The page shows through, blurred, at the client's request (5 Nov). Mostly
+   the page colour, so the video behind only tints it. */
+.bf-menu {
+  position: fixed;
+  inset: var(--header-h) 0 0 0;
+  z-index: 40;
+  background: color-mix(in srgb, var(--bf-bg) 80%, transparent);
+  -webkit-backdrop-filter: blur(24px);
+  backdrop-filter: blur(24px);
+  opacity: 0;
+  transition: opacity 0.4s var(--ease);
+}
+
+body.admin-bar .bf-menu {
+  top: calc(var(--header-h) + var(--wp-admin--admin-bar--height, 0px));
+}
+
+.bf-menu[hidden] {
+  display: block;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+.is-menu-open .bf-menu {
+  opacity: 1;
+}
+
+/* The list is as wide as its longest item, as Figma's Items frame. */
+.bf-menu__items {
+  list-style: none;
+  width: max-content;
+  margin: calc(99 * var(--u)) 0 0 var(--bf-gutter);
+  padding: 0;
+}
+
+.bf-menu__items li + li {
+  margin-top: calc(41 * var(--u));
+}
+
+.bf-menu__items li {
+  opacity: 0;
+  transform: translateX(calc(-30 * var(--u)));
+  transition: opacity 0.5s var(--ease), transform 0.6s var(--ease);
+  transition-delay: calc(0.12s + var(--i) * 0.06s);
+}
+
+.is-menu-open .bf-menu__items li {
+  opacity: 1;
+  transform: none;
+}
+
+.bf-menu__items a {
+  display: block;
+  width: max-content;
+  font-size: var(--text-27, calc(27 * var(--u)));
+  line-height: calc(28 * var(--u));
+  letter-spacing: var(--track-body);
+  text-decoration: none;
+  font-weight: 300;
+  transition: color 0.2s;
+}
+
+/* White on rollover, not bolder (client, 5 Nov). On focus only while the
+   keyboard is in use: the menu moves focus to its first link as it opens, and
+   Safari showed that link white after a tap, as if it were the current page
+   (Luke, 9 Nov 2026). */
+html[data-bf-keys] .bf-menu__items a:focus-visible,
+.bf-menu__items a[aria-current="page"],
+.bf-menu__items a:active {
+  color: var(--bf-white);
+}
+
+@media (hover: hover) {
+  .bf-menu__items a:hover {
+    color: var(--bf-white);
+  }
+}
+
+.bf-menu__divider {
+  display: none;
+}
+
+@media (min-width: 1024px) {
+  /* 8 in from the menu button, as in Figma, wherever the button sits. */
+  .bf-menu__items {
+    margin: calc(132 * var(--u)) 0 0 max(calc(185 * var(--u) + var(--bf-shift)), calc(var(--bf-header-edge) - 8 * var(--u)));
+  }
+
+  .bf-menu__items li + li {
+    margin-top: calc(54 * var(--u));
+  }
+
+  .bf-menu__items a {
+    font-size: var(--text-37, calc(37 * var(--u)));
+    line-height: calc(37 * var(--u));
+  }
+
+  /* The gold divider slides out from the top as the menu opens. */
+  .bf-menu__divider {
+    display: block;
+    position: absolute;
+    left: calc(760 * var(--u) + var(--bf-shift));
+    top: 0;
+    bottom: 0;
+    width: 1px;
+    background: var(--bf-gold);
+    transform: scaleY(0);
+    transform-origin: top;
+    transition: transform 0.9s var(--ease) 0.1s;
+  }
+
+  .is-menu-open .bf-menu__divider {
+    transform: scaleY(1);
+  }
+}
+
+body.is-menu-open {
+  overflow: hidden;
+}

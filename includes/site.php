@@ -101,7 +101,8 @@ function brodfest_menu_label( $slug ) {
 	);
 
 	if ( ! brodfest_is_invite() && isset( $std[ $slug ] ) ) {
-		return $std[ $slug ];
+		// The name from Brodfest › Site › Header words, when one is saved.
+		return (string) brodfest_setting( 'menu_' . $slug, $std[ $slug ] );
 	}
 
 	return brodfest_pages()[ $slug ]['title'] ?? '';

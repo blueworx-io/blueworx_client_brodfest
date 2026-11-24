@@ -1,0 +1,36 @@
+{
+	"$schema": "https://schemas.wp.org/trunk/block.json",
+	"apiVersion": 3,
+	"name": "brodfest/story-banner",
+	"title": "Story banner",
+	"category": "brodfest",
+	"icon": "format-image",
+	"description": "The banner artwork across the top of the Can Sakhara Story page. The artwork itself is the plugin's own.",
+	"keywords": [
+		"story",
+		"banner",
+		"artwork"
+	],
+	"textdomain": "blueworx-client-brodfest",
+	"attributes": {
+		"decorative": {
+			"type": "boolean",
+			"default": true
+		},
+		"alt": {
+			"type": "string",
+			"default": ""
+		}
+	},
+	"supports": {
+		"html": false,
+		"align": false,
+		"color": false,
+		"typography": false,
+		"spacing": false,
+		"customClassName": false,
+		"customCSS": false
+	},
+	"editorScript": "file:./edit.js",
+	"render": "file:./render.php"
+}

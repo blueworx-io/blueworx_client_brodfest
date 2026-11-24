@@ -22,6 +22,11 @@
 
 	<rule ref="WordPress"/>
 
+	<!-- WordPress itself reads a block's edit.asset.php by that name. -->
+	<rule ref="WordPress.Files.FileName.NotHyphenatedLowercase">
+		<exclude-pattern>*.asset.php</exclude-pattern>
+	</rule>
+
 	<config name="testVersion" value="8.1-"/>
 	<rule ref="WordPress.WP.I18n">
 		<properties>

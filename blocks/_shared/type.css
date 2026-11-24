@@ -1,0 +1,116 @@
+/*
+ * Type shared by the sections: titles, area names, card names, body copy.
+ *
+ * Every font and size is one of the theme's named styles (--font-*, --text-*),
+ * with today's value behind it until the theme has the name; colours are the
+ * theme's, through the --bf-* names in assets/css/src/app.css.
+ */
+
+/* ---- Type --------------------------------------------------------------- */
+
+/* Wide tracking adds space after the last letter too; the matching indent
+   puts centred lines back on centre. */
+.bf-title,
+.bf-area__name,
+.bf-card__name,
+.bf-placeholder-label {
+  font-family: var(--font-heading, "futura-pt", "Jost", "Futura", sans-serif);
+  font-weight: 400;
+  color: var(--bf-orange);
+  letter-spacing: var(--track-wide);
+  text-indent: var(--track-wide);
+  text-align: center;
+  text-transform: uppercase;
+}
+
+/* Text sizes are the agreed whole numbers; each line keeps the height of
+   Figma's text box, so everything below lands where Figma puts it. */
+.bf-title {
+  font-size: var(--text-37, calc(37 * var(--u)));
+  line-height: calc(48.75 * var(--u));
+}
+
+.bf-area__name {
+  font-size: var(--text-25, calc(25 * var(--u)));
+  line-height: calc(25 * var(--u));
+}
+
+.bf-card__name {
+  font-size: var(--text-22, calc(22 * var(--u)));
+  line-height: calc(22 * var(--u));
+}
+
+.bf-placeholder-label {
+  font-size: var(--text-25, calc(25 * var(--u)));
+  line-height: calc(25 * var(--u));
+  color: var(--bf-bg);
+}
+
+/* 30% bigger than Figma's 20 on the mobile design (client, 6 Nov 2026);
+   desktop sets its own size below. */
+.bf-body {
+  font-size: var(--text-26, calc(26 * var(--u)));
+  line-height: 1.85;
+  letter-spacing: var(--track-body);
+  text-align: center;
+}
+
+.bf-body a {
+  text-decoration: none;
+  border-bottom: 1px solid transparent;
+  transition: border-color 0.3s;
+}
+
+.bf-body a:active {
+  border-bottom-color: currentColor;
+}
+
+@media (hover: hover) {
+  .bf-body a:hover {
+    border-bottom-color: currentColor;
+  }
+}
+
+/* The copy's own line breaks (brodfest_text()) are the desktop design's; the
+   mobile design wraps on its own. */
+@media (max-width: 1023.98px) {
+  .bf-br,
+  .bf-hy {
+    display: none;
+  }
+}
+
+/* On a laptop the text is narrower than Figma's, so it wraps on its own too;
+   only the hotel cards, which keep their size, keep the breaks. */
+@media (min-width: 1024px) and (max-width: 1199.98px) {
+  :not(.bf-card__text) > :is(.bf-br, .bf-hy) {
+    display: none;
+  }
+}
+
+@media (min-width: 1024px) {
+  .bf-title {
+    font-size: var(--text-50, calc(50 * var(--u)));
+    line-height: 1;
+  }
+
+  .bf-area__name {
+    font-size: var(--text-34, calc(34 * var(--u)));
+    line-height: calc(34 * var(--u));
+  }
+
+  .bf-card__name {
+    font-size: var(--text-30, calc(30 * var(--u)));
+    line-height: calc(29 * var(--u));
+  }
+
+  .bf-placeholder-label {
+    font-size: var(--text-34, calc(34 * var(--u)));
+    line-height: calc(34 * var(--u));
+  }
+
+  .bf-body {
+    font-size: var(--text-20, calc(20 * var(--u)));
+    line-height: 2.75;
+  }
+}

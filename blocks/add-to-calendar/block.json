@@ -1,0 +1,34 @@
+{
+	"$schema": "https://schemas.wp.org/trunk/block.json",
+	"apiVersion": 3,
+	"name": "brodfest/add-to-calendar",
+	"title": "Add to Calendar",
+	"category": "brodfest",
+	"icon": "calendar",
+	"description": "The Add to Calendar button and its choice of calendars. It stays hidden on the site until it is switched on.",
+	"keywords": [
+		"calendar",
+		"ics"
+	],
+	"textdomain": "blueworx-client-brodfest",
+	"parent": [
+		"brodfest/home-lettering"
+	],
+	"attributes": {
+		"label": {
+			"type": "string",
+			"default": ""
+		}
+	},
+	"supports": {
+		"html": false,
+		"align": false,
+		"color": false,
+		"typography": false,
+		"spacing": false,
+		"customClassName": false,
+		"customCSS": false
+	},
+	"editorScript": "file:./edit.js",
+	"render": "file:./render.php"
+}

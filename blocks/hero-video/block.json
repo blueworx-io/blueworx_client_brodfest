@@ -1,0 +1,47 @@
+{
+	"$schema": "https://schemas.wp.org/trunk/block.json",
+	"apiVersion": 3,
+	"name": "brodfest/hero-video",
+	"title": "Home video",
+	"category": "brodfest",
+	"icon": "video-alt3",
+	"description": "The video at the top of the home page, with its sound and play buttons. A video chosen under Brodfest › Site wins over the files here.",
+	"keywords": [
+		"video",
+		"hero",
+		"home"
+	],
+	"textdomain": "blueworx-client-brodfest",
+	"attributes": {
+		"videos": {
+			"type": "array",
+			"default": [],
+			"items": {
+				"type": "object"
+			}
+		},
+		"placeholder": {
+			"type": "string",
+			"default": ""
+		},
+		"playLabel": {
+			"type": "string",
+			"default": ""
+		},
+		"soundLabel": {
+			"type": "string",
+			"default": ""
+		}
+	},
+	"supports": {
+		"html": false,
+		"align": false,
+		"color": false,
+		"typography": false,
+		"spacing": false,
+		"customClassName": false,
+		"customCSS": false
+	},
+	"editorScript": "file:./edit.js",
+	"render": "file:./render.php"
+}

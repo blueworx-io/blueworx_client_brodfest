@@ -20,6 +20,10 @@ const ALLOW = [
 	'readme.txt',
 	'includes',
 	'templates',
+	// The section blocks: each one's block.json, render.php and edit script,
+	// which WordPress reads at runtime. Their style.css files are build inputs
+	// (bundled into assets/css/public.css) and ride along; they are small.
+	'blocks',
 	// Only the built runtime assets — not assets/js/src or assets/css/src,
 	// which are build inputs. includes/assets.php only ever enqueues
 	// assets/css/public.css and assets/js/public.js, so the source trees

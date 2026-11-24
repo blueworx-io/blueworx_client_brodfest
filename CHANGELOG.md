@@ -5,6 +5,20 @@ All notable changes to this project are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.16.0] - 2026-11-24
+
+### Changed
+
+- Every section of the Save the Date and of the hidden Invite is now a section block, drawn on the server: the opening screen, the home video, the date and lettering, Add to Calendar, the text sections (Celebration, dress code, transport, enquiries and the rest), the Can Sakhara Story banner and feature image, the map, each accommodation area with its hotels, each recommendations group, the RSVP form, the header and the footer. The pages look exactly as they did on a computer, a tablet and a phone; the one difference is that screen readers now hear the Information page’s areas as headings under "Where to stay", and the Invite’s Enquiries page has one visible main heading instead of a hidden one.
+- Each page now holds its words as blocks, so they can be edited in WordPress. A page is given its blocks once, when the plugin updates; after that its words belong to the page and an update never overwrites them.
+- The Invite’s blocks are kept in a private "Held-back pages" copy of each page (under Pages in the admin) until the live site is switched to the Invite, so nothing of the Invite can be read before then. Switching the live site in Brodfest › Site swaps each page’s blocks with its held-back copy, and switching back puts them back exactly.
+- Every image on a block has an alt text field, or a "decorative" switch. The hotel and area photos and the map now have alt text. Lists (the hotels in an area, the places in a group) have a smallest and largest size, and a list with nothing in it leaves itself out of the page.
+- Each section’s styles now sit beside it in `blocks/` and use the theme’s named fonts and sizes (`--font-*`, `--text-*`), with today’s value behind each name until the theme has it. New names for the theme and Figma: `--text-13`, `--text-18`, `--text-20`, `--text-22`, `--text-23`, `--text-25`, `--text-26`, `--text-27`, `--text-30`, `--text-34`, `--text-35`, `--text-37`, `--text-48` and `--text-50`.
+
+### Removed
+
+- The fixed PHP page templates (`templates/pages/`, `templates/parts/`) and the copy held in code: the blocks and the pages’ own content replace them.
+
 ## [0.15.3] - 2026-11-24
 
 ### Added

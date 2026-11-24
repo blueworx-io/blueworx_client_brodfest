@@ -27,3 +27,33 @@ test('switching to the Invite in the admin changes what visitors see', async ({ 
     await chooseSite(page, 'Save the Date');
   }
 });
+
+// The header is a block drawn on every page; its words come from the settings
+// screen, and an empty box keeps the usual ones.
+test('the header words are set on the settings screen', async ({ page, browser }) => {
+  await loginAsAdmin(page);
+
+  async function setWords(rsvp, celebrate) {
+    await page.goto('/wp-admin/admin.php?page=brodfest');
+    await page.getByLabel('RSVP button', { exact: true }).fill(rsvp);
+    await page.getByLabel('Menu name for Celebrate (Save the Date)').fill(celebrate);
+    await page.getByRole('button', { name: 'Save changes' }).click();
+    await expect(page.getByText('Everything is saved')).toBeVisible();
+  }
+
+  const visitor = await browser.newContext();
+  const visit = await visitor.newPage();
+  await skipIntro(visit);
+  try {
+    await setWords('REPLY', 'The Party');
+    await visit.goto('/celebrate/');
+    await expect(visit.locator('.bf-pill')).toHaveText('REPLY');
+    await expect(visit.locator('.bf-menu__items a').first()).toHaveText('THE PARTY');
+  } finally {
+    await setWords('', '');
+    await visit.goto('/celebrate/');
+    await expect(visit.locator('.bf-pill')).toHaveText('RSVP');
+    await expect(visit.locator('.bf-menu__items a').first()).toHaveText('CELEBRATION');
+    await visitor.close();
+  }
+});

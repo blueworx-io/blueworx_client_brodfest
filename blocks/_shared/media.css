@@ -1,0 +1,130 @@
+/*
+ * The picture sections: photo strip, story banner, feature image, map, and the area banner box.
+ *
+ * Every font and size is one of the theme's named styles (--font-*, --text-*),
+ * with today's value behind it until the theme has the name; colours are the
+ * theme's, through the --bf-* names in assets/css/src/app.css.
+ */
+
+/* ---- Media blocks ------------------------------------------------------- */
+
+.bf-strip img {
+  display: block;
+  width: 100%;
+  height: calc(300 * var(--u));
+  object-fit: cover;
+}
+
+/* The artwork keeps Figma's size, centred: its colour runs to the edges of
+   a wider window, and a narrower one trims its sides. */
+.bf-story-banner {
+  background: var(--bf-field);
+  overflow: hidden;
+}
+
+body.brodfest .bf-story-banner svg {
+  width: calc(767 * var(--u));
+  margin-left: calc(50% - 383.5 * var(--u));
+}
+
+@media (min-width: 1024px) {
+  body.brodfest .bf-story-banner svg {
+    width: calc(1920 * var(--u));
+    margin-left: calc(50% - 960 * var(--u));
+  }
+}
+
+/* The banner's backdrop shape; its peaks draw in currentColor. */
+.bf-fill-field {
+  fill: var(--bf-field);
+}
+
+.bf-feature,
+.bf-map,
+.bf-banner {
+  display: grid;
+  place-items: center;
+  background: var(--bf-orange);
+  overflow: hidden;
+}
+
+.bf-banner picture {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.bf-banner img,
+.bf-card__image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.bf-feature {
+  margin: calc(129 * var(--u)) var(--bf-gutter) 0;
+  aspect-ratio: 1356 / 567;
+}
+
+/* The map slot: same width as the area banners. */
+.bf-map {
+  margin-top: calc(62 * var(--u));
+  height: calc(384 * var(--u));
+  background: var(--bf-field);
+}
+
+.bf-map .bf-placeholder-label {
+  color: var(--bf-gold);
+}
+
+/* The map itself, on the page colour as the client drew it: their squarer
+   version filling the 767 width on mobile, its slot as tall as the map, and
+   their wide one filling the desktop slot, cropping at the sides on a laptop
+   (Luke, 6 Nov 2026). */
+.bf-map--image {
+  background: none;
+}
+
+@media (max-width: 1023.98px) {
+  .bf-map--image {
+    height: auto;
+  }
+
+  /* The mobile design's 767, centred on a wider window, so its height
+     never changes with the width. */
+  .bf-map--image img {
+    width: calc(767 * var(--u));
+    height: auto;
+  }
+}
+
+@media (min-width: 1024px) {
+  .bf-strip img {
+    height: calc(502 * var(--u));
+  }
+
+  .bf-feature {
+    width: min(calc(1356 * var(--u)), var(--bf-column));
+    height: calc(567 * var(--u));
+    aspect-ratio: auto;
+    margin: calc(175 * var(--u)) auto 0;
+  }
+
+  .bf-feature .bf-placeholder-label {
+    font-size: var(--text-50, calc(50 * var(--u)));
+    line-height: calc(50 * var(--u));
+  }
+
+
+  .bf-map {
+    width: var(--bf-column);
+    height: calc(782 * var(--u));
+    margin: calc(79 * var(--u)) auto 0;
+  }
+
+  .bf-map--image img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+}

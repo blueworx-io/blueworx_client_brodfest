@@ -1,0 +1,33 @@
+{
+	"$schema": "https://schemas.wp.org/trunk/block.json",
+	"apiVersion": 3,
+	"name": "brodfest/site-footer",
+	"title": "Site footer",
+	"category": "brodfest",
+	"icon": "minus",
+	"description": "The logo mark at the foot of every page, drawn by the plugin.",
+	"keywords": [
+		"footer",
+		"mark"
+	],
+	"textdomain": "blueworx-client-brodfest",
+	"attributes": {
+		"markLabel": {
+			"type": "string",
+			"default": ""
+		}
+	},
+	"supports": {
+		"html": false,
+		"align": false,
+		"color": false,
+		"typography": false,
+		"spacing": false,
+		"customClassName": false,
+		"customCSS": false,
+		"inserter": false,
+		"multiple": false
+	},
+	"editorScript": "file:./edit.js",
+	"render": "file:./render.php"
+}

@@ -1,0 +1,50 @@
+{
+	"$schema": "https://schemas.wp.org/trunk/block.json",
+	"apiVersion": 3,
+	"name": "brodfest/site-header",
+	"title": "Site header",
+	"category": "brodfest",
+	"icon": "menu",
+	"description": "The logo, the menu and the RSVP button, drawn on every page by the plugin.",
+	"keywords": [
+		"header",
+		"menu",
+		"rsvp"
+	],
+	"textdomain": "blueworx-client-brodfest",
+	"attributes": {
+		"homeLabel": {
+			"type": "string",
+			"default": ""
+		},
+		"rsvpLabel": {
+			"type": "string",
+			"default": ""
+		},
+		"menuLabel": {
+			"type": "string",
+			"default": ""
+		},
+		"closeLabel": {
+			"type": "string",
+			"default": ""
+		},
+		"navLabel": {
+			"type": "string",
+			"default": ""
+		}
+	},
+	"supports": {
+		"html": false,
+		"align": false,
+		"color": false,
+		"typography": false,
+		"spacing": false,
+		"customClassName": false,
+		"customCSS": false,
+		"inserter": false,
+		"multiple": false
+	},
+	"editorScript": "file:./edit.js",
+	"render": "file:./render.php"
+}

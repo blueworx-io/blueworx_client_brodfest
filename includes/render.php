@@ -58,25 +58,70 @@ add_action( 'wp', 'brodfest_scope_title_tag_support' );
 /**
  * Takes over rendering for pages this plugin owns.
  *
+ * Every owned page is drawn by the one template, from its section blocks.
+ *
  * @param string $template Template path WordPress resolved.
  * @return string Template path to use.
  */
 function brodfest_template_include( $template ) {
-	if ( ! is_singular( 'page' ) ) {
+	if ( ! is_singular( 'page' ) || '' === brodfest_page_slug( get_queried_object_id() ) ) {
 		return $template;
 	}
 
-	$slug = brodfest_page_slug( get_queried_object_id() );
-
-	if ( '' === $slug ) {
-		return $template;
-	}
-
-	$path = BRODFEST_DIR . 'templates/' . brodfest_pages()[ $slug ]['template'];
+	$path = BRODFEST_DIR . 'templates/page.php';
 
 	return file_exists( $path ) ? $path : $template;
 }
 add_filter( 'template_include', 'brodfest_template_include' );
+
+/**
+ * What the page being drawn is, for the blocks that depend on it (the header
+ * shows a close button on the RSVP page). Read with one argument; set by
+ * brodfest_document_open() with two.
+ *
+ * @param string $key   'slug' or 'close'.
+ * @param mixed  $value Set it when given.
+ * @return mixed
+ */
+function brodfest_document( $key, $value = null ) {
+	static $state = array(
+		'slug'  => '',
+		'close' => false,
+	);
+
+	if ( null !== $value ) {
+		$state[ $key ] = $value;
+	}
+
+	return $state[ $key ] ?? null;
+}
+
+/**
+ * Draws one of the plugin's global blocks (the header or footer), from the
+ * block's own render file.
+ *
+ * @param string $name Block name without the namespace.
+ * @return void
+ */
+function brodfest_render_global( $name ) {
+	/**
+	 * Filters the attributes (the words) of a global block, by name.
+	 *
+	 * @param array  $attributes Attributes; empty uses the block's own words.
+	 * @param string $name       'site-header' or 'site-footer'.
+	 */
+	$attributes = (array) apply_filters( 'brodfest_global_attributes', array(), $name );
+
+	echo render_block( // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Drawn by this plugin's own render file, which escapes its own output.
+		array(
+			'blockName'    => 'brodfest/' . $name,
+			'attrs'        => $attributes,
+			'innerBlocks'  => array(),
+			'innerHTML'    => '',
+			'innerContent' => array(),
+		)
+	);
+}
 
 /**
  * Opens a complete HTML document for a plugin-rendered page, with the site
@@ -87,7 +132,7 @@ add_filter( 'template_include', 'brodfest_template_include' );
  *
  * @param array $args Optional. 'body_class' => string; 'close' => bool, to show
  *                    the header's close button in place of the menu, as the
- *                    RSVP page does; 'opening' => bool, for the home page's
+ *                    RSVP page does; 'opening' => bool, for a page with the
  *                    first-visit opening, where the logo draws itself and Enter
  *                    starts the video with sound.
  * @return void
@@ -96,6 +141,9 @@ function brodfest_document_open( $args = array() ) {
 	$body_class = isset( $args['body_class'] ) ? (string) $args['body_class'] : '';
 	$slug       = brodfest_page_slug( get_queried_object_id() );
 	$classes    = 'brodfest brodfest-site-' . brodfest_site();
+
+	brodfest_document( 'slug', $slug );
+	brodfest_document( 'close', ! empty( $args['close'] ) );
 
 	if ( '' !== $slug ) {
 		$classes .= ' brodfest-page-' . sanitize_html_class( $slug );
@@ -129,30 +177,8 @@ function brodfest_document_open( $args = array() ) {
 </head>
 <body <?php body_class( $classes ); ?>>
 	<?php wp_body_open(); ?>
-	<?php if ( ! empty( $args['opening'] ) ) : ?>
-	<div class="bf-opening" role="dialog" aria-modal="true" aria-label="<?php esc_attr_e( 'Welcome to Brodfest', 'blueworx-client-brodfest' ); ?>" data-bf-opening>
-		<span class="bf-opening__logo">
-			<?php
-			// Each letter's outline is measured as 1, so the drawing runs the
-			// same length whatever the letter's size.
-			ob_start();
-			brodfest_inline_svg( 'logo', 'Brodfest Ibiza' );
-			echo str_replace( '<path ', '<path pathLength="1" ', (string) ob_get_clean() ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- The plugin's own SVG, from brodfest_inline_svg().
-			?>
-		</span>
-		<button class="bf-opening__enter bf-pill" type="button" data-bf-enter><?php esc_html_e( 'ENTER', 'blueworx-client-brodfest' ); ?></button>
-	</div>
-	<?php endif; ?>
 	<a class="bf-skip" href="#content"><?php echo esc_html__( 'Skip to the content', 'blueworx-client-brodfest' ); ?></a>
-	<?php
-	brodfest_part(
-		'header',
-		array(
-			'slug'  => $slug,
-			'close' => ! empty( $args['close'] ),
-		)
-	);
-	?>
+	<?php brodfest_render_global( 'site-header' ); ?>
 	<main id="content" class="bf-main">
 	<?php
 }
@@ -167,32 +193,12 @@ function brodfest_document_close() {
 	?>
 	</main>
 	<?php
-	brodfest_part( 'footer' );
+	brodfest_render_global( 'site-footer' );
 	wp_footer();
 	?>
 </body>
 </html>
 	<?php
-}
-
-/**
- * Loads a template part from templates/parts/.
- *
- * @param string $name Part name, without the .php extension.
- * @param array  $args Variables made available to the part as $args.
- * @return void
- */
-function brodfest_part( $name, $args = array() ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.FoundAfterLastUsed -- $args is read by the included part, which phpcs cannot see.
-	// A part name reaches an include(), so it is reduced to a bare filename
-	// rather than trusted.
-	$name = basename( (string) $name, '.php' );
-	$path = BRODFEST_DIR . 'templates/parts/' . $name . '.php';
-
-	if ( ! file_exists( $path ) ) {
-		return;
-	}
-
-	include $path;
 }
 
 /**

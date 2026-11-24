@@ -1,0 +1,237 @@
+/*
+ * The area and recommendations sections and the cards row they share.
+ *
+ * Every font and size is one of the theme's named styles (--font-*, --text-*),
+ * with today's value behind it until the theme has the name; colours are the
+ * theme's, through the --bf-* names in assets/css/src/app.css.
+ */
+
+/* ---- Areas, categories and cards ---------------------------------------- */
+
+.bf-area,
+.bf-category {
+  padding-top: calc(89 * var(--u));
+}
+
+.bf-area + .bf-area {
+  padding-top: calc(130 * var(--u));
+}
+
+.bf-category + .bf-category {
+  padding-top: calc(87 * var(--u));
+}
+
+.bf-area__name {
+  padding-inline: var(--bf-text-gutter);
+}
+
+/* How far the area is from Brodfest, on the line under its name. */
+.bf-area__distance {
+  margin-top: calc(12 * var(--u));
+  padding-inline: var(--bf-text-gutter);
+  text-align: center;
+}
+
+/* Banners run full-bleed on mobile. */
+.bf-banner {
+  margin-top: calc(26 * var(--u));
+  height: calc(384 * var(--u));
+}
+
+.bf-area__intro {
+  margin-top: calc(62 * var(--u));
+  padding-inline: var(--bf-text-gutter);
+}
+
+.bf-cards {
+  margin-top: calc(54 * var(--u));
+}
+
+.bf-category .bf-cards {
+  margin-top: calc(40 * var(--u));
+}
+
+/* Mobile: one card in view, the next peeking 135px, swipe to move. */
+.bf-cards__track {
+  list-style: none;
+  margin: 0;
+  padding: 0 var(--bf-gutter);
+  display: flex;
+  gap: calc(24 * var(--u));
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  scroll-padding-inline: var(--bf-gutter);
+  scrollbar-width: none;
+}
+
+.bf-cards__track::-webkit-scrollbar {
+  display: none;
+}
+
+/* Positioned so hidden labels inside stay clipped by the carousel. */
+.bf-card {
+  position: relative;
+  flex: 0 0 calc(560 * var(--u));
+  scroll-snap-align: start;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.bf-card__image {
+  width: 100%;
+  aspect-ratio: 560 / 383;
+  background: var(--bf-gold);
+}
+
+.bf-card__name {
+  margin-top: calc(25 * var(--u));
+}
+
+/* The text takes up the slack, so a row's buttons stay in line however long
+   each hotel's name and copy run. */
+.bf-card__text {
+  flex-grow: 1;
+  margin-top: calc(20 * var(--u));
+  font-size: var(--text-20, calc(20 * var(--u)));
+  line-height: 1.85;
+  letter-spacing: var(--track-body);
+}
+
+.bf-card .bf-button--card {
+  margin-top: calc(31 * var(--u));
+}
+
+.bf-card__discount {
+  margin-top: calc(27 * var(--u));
+  color: var(--bf-orange);
+  font-size: var(--text-20, calc(20 * var(--u)));
+  line-height: 1.85;
+  letter-spacing: var(--track-body);
+}
+
+/* The code, and a hotel's own offer line, in white. */
+.bf-card__code,
+.bf-card__discount--offer {
+  color: var(--bf-white);
+}
+
+.bf-cards__dots {
+  display: flex;
+  width: max-content;
+  gap: calc(12 * var(--u));
+  margin: calc(40 * var(--u)) auto 0;
+}
+
+.bf-cards__dot {
+  width: calc(12 * var(--u));
+  height: calc(12 * var(--u));
+  border-radius: 999px;
+  border: 1.5px solid var(--bf-gold);
+  transition: background-color 0.3s;
+}
+
+.bf-cards__dot.is-active {
+  background: var(--bf-gold);
+}
+
+@media (min-width: 1024px) {
+  .bf-area {
+    padding-top: calc(118 * var(--u));
+  }
+
+  .bf-category {
+    padding-top: calc(118 * var(--u));
+  }
+
+  .bf-area + .bf-area {
+    padding-top: calc(173 * var(--u));
+  }
+
+  .bf-category + .bf-category {
+    padding-top: calc(112 * var(--u));
+  }
+
+  /* Figma's Section/Area Header: name, banner and intro on the banner's width. */
+  .bf-area__header {
+    width: var(--bf-column);
+    margin-inline: auto;
+  }
+
+  .bf-banner {
+    width: 100%;
+    height: calc(323 * var(--u));
+    margin: calc(39 * var(--u)) auto 0;
+  }
+
+  .bf-area__intro {
+    max-width: calc(1150 * var(--u));
+    margin: calc(79 * var(--u)) auto 0;
+    padding: 0;
+  }
+
+  .bf-cards {
+    margin-top: calc(75 * var(--u));
+  }
+
+  .bf-category .bf-cards {
+    margin-top: calc(57 * var(--u));
+  }
+
+  /* Desktop: the cards keep Figma's size in one row, centred. The moment
+     the window can no longer hold them, with 18px either side, the row
+     swipes from that margin and shows the dots (Luke, 6 Nov 2026):
+     carousel.js marks it, as only the browser knows when that is. */
+  .bf-cards__track {
+    width: fit-content;
+    max-width: calc(100% - 36 * var(--u));
+    margin: 0 auto;
+    padding: 0;
+    gap: calc(92 * var(--u));
+  }
+
+  .bf-cards.is-overflowing .bf-cards__track {
+    width: auto;
+    max-width: none;
+    margin: 0;
+    padding: 0 calc(18 * var(--u));
+    scroll-padding-inline: calc(18 * var(--u));
+  }
+
+  .bf-card {
+    flex-basis: calc(460 * var(--u));
+  }
+
+  .bf-card__image {
+    aspect-ratio: 460 / 315;
+  }
+
+  .bf-card__name {
+    margin-top: calc(31 * var(--u));
+  }
+
+  .bf-card__text {
+    margin-top: calc(25 * var(--u));
+    /* 13 on screen, not Figma's 20 at three-quarters (Mark, 9 Nov 2026). */
+    font-size: var(--text-13, 13px);
+  }
+
+  .bf-card .bf-button--card {
+    margin-top: calc(45 * var(--u));
+  }
+
+  .bf-card__discount {
+    margin-top: calc(32 * var(--u));
+    /* 13 on screen, not Figma's 20 at three-quarters (Mark, 9 Nov 2026). */
+    font-size: var(--text-13, 13px);
+  }
+
+  .bf-cards__dots {
+    display: none;
+  }
+
+  .bf-cards.is-overflowing .bf-cards__dots {
+    display: flex;
+  }
+}

@@ -1,0 +1,142 @@
+/*
+ * The home video.
+ *
+ * Every font and size is one of the theme's named styles (--font-*, --text-*),
+ * with today's value behind it until the theme has the name; colours are the
+ * theme's, through the --bf-* names in assets/css/src/app.css.
+ */
+
+/* ---- Home --------------------------------------------------------------- */
+
+/* The page colour behind the video, so nothing flashes while it loads
+   (client, 6 Nov 2026); Figma's stand-in colours only while there is none. */
+.bf-hero {
+  position: relative;
+  height: calc(767 * var(--u));
+  background: var(--bf-bg);
+  overflow: hidden;
+}
+
+.bf-hero:has(.bf-hero__placeholder) {
+  background: var(--bf-ph-std);
+}
+
+.brodfest-site-invite .bf-hero {
+  border-bottom: 1px solid var(--bf-gold);
+}
+
+.brodfest-site-invite .bf-hero:has(.bf-hero__placeholder) {
+  background: var(--bf-ph-invite);
+}
+
+/* From tablets up the video is the desktop one at the desktop's size, 840
+   at three-quarters, as the header is, so it only changes where phones take
+   over (Luke, 6 Nov 2026). The hero carries the desktop's measures itself,
+   for its buttons too. */
+@media (min-width: 768px) {
+  .bf-hero {
+    --u: 0.75px;
+    --bf-shift: max(calc(-160 * var(--u)), calc((100% - 1920 * var(--u)) / 2));
+    --bf-gutter: calc(193 * var(--u) + var(--bf-shift));
+    height: calc(840 * var(--u));
+  }
+}
+
+.bf-hero__video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.bf-hero__placeholder {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  color: var(--bf-white);
+  font-size: var(--text-48, calc(48 * var(--u)));
+}
+
+.bf-hero__play {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: calc(120 * var(--u));
+  height: calc(120 * var(--u));
+  border-radius: 999px;
+  border: 1.5px solid var(--bf-gold);
+  background: color-mix(in srgb, var(--bf-bg) 45%, transparent);
+  transform: translate(-50%, -50%);
+  cursor: pointer;
+  transition: transform 0.4s var(--ease), background-color 0.3s;
+}
+
+.bf-hero__play::before {
+  content: "";
+  position: absolute;
+  left: 54%;
+  top: 50%;
+  border-style: solid;
+  border-width: calc(22 * var(--u)) 0 calc(22 * var(--u)) calc(36 * var(--u));
+  border-color: transparent transparent transparent var(--bf-gold);
+  transform: translate(-50%, -50%);
+}
+
+.bf-hero__play:active {
+  transform: translate(-50%, -50%) scale(1.06);
+  background: color-mix(in srgb, var(--bf-bg) 70%, transparent);
+}
+
+@media (hover: hover) {
+  .bf-hero__play:hover {
+    transform: translate(-50%, -50%) scale(1.06);
+    background: color-mix(in srgb, var(--bf-bg) 70%, transparent);
+  }
+}
+
+.bf-hero__sound {
+  position: absolute;
+  right: max(var(--bf-gutter), calc(48 * var(--u)));
+  bottom: calc(32 * var(--u));
+  z-index: 1;
+  width: calc(56 * var(--u));
+  height: calc(56 * var(--u));
+  display: grid;
+  place-items: center;
+  border-radius: 999px;
+  border: 1.5px solid var(--bf-gold);
+  background: color-mix(in srgb, var(--bf-bg) 45%, transparent);
+  color: var(--bf-gold);
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+
+.bf-hero__sound[hidden] {
+  display: none;
+}
+
+.bf-hero__sound:active {
+  background: color-mix(in srgb, var(--bf-bg) 70%, transparent);
+}
+
+@media (hover: hover) {
+  .bf-hero__sound:hover {
+    background: color-mix(in srgb, var(--bf-bg) 70%, transparent);
+  }
+}
+
+.bf-hero__sound svg {
+  grid-area: 1 / 1;
+  width: calc(26 * var(--u));
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.bf-hero__sound[aria-pressed="true"] .bf-hero__sound-off,
+.bf-hero__sound[aria-pressed="false"] .bf-hero__sound-on {
+  display: none;
+}
