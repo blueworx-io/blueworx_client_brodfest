@@ -5,6 +5,12 @@ All notable changes to this project are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.15.3] - 2026-11-24
+
+### Added
+
+- A check of the plugin against our current Foundation rules, and of the hidden Invite pages against Mark’s V5.01 design, in docs/foundation-check-2026-11-24.md. Notes only: nothing on the live site changes.
+
 ## [0.15.2] - 2026-11-14
 
 ### Changed
