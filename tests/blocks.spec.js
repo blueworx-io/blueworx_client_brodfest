@@ -47,6 +47,11 @@ async function restFor(page) {
     return response.json();
   };
   return {
+    // Any status allowed: for the requests that are meant to be refused.
+    async raw(method, path, data, headers = {}) {
+      const response = await page.request.fetch('/wp-json' + path, { method, headers: { 'X-WP-Nonce': nonce, ...headers }, ...(data ? { data } : {}) });
+      return { status: response.status(), body: await response.json().catch(() => null) };
+    },
     get: (path) => call('GET', path),
     post: (path, data) => call('POST', path, data),
     // A page's saved content and id, by slug.
@@ -317,4 +322,118 @@ test('every page, and every held-back Invite page, opens in the block editor wit
     }
   }
   expect(errors).toEqual([]);
+});
+
+// The held-back page of a page, found by its title.
+async function heldPageOf(api, title) {
+  const held = await api.get('/wp/v2/brodfest-held-pages?status=private&per_page=20&context=edit');
+  return held.find((h) => h.title.raw.startsWith(`${title} (`));
+}
+
+test('a held-back page cannot be published, so it can never be read through the REST API', async ({ page, browser }) => {
+  const api = await restFor(page);
+  const held = await heldPageOf(api, 'Celebrate');
+
+  // Asking for it (as Quick Edit or the REST API would) leaves it private.
+  const asked = await api.raw('POST', `/wp/v2/brodfest-held-pages/${held.id}`, { status: 'publish' });
+  expect(asked.body.status).toBe('private');
+  const draft = await api.raw('POST', `/wp/v2/brodfest-held-pages/${held.id}`, { status: 'draft' });
+  expect(draft.body.status).toBe('private');
+
+  const visitor = await browser.newContext();
+  try {
+    const seen = await visitor.request.get(`/wp-json/wp/v2/brodfest-held-pages/${held.id}`);
+    expect([401, 403, 404]).toContain(seen.status());
+    const listed = await (await visitor.request.get('/wp-json/wp/v2/brodfest-held-pages')).json();
+    expect(JSON.stringify(listed)).not.toContain('CELEBRATE');
+  } finally {
+    await visitor.close();
+  }
+});
+
+test('a tab opened before the live site was switched cannot save over the new blocks', async ({ page }) => {
+  const api = await restFor(page);
+  const celebrate = await api.page('celebrate');
+  const count = async () => (await api.get(`/wp/v2/pages/${celebrate.id}?context=edit`)).brodfest_swap_count;
+  const before = await count();
+  const save = (n) => api.raw('POST', `/wp/v2/pages/${celebrate.id}`, { content: celebrate.raw }, { 'X-Brodfest-Swap-Count': String(n) });
+
+  // The right count saves; a wrong one is refused and nothing changes.
+  expect((await save(before)).status).toBe(200);
+  const wrong = await save(before + 1);
+  expect(wrong.status).toBe(409);
+  expect(wrong.body.code).toBe('brodfest_site_switched');
+
+  await chooseSite(page, 'Invite');
+  try {
+    expect(await count()).toBeGreaterThan(before);
+    const stale = await save(before);
+    expect(stale.status).toBe(409);
+    expect((await api.page('celebrate')).raw).toContain('"title":"CELEBRATE"');
+  } finally {
+    await chooseSite(page, 'Save the Date');
+  }
+  expect((await api.page('celebrate')).raw).toBe(celebrate.raw);
+});
+
+test('a held-back page that was deleted is made again, and the administrator is told', async ({ page }) => {
+  const api = await restFor(page);
+  const before = (await api.page('celebrate')).raw;
+  const held = await heldPageOf(api, 'Celebrate');
+  await api.raw('DELETE', `/wp/v2/brodfest-held-pages/${held.id}?force=true`);
+  expect(await heldPageOf(api, 'Celebrate')).toBeUndefined();
+
+  await chooseSite(page, 'Invite');
+  try {
+    // The switch still happened, from the starting content, and the page has its copy again.
+    expect((await api.page('celebrate')).raw).toContain('"title":"CELEBRATE"');
+    expect(await heldPageOf(api, 'Celebrate')).toBeDefined();
+    await page.goto('/wp-admin/edit.php?post_type=page');
+    await expect(page.getByText('made again from the starting content')).toBeVisible();
+  } finally {
+    await chooseSite(page, 'Save the Date');
+  }
+  // What the page held before is back exactly.
+  expect((await api.page('celebrate')).raw).toBe(before);
+});
+
+test('WordPress Preview shows an unsaved change to a published page', async ({ page }) => {
+  const api = await restFor(page);
+  const celebrate = await api.page('celebrate');
+  const edited = celebrate.raw.replace('"title":"CELEBRATION"', '"title":"CELEBRATION PREVIEWED"');
+  expect(edited).not.toBe(celebrate.raw);
+
+  const autosave = await api.post(`/wp/v2/pages/${celebrate.id}/autosaves`, { content: edited, title: 'Celebrate' });
+  const link = autosave.preview_link;
+  expect(link).toContain('preview=true');
+  await skipIntro(page);
+  await page.goto(link);
+  await expect(page.locator('h1').first()).toHaveText('CELEBRATION PREVIEWED');
+
+  // The published page itself is untouched.
+  await page.goto('/celebrate/');
+  await expect(page.locator('h1').first()).toHaveText('CELEBRATION');
+});
+
+test('a revision made before the live site was switched cannot be restored over the other site’s blocks', async ({ page }) => {
+  const api = await restFor(page);
+  const celebrate = await api.page('celebrate');
+
+  // Two saves, so the page has a revision of the Save the Date's blocks.
+  await api.post(`/wp/v2/pages/${celebrate.id}`, { content: celebrate.raw.replace('"title":"CELEBRATION"', '"title":"CELEBRATION REVISED"') });
+  await api.post(`/wp/v2/pages/${celebrate.id}`, { content: celebrate.raw });
+  const [revision] = await api.get(`/wp/v2/pages/${celebrate.id}/revisions?per_page=1`);
+  const restore = () => page.request.get(`/wp-admin/revision.php?revision=${revision.id}&action=restore`);
+
+  // On its own site it gets as far as WordPress's own check.
+  expect((await restore()).status()).not.toBe(409);
+
+  await chooseSite(page, 'Invite');
+  try {
+    const refused = await restore();
+    expect(refused.status()).toBe(409);
+    expect(await refused.text()).toContain('from the other site');
+  } finally {
+    await chooseSite(page, 'Save the Date');
+  }
 });

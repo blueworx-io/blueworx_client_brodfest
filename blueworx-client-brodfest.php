@@ -74,6 +74,7 @@ require_once BRODFEST_DIR . 'includes/auto-updates.php';
 require_once BRODFEST_DIR . 'includes/site.php';
 require_once BRODFEST_DIR . 'includes/settings.php';
 require_once BRODFEST_DIR . 'includes/pages.php';
+require_once BRODFEST_DIR . 'includes/held-pages.php';
 require_once BRODFEST_DIR . 'includes/blocks.php';
 require_once BRODFEST_DIR . 'includes/seed.php';
 require_once BRODFEST_DIR . 'includes/content.php';

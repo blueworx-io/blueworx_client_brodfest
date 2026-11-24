@@ -15,7 +15,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-$brodfest_blocks = brodfest_page_blocks( get_queried_object_id() );
+$brodfest_blocks = brodfest_page_blocks( get_queried_object_id(), get_post() );
 $brodfest_html   = do_blocks( $brodfest_blocks );
 
 brodfest_document_open(

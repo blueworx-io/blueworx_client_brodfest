@@ -39,6 +39,15 @@ const BRODFEST_CONTENT_SITE_META = '_brodfest_content_site';
 /** Option: the site whose blocks the pages held when the swap last ran. */
 const BRODFEST_SYNCED_OPTION = 'brodfest_synced_site';
 
+/** Option row that is the lock while a swap runs: only one request can insert it. */
+const BRODFEST_LOCK_OPTION = 'brodfest_sync_lock';
+
+/** Option: what the administrator has to be told about the last swap. */
+const BRODFEST_NOTICE_OPTION = 'brodfest_sync_notice';
+
+/** Page and held-back page meta: counts the swaps, so a stale editor tab can be told. */
+const BRODFEST_GEN_META = '_brodfest_swap_gen';
+
 /**
  * The pages this plugin owns and renders.
  *
@@ -242,13 +251,17 @@ function brodfest_held_title( $slug, $site ) {
  * The blocks to draw for a page on the site this request shows.
  *
  * The page's own content when it holds that site's blocks, otherwise the
- * held-back page's. A page nobody has moved onto blocks yet shows its starting
- * content, so the site is never blank.
+ * held-back page's. A page nobody has moved onto blocks yet, or whose
+ * held-back page has gone, shows its starting content, so the site is never
+ * blank.
  *
- * @param int $page_id The page.
+ * @param int     $page_id The page.
+ * @param WP_Post $post    Optional. The page as WordPress has it loaded: for a
+ *                         WordPress preview that is the unsaved version, which
+ *                         is what an editor is there to see.
  * @return string Serialised blocks.
  */
-function brodfest_page_blocks( $page_id ) {
+function brodfest_page_blocks( $page_id, $post = null ) {
 	$page_id = (int) $page_id;
 	$site    = brodfest_site();
 	$holds   = (string) get_post_meta( $page_id, BRODFEST_CONTENT_SITE_META, true );
@@ -258,70 +271,258 @@ function brodfest_page_blocks( $page_id ) {
 	}
 
 	if ( $holds === $site ) {
-		return (string) get_post_field( 'post_content', $page_id );
+		return $post instanceof WP_Post && (int) $post->ID === $page_id ? (string) $post->post_content : (string) get_post_field( 'post_content', $page_id );
 	}
 
-	$held_id = (int) get_post_meta( $page_id, BRODFEST_HOLD_META, true );
+	$held_id = brodfest_held_id( $page_id );
 
-	return $held_id > 0 && BRODFEST_HOLD_TYPE === get_post_type( $held_id ) ? (string) get_post_field( 'post_content', $held_id ) : '';
+	return $held_id > 0 ? (string) get_post_field( 'post_content', $held_id ) : brodfest_seed_content( brodfest_page_slug( $page_id ), $site );
+}
+
+/**
+ * The held-back page that goes with a page, or 0 when it is missing or in the
+ * bin.
+ *
+ * @param int $page_id The page.
+ * @return int
+ */
+function brodfest_held_id( $page_id ) {
+	$held_id = (int) get_post_meta( (int) $page_id, BRODFEST_HOLD_META, true );
+
+	return $held_id > 0 && BRODFEST_HOLD_TYPE === get_post_type( $held_id ) && 'trash' !== get_post_status( $held_id ) ? $held_id : 0;
+}
+
+// The lock is a row in the options table that only one request can insert, which
+// takes a direct query: add_option() and transients read first and write after,
+// so two requests can both get past the read. Every query is prepared.
+// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+
+/**
+ * Takes the sync lock in one step. A plain INSERT fails if the row is already
+ * there, so of two requests at once only one gets the lock; a lock older than
+ * two minutes belongs to a request that died, and is taken over.
+ *
+ * @return bool Whether this request now holds the lock.
+ */
+function brodfest_sync_lock() {
+	global $wpdb;
+
+	$insert = static function () use ( $wpdb ) {
+		$wpdb->suppress_errors( true );
+		$result = $wpdb->query( $wpdb->prepare( "INSERT INTO {$wpdb->options} (option_name, option_value, autoload) VALUES (%s, %s, 'no')", BRODFEST_LOCK_OPTION, (string) time() ) );
+		$wpdb->suppress_errors( false );
+
+		return 1 === $result;
+	};
+
+	if ( $insert() ) {
+		return true;
+	}
+
+	$since = (int) $wpdb->get_var( $wpdb->prepare( "SELECT option_value FROM {$wpdb->options} WHERE option_name = %s", BRODFEST_LOCK_OPTION ) );
+
+	if ( $since > 0 && time() - $since > 2 * MINUTE_IN_SECONDS ) {
+		$wpdb->query( $wpdb->prepare( "DELETE FROM {$wpdb->options} WHERE option_name = %s AND option_value = %s", BRODFEST_LOCK_OPTION, (string) $since ) );
+
+		return $insert();
+	}
+
+	return false;
+}
+
+/**
+ * Lets go of the sync lock.
+ *
+ * @return void
+ */
+function brodfest_sync_unlock() {
+	global $wpdb;
+
+	$wpdb->query( $wpdb->prepare( "DELETE FROM {$wpdb->options} WHERE option_name = %s", BRODFEST_LOCK_OPTION ) );
+	wp_cache_delete( BRODFEST_LOCK_OPTION, 'options' );
+}
+
+// phpcs:enable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+
+/**
+ * Swaps one page's blocks with its held-back page's, checking each write.
+ *
+ * @param string $slug    Owned-page slug.
+ * @param int    $page_id The page.
+ * @param int    $held_id Its held-back page.
+ * @param string $holds   The site the page holds now.
+ * @param string $live    The site it should hold.
+ * @return array|false What it did, for undoing it (see brodfest_unswap_page()), or false with nothing changed.
+ */
+function brodfest_swap_page( $slug, $page_id, $held_id, $holds, $live ) {
+	$undo = array(
+		'slug'         => $slug,
+		'page_id'      => $page_id,
+		'held_id'      => $held_id,
+		'holds'        => $holds,
+		'live'         => $live,
+		'page_content' => (string) get_post_field( 'post_content', $page_id ),
+		'held_content' => (string) get_post_field( 'post_content', $held_id ),
+		'held_title'   => (string) get_post_field( 'post_title', $held_id ),
+	);
+
+	// The markers go first, so the revisions the writes make are tagged with
+	// the site their content is for.
+	update_post_meta( $page_id, BRODFEST_CONTENT_SITE_META, $live );
+	update_post_meta( $held_id, BRODFEST_CONTENT_SITE_META, $holds );
+
+	$page_ok = brodfest_write_post( $page_id, array( 'post_content' => $undo['held_content'] ) );
+	$held_ok = $page_ok && brodfest_write_post(
+		$held_id,
+		array(
+			'post_title'   => brodfest_held_title( $slug, $holds ),
+			'post_content' => $undo['page_content'],
+		)
+	);
+
+	if ( ! $held_ok ) {
+		// Nothing is lost: the page's own words are still in $undo.
+		brodfest_unswap_page( $undo, $page_ok );
+
+		return false;
+	}
+
+	brodfest_bump_gen( $page_id );
+	brodfest_bump_gen( $held_id );
+
+	return $undo;
+}
+
+/**
+ * Puts a page and its held-back page back as they were before a swap.
+ *
+ * @param array $undo       From brodfest_swap_page().
+ * @param bool  $page_moved Whether the page's content was already replaced.
+ * @return bool Whether everything went back.
+ */
+function brodfest_unswap_page( $undo, $page_moved = true ) {
+	update_post_meta( $undo['page_id'], BRODFEST_CONTENT_SITE_META, $undo['holds'] );
+	update_post_meta( $undo['held_id'], BRODFEST_CONTENT_SITE_META, $undo['live'] );
+
+	$ok = true;
+
+	if ( $page_moved ) {
+		$ok = brodfest_write_post( $undo['page_id'], array( 'post_content' => $undo['page_content'] ) );
+		brodfest_bump_gen( $undo['page_id'] );
+	}
+
+	// The held-back page is only ever written after the page, so a failed
+	// swap has changed it at most once, and this puts that right.
+	$ok = brodfest_write_post(
+		$undo['held_id'],
+		array(
+			'post_title'   => $undo['held_title'],
+			'post_content' => $undo['held_content'],
+		)
+	) && $ok;
+	brodfest_bump_gen( $undo['held_id'] );
+
+	return $ok;
+}
+
+/**
+ * Writes some fields of a post and says whether WordPress saved them.
+ *
+ * @param int   $post_id The post.
+ * @param array $fields  Post fields to change.
+ * @return bool
+ */
+function brodfest_write_post( $post_id, $fields ) {
+	$result = wp_update_post( wp_slash( array_merge( array( 'ID' => $post_id ), $fields ) ), true );
+
+	return ! is_wp_error( $result ) && (int) $result === (int) $post_id;
 }
 
 /**
  * Makes the pages themselves hold the live site's blocks, swapping each with
  * its held-back page when the live site has changed.
  *
+ * All or nothing: every page's held-back copy must exist first (a missing one
+ * is made again from the starting content and the administrator is told), and
+ * if any write fails the pages already swapped are put back and the switch is
+ * left unfinished, to be tried again. Until it finishes, pages are still drawn
+ * correctly, because each page says which site its own content is for.
+ *
  * Idempotent: a page that already holds the live site's blocks is left alone,
  * so running it twice never swaps back. Until a site is switched to the
  * Invite, no visitor, REST request or search engine can see its copy: it sits
  * in a private post.
  *
- * @return void
+ * @return bool Whether the pages now hold the live site's blocks.
  */
 function brodfest_sync_live_content() {
-	$live = brodfest_live_site();
-
-	// Two requests at once must not both swap.
-	if ( false === get_transient( 'brodfest_sync_lock' ) ) {
-		set_transient( 'brodfest_sync_lock', 1, 30 );
-	} else {
-		return;
+	if ( ! brodfest_sync_lock() ) {
+		return false;
 	}
 
-	foreach ( brodfest_page_ids() as $slug => $page_id ) {
-		$holds   = (string) get_post_meta( $page_id, BRODFEST_CONTENT_SITE_META, true );
-		$held_id = (int) get_post_meta( $page_id, BRODFEST_HOLD_META, true );
+	// What the administrator is told is about this run only.
+	delete_option( BRODFEST_NOTICE_OPTION );
 
-		if ( '' === $holds || $holds === $live || $held_id <= 0 || BRODFEST_HOLD_TYPE !== get_post_type( $held_id ) ) {
-			continue;
+	$live = brodfest_live_site();
+	$ids  = brodfest_page_ids();
+	$done = array();
+	$ok   = true;
+
+	try {
+		// Every page has to have its held-back copy before anything moves.
+		$recreated = array();
+
+		foreach ( $ids as $slug => $page_id ) {
+			if ( '' !== (string) get_post_meta( $page_id, BRODFEST_CONTENT_SITE_META, true ) && 0 === brodfest_held_id( $page_id ) ) {
+				$recreated[] = $slug;
+			}
+
+			brodfest_seed_page( $slug, $page_id );
 		}
 
-		$now_live = (string) get_post_field( 'post_content', $held_id );
-		$now_held = (string) get_post_field( 'post_content', $page_id );
+		if ( array() !== $recreated ) {
+			update_option( BRODFEST_NOTICE_OPTION, array( 'recreated' => $recreated ), false );
+		}
 
-		wp_update_post(
-			wp_slash(
-				array(
-					'ID'           => $page_id,
-					'post_content' => $now_live,
-				)
-			)
-		);
-		wp_update_post(
-			wp_slash(
-				array(
-					'ID'           => $held_id,
-					'post_title'   => brodfest_held_title( $slug, $holds ),
-					'post_content' => $now_held,
-				)
-			)
-		);
+		foreach ( $ids as $slug => $page_id ) {
+			$holds   = (string) get_post_meta( $page_id, BRODFEST_CONTENT_SITE_META, true );
+			$held_id = brodfest_held_id( $page_id );
 
-		update_post_meta( $page_id, BRODFEST_CONTENT_SITE_META, $live );
-		update_post_meta( $held_id, BRODFEST_CONTENT_SITE_META, $holds );
+			if ( '' === $holds || $holds === $live ) {
+				continue;
+			}
+
+			$swap = $held_id > 0 ? brodfest_swap_page( $slug, $page_id, $held_id, $holds, $live ) : false;
+
+			if ( ! $swap ) {
+				// Put back the pages already swapped, newest first.
+				foreach ( array_reverse( $done ) as $undo ) {
+					brodfest_unswap_page( $undo );
+				}
+
+				update_option(
+					BRODFEST_NOTICE_OPTION,
+					array(
+						'failed'    => $slug,
+						'recreated' => $recreated,
+					),
+					false
+				);
+				$ok = false;
+				break;
+			}
+
+			$done[] = $swap;
+		}
+	} finally {
+		brodfest_sync_unlock();
 	}
 
-	update_option( BRODFEST_SYNCED_OPTION, $live );
-	delete_transient( 'brodfest_sync_lock' );
+	if ( $ok ) {
+		update_option( BRODFEST_SYNCED_OPTION, $live );
+	}
+
+	return $ok;
 }
 
 /**
@@ -330,20 +531,27 @@ function brodfest_sync_live_content() {
  * @return void
  */
 function brodfest_sync_on_settings_change() {
-	brodfest_sync_live_content();
+	if ( ! brodfest_sync_live_content() ) {
+		set_transient( 'brodfest_sync_retry', 1, 5 * MINUTE_IN_SECONDS );
+	}
 }
 add_action( 'update_option_' . BRODFEST_SETTINGS_OPTION, 'brodfest_sync_on_settings_change' );
 add_action( 'add_option_' . BRODFEST_SETTINGS_OPTION, 'brodfest_sync_on_settings_change' );
 
 /**
  * The same swap, caught on the next request if the setting was changed some
- * other way (the command line, an import).
+ * other way (the command line, an import) or an earlier try did not finish.
+ * A try that failed is not repeated for five minutes.
  *
  * @return void
  */
 function brodfest_sync_if_needed() {
-	if ( get_option( BRODFEST_SYNCED_OPTION ) !== brodfest_live_site() ) {
-		brodfest_sync_live_content();
+	if ( get_option( BRODFEST_SYNCED_OPTION ) === brodfest_live_site() || false !== get_transient( 'brodfest_sync_retry' ) ) {
+		return;
+	}
+
+	if ( ! brodfest_sync_live_content() ) {
+		set_transient( 'brodfest_sync_retry', 1, 5 * MINUTE_IN_SECONDS );
 	}
 }
 add_action( 'init', 'brodfest_sync_if_needed', 30 );
