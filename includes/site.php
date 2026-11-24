@@ -22,14 +22,29 @@ const BRODFEST_SITE_INVITE = 'invite';
 const BRODFEST_PREVIEW_ARG = 'brodfest-site';
 
 /**
+ * The site the administrator chose on the settings screen.
+ *
+ * @return string
+ */
+function brodfest_wanted_site() {
+	return BRODFEST_SITE_INVITE === brodfest_saved_site() ? BRODFEST_SITE_INVITE : BRODFEST_SITE_STD;
+}
+
+/**
  * The site visitors see, before any preview.
+ *
+ * This is the site the pages were last moved onto, not the one just chosen:
+ * choosing a site only takes effect once the pages hold its blocks (see
+ * brodfest_sync_live_content()). A switch that fails therefore leaves the
+ * website, and the public REST API, on the site they were on. Until the pages
+ * have been moved for the first time it is the chosen site.
  *
  * @return string
  */
 function brodfest_live_site() {
-	$site = brodfest_saved_site();
+	$synced = (string) get_option( 'brodfest_synced_site', '' );
 
-	return BRODFEST_SITE_INVITE === $site ? BRODFEST_SITE_INVITE : BRODFEST_SITE_STD;
+	return in_array( $synced, array( BRODFEST_SITE_STD, BRODFEST_SITE_INVITE ), true ) ? $synced : brodfest_wanted_site();
 }
 
 /**

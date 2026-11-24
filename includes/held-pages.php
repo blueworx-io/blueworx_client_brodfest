@@ -94,10 +94,19 @@ function brodfest_register_gen_field() {
 add_action( 'rest_api_init', 'brodfest_register_gen_field' );
 
 /**
- * Refuses a save from an editor tab that was opened before the live site was
- * switched: the page now holds the other site's blocks, and the tab would
- * overwrite them with the old ones. The editor sends the swap count it opened
- * with (see blocks/_shared/guard.js); a client that sends none is not checked.
+ * Takes the swap lock for the length of a save to a page or held-back page, and
+ * refuses a save from an editor tab that was opened before the live site was
+ * switched.
+ *
+ * Holding the lock keeps the save from overlapping a switch (a switch waits for
+ * it, and a save waits, briefly, for a switch), and the swap count is checked
+ * only once the lock is held, so a count that changes while the request waits
+ * cannot slip through. After a switch the page holds the other site's blocks,
+ * and the old tab would overwrite them. The editor sends the swap count it
+ * opened with (see blocks/_shared/guard.js); a client that sends none takes the
+ * lock but is not checked.
+ *
+ * The lock is let go in brodfest_release_save_lock(), when the response is ready.
  *
  * @param mixed           $result  Response so far; null to carry on.
  * @param WP_REST_Server  $server  Server.
@@ -107,7 +116,7 @@ add_action( 'rest_api_init', 'brodfest_register_gen_field' );
 function brodfest_refuse_stale_save( $result, $server, $request ) {
 	unset( $server );
 
-	if ( null !== $result || 'GET' === $request->get_method() || null === $request->get_header( 'x_brodfest_swap_count' ) ) {
+	if ( null !== $result || in_array( $request->get_method(), array( 'GET', 'HEAD', 'OPTIONS' ), true ) ) {
 		return $result;
 	}
 
@@ -115,7 +124,19 @@ function brodfest_refuse_stale_save( $result, $server, $request ) {
 		return $result;
 	}
 
-	if ( (int) $request->get_header( 'x_brodfest_swap_count' ) !== brodfest_gen( (int) $m[1] ) ) {
+	if ( ! brodfest_sync_lock( 5 ) ) {
+		return new WP_Error(
+			'brodfest_switch_running',
+			__( 'The live site is being switched right now. Nothing was saved: wait a moment, then save again.', 'blueworx-client-brodfest' ),
+			array( 'status' => 409 )
+		);
+	}
+
+	$sent = $request->get_header( 'x_brodfest_swap_count' );
+
+	if ( null !== $sent && brodfest_gen( (int) $m[1] ) !== (int) $sent ) {
+		brodfest_sync_unlock();
+
 		return new WP_Error(
 			'brodfest_site_switched',
 			__( 'The live site was switched while this page was open, so it now holds different blocks. Nothing was saved: reload the page, then make the change again.', 'blueworx-client-brodfest' ),
@@ -126,6 +147,19 @@ function brodfest_refuse_stale_save( $result, $server, $request ) {
 	return $result;
 }
 add_filter( 'rest_pre_dispatch', 'brodfest_refuse_stale_save', 10, 3 );
+
+/**
+ * Lets go of the lock a save took, once its response is ready.
+ *
+ * @param mixed $response The response.
+ * @return mixed
+ */
+function brodfest_release_save_lock( $response ) {
+	brodfest_sync_unlock();
+
+	return $response;
+}
+add_filter( 'rest_post_dispatch', 'brodfest_release_save_lock', 100 );
 
 /**
  * Gives the block editor the swap count of the page it opened.
@@ -173,7 +207,10 @@ add_action( '_wp_put_post_revision', 'brodfest_tag_revision' );
 
 /**
  * Refuses to restore a revision made when the page held the other site's
- * blocks. Revisions from before they were tagged are let through.
+ * blocks, and one with no tag: it was made before the plugin kept track of which
+ * site a revision is for, so it cannot be known to be safe. Every revision made
+ * since is tagged, the first one (the starting blocks) included, because a page
+ * is marked with its site before its blocks are written.
  *
  * @return void
  */
@@ -189,9 +226,9 @@ function brodfest_refuse_other_site_revision() {
 	$parent = (int) wp_get_post_parent_id( $revision_id );
 	$tag    = (string) get_post_meta( $revision_id, BRODFEST_CONTENT_SITE_META, true );
 
-	if ( '' !== $tag && $parent > 0 && brodfest_is_swappable( $parent ) && (string) get_post_meta( $parent, BRODFEST_CONTENT_SITE_META, true ) !== $tag ) {
+	if ( $parent > 0 && brodfest_is_swappable( $parent ) && (string) get_post_meta( $parent, BRODFEST_CONTENT_SITE_META, true ) !== $tag ) {
 		wp_die(
-			esc_html__( 'That revision is from the other site: the live site has been switched since, and restoring it would put the other site’s blocks on this page. Open the held-back page to restore it there.', 'blueworx-client-brodfest' ),
+			esc_html__( 'That revision cannot be restored here: it is from the other site (the live site has been switched since), or from before revisions were tagged with their site. Restoring it could put the wrong blocks on this page. Open the page it belongs to, or the held-back page, to restore it there.', 'blueworx-client-brodfest' ),
 			'',
 			array(
 				'response'  => 409,
@@ -223,8 +260,22 @@ function brodfest_sync_notice() {
 		wp_admin_notice(
 			sprintf(
 				/* translators: %s: page name. */
-				esc_html__( 'The live site could not be switched: the page “%s” could not be saved. Every page has been put back as it was, and the switch will be tried again shortly. If this keeps showing, check that the page and its held-back page can be edited.', 'blueworx-client-brodfest' ),
+				esc_html__( 'The live site could not be switched: the page “%s” could not be saved, so the switch was stopped and the website is still on the site it was on. The switch will be tried again shortly. If this keeps showing, check that the page and its held-back page can be edited.', 'blueworx-client-brodfest' ),
 				esc_html( $name( $notice['failed'] ) )
+			),
+			array(
+				'type'               => 'error',
+				'additional_classes' => array( 'inline' ),
+			)
+		);
+	}
+
+	if ( ! empty( $notice['unrestored'] ) ) {
+		wp_admin_notice(
+			sprintf(
+				/* translators: %s: page names. */
+				esc_html__( 'These pages could not be put back as they were after the failed switch: %s. Nothing is lost: both versions of each are kept under Pages › Held-back pages, titled “Recovery copy”. Copy the blocks you want from there into the page.', 'blueworx-client-brodfest' ),
+				esc_html( implode( ', ', array_map( $name, (array) $notice['unrestored'] ) ) )
 			),
 			array(
 				'type'               => 'error',

@@ -62,20 +62,33 @@ What keeps the swap safe (`includes/pages.php`, `includes/held-pages.php`):
 - **Private for good.** A held-back page is forced to `private` on every save,
   whatever Quick Edit or the REST API asks for, so it is never published or
   readable without a sign-in.
-- **One swap at a time.** The lock is a single INSERT into the options table: of
-  two requests at once, only one gets it (a lock older than two minutes is taken
-  over).
-- **All or nothing.** Every page's held-back copy has to exist first (a deleted
-  one is made again from the starting content, and an administrator notice says
-  so). Each write is checked; if any fails, the pages already swapped are put
-  back, the switch stays unfinished, an administrator notice names the page, and
-  it is tried again after five minutes. Pages are drawn correctly meanwhile,
-  because each page says which site its own content is for.
+- **One lock for everything that writes blocks.** The lock is a single INSERT
+  into the options table: of two requests at once, only one gets it (a lock
+  older than two minutes is taken over; each request releases only its own).
+  Giving pages their starting blocks, swapping, and every editor save to a page
+  or held-back page all take it, so none of them can overlap.
+- **The website changes site only when the pages have.** The site visitors see is
+  the site the pages were last moved onto (`brodfest_live_site()`), not the one
+  just chosen (`brodfest_wanted_site()`). A switch that fails leaves the website
+  and the public REST API on the site they were on.
+- **All or nothing, with a safety copy.** Every page has its blocks and held-back
+  copy first (a deleted held-back page is made again from the starting content,
+  and an administrator notice says so; a page whose starting blocks fail to save
+  is not marked as seeded, and is tried again). Before a page is swapped, both
+  versions are copied to "Recovery copy" posts among the held-back pages. Each
+  write is read back and must match exactly. If any fails, the pages already
+  swapped are put back and the switch stays unfinished; the recovery copies are
+  deleted once the put-back is confirmed, and kept (with a notice naming the
+  pages) if it is not. A retry follows after five minutes. Moves are made with
+  HTML filtering switched off, so a signed-out visitor's request cannot rewrite
+  text such as an ampersand.
 - **No saving over the wrong site.** Each page counts its swaps. The block
-  editor sends the count it opened with (`blocks/_shared/guard.js`); a save from a
-  tab opened before a switch is refused (409) and nothing is written. Revisions
-  are tagged with the site they were made for, and restoring one made for the
-  other site is refused on the revisions screen.
+  editor sends the count it opened with (`blocks/_shared/guard.js`); once the
+  save holds the lock, a count that no longer matches is refused (409) and
+  nothing is written. Every revision is tagged with the site it was made for (a
+  page is marked with its site before its blocks are written, so the first
+  revision is tagged too). A revision for the other site, or one with no tag, is
+  refused on the revisions screen.
 - **Previews.** WordPress Preview draws the unsaved version of the page (the
   page as `get_post()` has it, not `get_queried_object()`, which is stale).
 
