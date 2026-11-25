@@ -3,7 +3,7 @@
  * Plugin Name:       BlueWorx Clients | Brodfest
  * Plugin URI:        https://github.com/blueworx-io/blueworx_client_brodfest
  * Description:       The Brodfest website, as a self-contained WordPress plugin on the BlueWorx Enhance theme.
- * Version:           0.15.3
+ * Version:           0.16.0
  * Requires at least: 6.4
  * Requires PHP:      8.1
  * Author:            BlueWorx
@@ -21,7 +21,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'BRODFEST_VERSION', '0.15.3' );
+define( 'BRODFEST_VERSION', '0.16.0' );
 define( 'BRODFEST_SLUG', 'blueworx-client-brodfest' );
 define( 'BRODFEST_FILE', __FILE__ );
 define( 'BRODFEST_DIR', plugin_dir_path( __FILE__ ) );
@@ -72,7 +72,11 @@ require_once BRODFEST_DIR . 'blueworx-page-editor/blueworx-page-editor.php';
 
 require_once BRODFEST_DIR . 'includes/auto-updates.php';
 require_once BRODFEST_DIR . 'includes/site.php';
+require_once BRODFEST_DIR . 'includes/settings.php';
 require_once BRODFEST_DIR . 'includes/pages.php';
+require_once BRODFEST_DIR . 'includes/held-pages.php';
+require_once BRODFEST_DIR . 'includes/blocks.php';
+require_once BRODFEST_DIR . 'includes/seed.php';
 require_once BRODFEST_DIR . 'includes/content.php';
 require_once BRODFEST_DIR . 'includes/render.php';
 require_once BRODFEST_DIR . 'includes/assets.php';
@@ -82,7 +86,6 @@ require_once BRODFEST_DIR . 'includes/rsvp.php';
 require_once BRODFEST_DIR . 'includes/guests.php';
 require_once BRODFEST_DIR . 'includes/guest-list.php';
 require_once BRODFEST_DIR . 'includes/calendar.php';
-require_once BRODFEST_DIR . 'includes/settings.php';
 
 /**
  * Creates the plugin's pages and makes Home the front page on activation.
@@ -110,8 +113,16 @@ function brodfest_maybe_upgrade() {
 		return;
 	}
 
+	// One request moves the pages onto blocks. Another that arrives meanwhile
+	// shows each page's starting content, so nobody sees a blank page.
+	if ( false !== get_transient( 'brodfest_upgrade_lock' ) ) {
+		return;
+	}
+
+	set_transient( 'brodfest_upgrade_lock', 1, MINUTE_IN_SECONDS );
 	brodfest_install_pages( false );
 	update_option( 'brodfest_version', BRODFEST_VERSION );
+	delete_transient( 'brodfest_upgrade_lock' );
 }
 add_action( 'init', 'brodfest_maybe_upgrade' );
 

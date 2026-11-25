@@ -25,3 +25,17 @@ export async function skipIntro(page) {
     HTMLMediaElement.prototype.play = () => Promise.reject(new DOMException('Autoplay refused', 'NotAllowedError'));
   });
 }
+
+// Signs in with a plain form post, without loading the dashboard. For specs that
+// only need the signed-in cookie: the dashboard's page load, which waits on
+// every one of its scripts and on feeds from other sites, is slow on a test
+// site that answers one request at a time.
+export async function loginQuietly(page, baseURL = process.env.PLAYWRIGHT_BASE_URL ?? 'http://127.0.0.1:8881') {
+  // WordPress refuses a sign-in from a browser that has not been given this.
+  await page.context().addCookies([{ name: 'wordpress_test_cookie', value: 'WP Cookie check', url: baseURL }]);
+  const response = await page.request.post(LOGIN_PATH, {
+    form: { log: ADMIN_USER, pwd: ADMIN_PASS, 'wp-submit': 'Log In', redirect_to: '/wp-admin/', testcookie: '1' },
+    maxRedirects: 0,
+  });
+  if (response.status() !== 302) throw new Error(`Sign-in did not go through (HTTP ${response.status()}).`);
+}

@@ -1,0 +1,101 @@
+/*
+ * The first-visit opening screen.
+ *
+ * Every font and size is one of the theme's named styles (--font-*, --text-*),
+ * with today's value behind it until the theme has the name; colours are the
+ * theme's, through the --bf-* names in assets/css/src/app.css.
+ */
+
+/* ---- First-visit opening ------------------------------------------------ */
+
+/* Black, the logo draws itself letter by letter and fills (Luke, 5 Nov 2026),
+   then Enter fades in under it, 2.6 seconds in all; the screen fades to the
+   page once it is pressed (Luke, 6 Nov 2026). Not in Figma. Anyone who asks
+   for less motion goes straight to the page. */
+.bf-opening {
+  display: none;
+}
+
+html.bf-is-opening {
+  overflow: hidden;
+}
+
+html.bf-is-opening .bf-opening {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: calc(115 * var(--u));
+  background: var(--bf-bg);
+}
+
+html.bf-is-opening .bf-opening.is-leaving {
+  animation: bf-opening-out 0.6s ease forwards;
+}
+
+/* A little lower and smaller than the RSVP pill, as the client asked. The
+   browser puts focus on it as the screen opens. */
+.bf-opening__enter {
+  width: calc(105 * var(--u));
+  height: calc(46 * var(--u));
+  font-size: var(--text-22, calc(22 * var(--u)));
+  animation: bf-enter-in 0.6s ease 2s both;
+}
+
+@media (min-width: 1024px) {
+  .bf-opening__enter {
+    width: calc(160 * var(--u));
+    height: calc(54 * var(--u));
+    font-size: var(--text-30, calc(30 * var(--u)));
+  }
+}
+
+.bf-opening__logo {
+  width: calc(430 * var(--u));
+  color: var(--bf-primary);
+}
+
+.bf-opening__logo svg {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.bf-opening__logo path {
+  stroke: currentColor;
+  stroke-width: 0.6;
+  stroke-dasharray: 1;
+  fill-opacity: 0;
+  animation:
+    bf-draw 1.2s ease-in-out both,
+    bf-fill 0.5s ease 1.2s forwards;
+}
+
+.bf-opening__logo path:nth-child(2) { animation-delay: 0.07s, 1.27s; }
+.bf-opening__logo path:nth-child(3) { animation-delay: 0.14s, 1.34s; }
+.bf-opening__logo path:nth-child(4) { animation-delay: 0.21s, 1.41s; }
+.bf-opening__logo path:nth-child(5) { animation-delay: 0.28s, 1.48s; }
+.bf-opening__logo path:nth-child(6) { animation-delay: 0.35s, 1.55s; }
+.bf-opening__logo path:nth-child(7) { animation-delay: 0.42s, 1.62s; }
+.bf-opening__logo path:nth-child(8) { animation-delay: 0.49s, 1.69s; }
+.bf-opening__logo path:nth-child(n + 9) { animation-delay: 0.56s, 1.76s; }
+
+@keyframes bf-draw {
+  from { stroke-dashoffset: 1; }
+  to { stroke-dashoffset: 0; }
+}
+
+@keyframes bf-fill {
+  to { fill-opacity: 1; }
+}
+
+@keyframes bf-enter-in {
+  from { opacity: 0; }
+}
+
+@keyframes bf-opening-out {
+  to { opacity: 0; visibility: hidden; }
+}

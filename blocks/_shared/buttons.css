@@ -1,0 +1,143 @@
+/*
+ * Buttons shared by the sections: the RSVP pill, Enter, card and send buttons.
+ *
+ * Every font and size is one of the theme's named styles (--font-*, --text-*),
+ * with today's value behind it until the theme has the name; colours are the
+ * theme's, through the --bf-* names in assets/css/src/app.css.
+ */
+
+/* ---- Buttons ------------------------------------------------------------ */
+
+/* Rollover colours, here and across the stylesheet, are for a pointer that
+   can hover. A touch screen leaves "hover" on whatever was last tapped, so a
+   tapped button kept its rollover colour; there the colour shows only while
+   the finger is down, with :active (Luke, 9 Nov 2026). */
+
+.bf-pill,
+.bf-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  text-decoration: none;
+  cursor: pointer;
+  border: 0;
+  transition: background-color 0.3s, color 0.3s, transform 0.3s var(--ease);
+}
+
+.bf-pill {
+  width: calc(117 * var(--u));
+  height: calc(51 * var(--u));
+  background: var(--bf-primary);
+  color: var(--bf-bg) !important;
+  font-family: var(--font-heading, "futura-pt", "Jost", "Futura", sans-serif);
+  font-weight: 400;
+  font-size: var(--text-25, calc(25 * var(--u)));
+  letter-spacing: var(--track-pill);
+  text-indent: var(--track-pill);
+}
+
+.bf-pill.is-active,
+.bf-pill:active {
+  background: var(--bf-orange);
+}
+
+@media (hover: hover) {
+  .bf-pill:hover {
+    background: var(--bf-orange);
+  }
+}
+
+.bf-button--primary {
+  width: calc(450 * var(--u));
+  height: calc(67 * var(--u));
+  background: var(--bf-rust);
+  color: var(--bf-gold);
+  font-family: var(--font-body, "aller", "Lato", sans-serif);
+  font-weight: 300;
+  font-size: var(--text-26, calc(26 * var(--u)));
+  letter-spacing: var(--track-body);
+}
+
+.bf-button--primary:active {
+  background: var(--bf-orange);
+  color: var(--bf-bg);
+}
+
+@media (hover: hover) {
+  .bf-button--primary:hover {
+    background: var(--bf-orange);
+    color: var(--bf-bg);
+  }
+}
+
+.bf-button--card {
+  width: calc(212 * var(--u));
+  height: calc(50 * var(--u));
+  background: var(--bf-orange);
+  color: var(--bf-bg) !important;
+  font-family: var(--font-heading, "futura-pt", "Jost", "Futura", sans-serif);
+  font-weight: 400;
+  font-size: var(--text-22, calc(22 * var(--u)));
+  letter-spacing: var(--track-wide);
+  text-indent: var(--track-wide);
+}
+
+.bf-button--card:active {
+  background: var(--bf-gold);
+}
+
+@media (hover: hover) {
+  .bf-button--card:hover {
+    background: var(--bf-gold);
+  }
+}
+
+/* SEND takes the RSVP pill's Futura, per the design comment. */
+.bf-button--send {
+  width: calc(188 * var(--u));
+  height: calc(67 * var(--u));
+  background: var(--bf-primary);
+  color: var(--bf-bg);
+  font-family: var(--font-heading, "futura-pt", "Jost", "Futura", sans-serif);
+  font-weight: 400;
+  font-size: var(--text-26, calc(26 * var(--u)));
+  letter-spacing: var(--track-pill);
+  text-indent: var(--track-pill);
+}
+
+.bf-button--send:active {
+  background: var(--bf-orange);
+}
+
+@media (hover: hover) {
+  .bf-button--send:hover {
+    background: var(--bf-orange);
+  }
+}
+
+@media (min-width: 1024px) {
+  .bf-pill {
+    width: calc(185 * var(--u));
+    height: calc(62 * var(--u));
+    font-size: var(--text-35, calc(35 * var(--u)));
+  }
+
+  .bf-button--primary {
+    width: calc(600 * var(--u));
+    height: calc(90 * var(--u));
+    font-size: var(--text-35, calc(35 * var(--u)));
+  }
+
+  .bf-button--card {
+    width: calc(282 * var(--u));
+    height: calc(66 * var(--u));
+    font-size: var(--text-30, calc(30 * var(--u)));
+  }
+
+  .bf-button--send {
+    width: calc(251 * var(--u));
+    height: calc(90 * var(--u));
+    font-size: var(--text-35, calc(35 * var(--u)));
+  }
+}

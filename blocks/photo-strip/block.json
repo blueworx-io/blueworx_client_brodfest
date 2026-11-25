@@ -1,0 +1,44 @@
+{
+	"$schema": "https://schemas.wp.org/trunk/block.json",
+	"apiVersion": 3,
+	"name": "brodfest/photo-strip",
+	"title": "Photo strip",
+	"category": "brodfest",
+	"icon": "format-image",
+	"description": "One wide photo across the page, with its alt text.",
+	"keywords": [
+		"photo",
+		"strip",
+		"image"
+	],
+	"textdomain": "blueworx-client-brodfest",
+	"attributes": {
+		"image": {
+			"type": "string",
+			"default": ""
+		},
+		"imageId": {
+			"type": "integer",
+			"default": 0
+		},
+		"imageAlt": {
+			"type": "string",
+			"default": ""
+		},
+		"imageDecorative": {
+			"type": "boolean",
+			"default": false
+		}
+	},
+	"supports": {
+		"html": false,
+		"align": false,
+		"color": false,
+		"typography": false,
+		"spacing": false,
+		"customClassName": false,
+		"customCSS": false
+	},
+	"editorScript": "file:./edit.js",
+	"render": "file:./render.php"
+}

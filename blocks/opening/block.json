@@ -1,0 +1,41 @@
+{
+	"$schema": "https://schemas.wp.org/trunk/block.json",
+	"apiVersion": 3,
+	"name": "brodfest/opening",
+	"title": "Opening screen",
+	"category": "brodfest",
+	"icon": "visibility",
+	"description": "The first-visit screen: the logo draws itself, then Enter lifts the screen away and starts the video.",
+	"keywords": [
+		"opening",
+		"enter",
+		"intro",
+		"logo"
+	],
+	"textdomain": "blueworx-client-brodfest",
+	"attributes": {
+		"dialogLabel": {
+			"type": "string",
+			"default": ""
+		},
+		"logoLabel": {
+			"type": "string",
+			"default": ""
+		},
+		"enterLabel": {
+			"type": "string",
+			"default": ""
+		}
+	},
+	"supports": {
+		"html": false,
+		"align": false,
+		"color": false,
+		"typography": false,
+		"spacing": false,
+		"customClassName": false,
+		"customCSS": false
+	},
+	"editorScript": "file:./edit.js",
+	"render": "file:./render.php"
+}

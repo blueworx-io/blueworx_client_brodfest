@@ -1,0 +1,69 @@
+{
+	"$schema": "https://schemas.wp.org/trunk/block.json",
+	"apiVersion": 3,
+	"name": "brodfest/text-section",
+	"title": "Text section",
+	"category": "brodfest",
+	"icon": "text-page",
+	"description": "A title with a few paragraphs under it: the welcome, the dress code, the transport, an enquiry contact. The words are yours; the layout is the plugin's.",
+	"keywords": [
+		"text",
+		"title",
+		"paragraph",
+		"celebration",
+		"enquiries"
+	],
+	"textdomain": "blueworx-client-brodfest",
+	"attributes": {
+		"title": {
+			"type": "string",
+			"default": ""
+		},
+		"headingLevel": {
+			"type": "integer",
+			"default": 1
+		},
+		"titleStyle": {
+			"type": "string",
+			"enum": [
+				"page",
+				"subtitle"
+			],
+			"default": "page"
+		},
+		"paragraphs": {
+			"type": "array",
+			"default": [],
+			"items": {
+				"type": "string"
+			}
+		},
+		"email": {
+			"type": "string",
+			"default": ""
+		},
+		"note": {
+			"type": "string",
+			"default": ""
+		}
+	},
+	"supports": {
+		"html": false,
+		"align": false,
+		"color": false,
+		"typography": false,
+		"spacing": false,
+		"customClassName": false,
+		"customCSS": false
+	},
+	"example": {
+		"attributes": {
+			"title": "CELEBRATION",
+			"paragraphs": [
+				"A few words about the celebration."
+			]
+		}
+	},
+	"editorScript": "file:./edit.js",
+	"render": "file:./render.php"
+}

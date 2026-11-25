@@ -1,0 +1,393 @@
+/*
+ * The RSVP form.
+ *
+ * Every font and size is one of the theme's named styles (--font-*, --text-*),
+ * with today's value behind it until the theme has the name; colours are the
+ * theme's, through the --bf-* names in assets/css/src/app.css.
+ */
+
+/* ---- RSVP --------------------------------------------------------------- */
+
+/* The page slides down from under the header as it opens. */
+.bf-rsvp {
+  padding: calc(48 * var(--u)) var(--bf-gutter) 0;
+  animation: bf-slide-down 0.9s var(--ease) both;
+}
+
+/* RSVP over the page the guest is on (client, 6 Nov 2026): it lowers from
+   under the header and goes back up, and the page behind keeps its place.
+   rsvp-panel.js fills it with the RSVP page's form. */
+.bf-rsvp-panel {
+  position: fixed;
+  inset: var(--header-h) 0 0;
+  z-index: 45;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding-bottom: calc(120 * var(--u));
+  background: var(--bf-bg);
+  transform: translateY(-100%);
+  transition: transform 0.7s var(--ease);
+}
+
+body.admin-bar .bf-rsvp-panel {
+  top: calc(var(--header-h) + var(--wp-admin--admin-bar--height, 0px));
+}
+
+.is-rsvp-open .bf-rsvp-panel {
+  transform: none;
+}
+
+.bf-rsvp-panel .bf-rsvp {
+  animation: none;
+}
+
+html.is-rsvp-locked {
+  overflow: hidden;
+}
+
+@keyframes bf-slide-down {
+  from { opacity: 0; transform: translateY(calc(-160 * var(--u))); }
+}
+
+.bf-rsvp__message {
+  margin-top: calc(66 * var(--u));
+}
+
+.bf-rsvp__close {
+  display: flex;
+  justify-content: center;
+  margin-top: calc(66 * var(--u));
+}
+
+.bf-form {
+  margin: calc(66 * var(--u)) auto 0;
+  max-width: calc(671 * var(--u));
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.bf-form__trap {
+  position: absolute;
+  left: -9999px;
+}
+
+.bf-fields {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: calc(22 * var(--u));
+}
+
+/* What only matters to someone coming (Mark, 12 Nov 2026): the partner
+   question and the accessibility tick, each marked on its own. */
+[data-bf-attending][hidden] {
+  display: none;
+}
+
+[data-bf-guest] {
+  width: 100%;
+  margin-top: calc(45 * var(--u));
+}
+
+[data-bf-guest][hidden] {
+  display: none;
+}
+
+.bf-field {
+  position: relative;
+  display: flex;
+  height: calc(68.2 * var(--u));
+  background: var(--bf-field);
+}
+
+.bf-field input,
+.bf-field select {
+  flex: 1;
+  min-width: 0;
+  background: transparent;
+  border: 0;
+  color: var(--bf-gold);
+  font: inherit;
+  font-size: var(--text-20, calc(20 * var(--u)));
+  letter-spacing: var(--track-body);
+  text-align: center;
+  text-align-last: center;
+  appearance: none;
+  padding: 0 calc(70 * var(--u));
+}
+
+.bf-field input::placeholder {
+  color: var(--bf-gold);
+  opacity: 1;
+}
+
+/* An open list is the page colour with gold lettering in the form's font
+   (client, 5 Nov). Where the browser lets the list itself be styled, it is
+   drawn that way too, rather than as the system's menu. */
+.bf-field select option {
+  background: var(--bf-bg);
+  color: var(--bf-gold);
+  font-family: var(--font-body, "aller", "Lato", sans-serif);
+  font-weight: 300;
+}
+
+@supports (appearance: base-select) {
+  .bf-field select,
+  .bf-field select::picker(select) {
+    appearance: base-select;
+  }
+
+  /* Drawn this way the field lays its choice out as a row, which would sit
+     it at the top. */
+  .bf-field select {
+    justify-content: center;
+    align-items: center;
+  }
+
+  .bf-field select::picker-icon,
+  .bf-field select option::checkmark {
+    display: none;
+  }
+
+  .bf-field select::picker(select) {
+    background: var(--bf-bg);
+    border: 1px solid var(--bf-gold);
+    color: var(--bf-gold);
+    padding: calc(8 * var(--u)) 0;
+  }
+
+  .bf-field select option {
+    justify-content: center;
+    padding: calc(10 * var(--u)) calc(24 * var(--u));
+  }
+
+  .bf-field select option:focus-visible,
+  .bf-field select option:checked,
+  .bf-field select option:active {
+    background: var(--bf-rust);
+    outline: none;
+  }
+
+  @media (hover: hover) {
+    .bf-field select option:hover {
+      background: var(--bf-rust);
+      outline: none;
+    }
+  }
+
+  .bf-field .bf-field__prefix {
+    justify-content: flex-start;
+  }
+}
+
+.bf-field input:focus,
+.bf-field select:focus {
+  outline: none;
+}
+
+.bf-field:focus-within {
+  box-shadow: inset 0 0 0 1px var(--bf-gold);
+}
+
+.bf-field--phone .bf-field__prefix {
+  flex: 0 0 calc(90 * var(--u));
+  padding: 0 0 0 calc(20 * var(--u));
+  text-align: left;
+}
+
+/* As much on the right as the code takes on the left, so the placeholder
+   sits in the middle of the field. */
+.bf-field--phone input:last-of-type {
+  padding-left: 0;
+  padding-right: calc(90 * var(--u));
+}
+
+.bf-field--select::after {
+  content: "";
+  position: absolute;
+  right: calc(36 * var(--u));
+  top: 50%;
+  width: calc(22 * var(--u));
+  height: calc(12 * var(--u));
+  background: var(--bf-gold);
+  clip-path: polygon(0 0, 100% 0, 50% 100%);
+  transform: translateY(-50%);
+  pointer-events: none;
+}
+
+.bf-radios {
+  border: 0;
+  margin: calc(49 * var(--u)) 0 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+/* As in Figma, the first answer is a fixed-width frame and the second
+   follows straight after it. */
+.bf-radios label:first-of-type {
+  width: calc(157 * var(--u));
+}
+
+.bf-radios + .bf-radios {
+  margin-top: calc(49 * var(--u));
+}
+
+.bf-radios legend {
+  width: 100%;
+  text-align: center;
+  font-size: var(--text-20, calc(20 * var(--u)));
+  line-height: 1;
+  letter-spacing: var(--track-body);
+  margin-bottom: calc(27 * var(--u));
+}
+
+.bf-radios label,
+.bf-check {
+  display: inline-flex;
+  align-items: center;
+  gap: calc(15 * var(--u));
+  font-size: var(--text-20, calc(20 * var(--u)));
+  letter-spacing: var(--track-body);
+  cursor: pointer;
+}
+
+/* Radio and checkbox are the design's gold circle, filled when chosen. */
+.bf-radios input,
+.bf-check input {
+  appearance: none;
+  flex: 0 0 auto;
+  width: calc(33.7 * var(--u));
+  height: calc(33.7 * var(--u));
+  margin: 0;
+  border-radius: 999px;
+  border: 1.5px solid var(--bf-gold);
+  cursor: pointer;
+  transition: background-color 0.25s, box-shadow 0.25s;
+}
+
+.bf-radios input:checked,
+.bf-check input:checked {
+  background: var(--bf-gold);
+}
+
+/* Closer to the fields than Figma's 75 and 99 (Mark, 11 Nov 2026). */
+.bf-check {
+  margin-top: calc(50 * var(--u));
+  align-self: stretch;
+  font-size: var(--text-18, calc(18 * var(--u)));
+  line-height: calc(28 * var(--u));
+}
+
+/* Who to email about more guests (Mark, 11 Nov 2026); not in Figma. */
+.bf-form__note {
+  margin-top: calc(40 * var(--u));
+  text-align: center;
+  font-size: var(--text-18, calc(18 * var(--u)));
+  line-height: calc(28 * var(--u));
+  letter-spacing: var(--track-body);
+}
+
+.bf-form .bf-button--send {
+  margin-top: calc(108 * var(--u));
+}
+
+@media (min-width: 1024px) {
+  /* The RSVP title sits a pixel lower than the other pages' in Figma. */
+  .bf-rsvp {
+    padding-top: calc(60 * var(--u));
+  }
+
+  .bf-rsvp__message,
+  .bf-rsvp__close {
+    margin-top: calc(94 * var(--u));
+  }
+
+  .bf-form {
+    margin-top: calc(94 * var(--u));
+    max-width: calc(799.3 * var(--u));
+  }
+
+  .bf-fields {
+    gap: calc(30 * var(--u));
+  }
+
+  [data-bf-guest] {
+    margin-top: calc(60 * var(--u));
+  }
+
+  .bf-field {
+    height: calc(90.9 * var(--u));
+  }
+
+  .bf-field input,
+  .bf-field select,
+  .bf-radios legend,
+  .bf-radios label {
+    font-size: var(--text-25, calc(25 * var(--u)));
+  }
+
+  .bf-field--phone .bf-field__prefix {
+    flex-basis: calc(130 * var(--u));
+    padding-left: calc(67 * var(--u));
+  }
+
+  .bf-field--phone input:last-of-type {
+    padding-right: calc(130 * var(--u));
+  }
+
+  .bf-field--select::after {
+    right: calc(94 * var(--u));
+    width: calc(29 * var(--u));
+    height: calc(16 * var(--u));
+  }
+
+  .bf-radios {
+    margin-top: calc(62 * var(--u));
+  }
+
+  .bf-radios label:first-of-type {
+    width: calc(209.3 * var(--u));
+  }
+
+  .bf-radios + .bf-radios {
+    margin-top: calc(62 * var(--u));
+  }
+
+  .bf-radios legend {
+    margin-bottom: calc(39 * var(--u));
+  }
+
+  .bf-radios label,
+  .bf-check {
+    gap: calc(20 * var(--u));
+  }
+
+  .bf-radios input,
+  .bf-check input {
+    width: calc(44.9 * var(--u));
+    height: calc(44.9 * var(--u));
+  }
+
+  /* As wide as its one line, from the form's left edge, as Figma's row. */
+  .bf-check {
+    align-self: flex-start;
+    width: max-content;
+    margin-top: calc(66 * var(--u));
+    font-size: var(--text-23, calc(23 * var(--u)));
+    line-height: 1;
+    white-space: nowrap;
+  }
+
+  .bf-form__note {
+    margin-top: calc(53 * var(--u));
+    font-size: var(--text-23, calc(23 * var(--u)));
+    line-height: calc(36 * var(--u));
+  }
+
+  .bf-form .bf-button--send {
+    margin-top: calc(144 * var(--u));
+  }
+}

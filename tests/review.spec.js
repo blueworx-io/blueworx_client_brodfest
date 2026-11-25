@@ -96,7 +96,7 @@ test('Celebration has the new copy and the dress code; transport has moved to In
 test('Information has the real hotels, with only Cala Llonga discounted', async ({ page }) => {
   await page.goto('/accommodation/');
   await expect(page.locator('h1')).toHaveText('INFORMATION');
-  await expect(page.locator('.bf-area h2.bf-area__name')).toHaveText(["PLAYA D’EN BOSSA", 'TALAMANCA', 'CALA LLONGA']);
+  await expect(page.locator('.bf-area h3.bf-area__name')).toHaveText(["PLAYA D’EN BOSSA", 'TALAMANCA', 'CALA LLONGA']);
   await expect(page.locator('.bf-card__name')).toHaveText([
     'BLESS IBIZA', 'TORRE DEL MAR', 'AMA IBIZA',
     'NOBU HOTEL', 'HOTEL SIMBAD', 'HOTEL LUX ISLA',

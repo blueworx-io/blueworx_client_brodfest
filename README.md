@@ -3,15 +3,20 @@
 The Brodfest website, as a WordPress plugin on the BlueWorx Enhance theme.
 Enhance runs the admin, sign-in and security; this plugin draws every public page.
 
+Every section of every page is a section block in `blocks/`, drawn on the server.
+See `docs/section-blocks.md` for how blocks, pages and the two sites (Save the
+Date and Invite) fit together.
+
 ## Adding a page
 
 1. Add an entry to `brodfest_pages()` in `includes/pages.php`.
-2. Add its template in `templates/pages/`, between `brodfest_document_open()` and
-   `brodfest_document_close()`.
-3. Shared pieces go in `templates/parts/` and load with `brodfest_part()`.
-4. Colours and fonts are tokens in `assets/css/src/app.css`; run `npm run build`.
+2. Add its starting blocks for each site in `brodfest_seed_blocks()` in `includes/seed.php`.
+3. A new kind of section is a new folder in `blocks/` (`block.json`, `render.php`,
+   `edit.js`, `edit.asset.php`, and its styles imported from `assets/css/src/app.css`).
+4. Colours and fonts are the theme's named styles; run `npm run build` after a style change.
 
-Live sites create new pages on their next update.
+Live sites create new pages, with their starting blocks, on their next update. An
+existing page's words are never overwritten by an update.
 
 ## Local site
 

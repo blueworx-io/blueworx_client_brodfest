@@ -1,0 +1,71 @@
+{
+	"$schema": "https://schemas.wp.org/trunk/block.json",
+	"apiVersion": 3,
+	"name": "brodfest/map",
+	"title": "Map",
+	"category": "brodfest",
+	"icon": "location-alt",
+	"description": "The map: a wide picture for desktop and a squarer one for mobile, with one alt text. Until pictures are chosen, the box shows its placeholder label.",
+	"keywords": [
+		"map",
+		"ibiza"
+	],
+	"textdomain": "blueworx-client-brodfest",
+	"attributes": {
+		"imageDesktop": {
+			"type": "string",
+			"default": ""
+		},
+		"imageDesktopId": {
+			"type": "integer",
+			"default": 0
+		},
+		"desktopWidth": {
+			"type": "integer",
+			"default": 0
+		},
+		"desktopHeight": {
+			"type": "integer",
+			"default": 0
+		},
+		"imageMobile": {
+			"type": "string",
+			"default": ""
+		},
+		"imageMobileId": {
+			"type": "integer",
+			"default": 0
+		},
+		"mobileWidth": {
+			"type": "integer",
+			"default": 0
+		},
+		"mobileHeight": {
+			"type": "integer",
+			"default": 0
+		},
+		"alt": {
+			"type": "string",
+			"default": ""
+		},
+		"decorative": {
+			"type": "boolean",
+			"default": false
+		},
+		"placeholderLabel": {
+			"type": "string",
+			"default": ""
+		}
+	},
+	"supports": {
+		"html": false,
+		"align": false,
+		"color": false,
+		"typography": false,
+		"spacing": false,
+		"customClassName": false,
+		"customCSS": false
+	},
+	"editorScript": "file:./edit.js",
+	"render": "file:./render.php"
+}

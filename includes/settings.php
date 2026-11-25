@@ -97,6 +97,28 @@ function brodfest_settings_screen() {
 						),
 					),
 					array(
+						'id'     => 'header',
+						'title'  => __( 'Header words', 'blueworx-client-brodfest' ),
+						'note'   => __( 'The words on the site header. Leave a box empty to use the usual words.', 'blueworx-client-brodfest' ),
+						'fields' => array(
+							array(
+								'id'    => 'rsvp_label',
+								'kind'  => 'text',
+								'label' => __( 'RSVP button', 'blueworx-client-brodfest' ),
+							),
+							array(
+								'id'    => 'menu_celebrate',
+								'kind'  => 'text',
+								'label' => __( 'Menu name for Celebrate (Save the Date)', 'blueworx-client-brodfest' ),
+							),
+							array(
+								'id'    => 'menu_accommodation',
+								'kind'  => 'text',
+								'label' => __( 'Menu name for Accommodation (Save the Date)', 'blueworx-client-brodfest' ),
+							),
+						),
+					),
+					array(
 						'id'     => 'replies',
 						'title'  => __( 'RSVP replies', 'blueworx-client-brodfest' ),
 						'fields' => array(
@@ -153,6 +175,27 @@ function brodfest_saved_video( $url, $site ) {
 	return (string) wp_get_attachment_url( $id );
 }
 add_filter( 'brodfest_hero_video', 'brodfest_saved_video', 5, 2 );
+
+/**
+ * The header's words from the settings screen: the RSVP button, when one is
+ * saved. Empty keeps the block's own words.
+ *
+ * @param array  $attributes The block's attributes.
+ * @param string $name       'site-header' or 'site-footer'.
+ * @return array
+ */
+function brodfest_saved_header_words( $attributes, $name ) {
+	if ( 'site-header' === $name ) {
+		$label = trim( (string) brodfest_setting( 'rsvp_label', '' ) );
+
+		if ( '' !== $label ) {
+			$attributes['rsvpLabel'] = $label;
+		}
+	}
+
+	return $attributes;
+}
+add_filter( 'brodfest_global_attributes', 'brodfest_saved_header_words', 5, 2 );
 
 /**
  * RSVP emails go to the saved address when there is one.

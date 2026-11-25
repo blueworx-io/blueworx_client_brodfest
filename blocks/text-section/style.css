@@ -1,0 +1,100 @@
+/*
+ * The text section.
+ *
+ * Every font and size is one of the theme's named styles (--font-*, --text-*),
+ * with today's value behind it until the theme has the name; colours are the
+ * theme's, through the --bf-* names in assets/css/src/app.css.
+ */
+
+/* ---- Text pages --------------------------------------------------------- */
+
+.bf-text {
+  padding: calc(48 * var(--u)) var(--bf-text-gutter) 0;
+}
+
+.bf-text .bf-title + .bf-body,
+.bf-text .bf-area__name + .bf-body {
+  margin-top: calc(39 * var(--u));
+}
+
+/* Celebration's subtitles: the area-header style, inside a text block. */
+.bf-text .bf-area__name {
+  padding-inline: 0;
+}
+
+.bf-text .bf-body + .bf-body {
+  margin-top: calc(37 * var(--u));
+}
+
+/* Sections follow one another without a wrapper, so the gaps are set by what a
+   section follows: another section, a picture (the photo strip or story
+   banner, which also doubles the gap before a second section), or an area. */
+.bf-text + .bf-text {
+  padding-top: calc(84 * var(--u));
+}
+
+.bf-strip + .bf-text,
+.bf-story-banner + .bf-text {
+  padding-top: calc(84 * var(--u));
+}
+
+.bf-strip ~ .bf-text + .bf-text,
+.bf-story-banner ~ .bf-text + .bf-text {
+  padding-top: calc(158 * var(--u));
+}
+
+/* 84 of gap, then the section's own 48. */
+.bf-area + .bf-text {
+  padding-top: calc(132 * var(--u));
+}
+
+@media (min-width: 1024px) {
+  .bf-text {
+    padding-top: calc(59 * var(--u));
+  }
+
+  .bf-text .bf-body {
+    max-width: calc(1140 * var(--u));
+    margin-inline: auto;
+  }
+
+  .bf-text .bf-title + .bf-body,
+  .bf-text .bf-area__name + .bf-body {
+    margin-top: calc(53 * var(--u));
+  }
+
+  .bf-text .bf-body + .bf-body {
+    margin-top: calc(55 * var(--u));
+  }
+
+  .bf-text .bf-body--note {
+    margin-top: calc(24 * var(--u)) !important;
+  }
+
+  .bf-text + .bf-text {
+    padding-top: calc(110 * var(--u));
+  }
+
+  .bf-strip + .bf-text,
+  .bf-story-banner + .bf-text {
+    padding-top: calc(107 * var(--u));
+  }
+
+  .bf-strip ~ .bf-text + .bf-text,
+  .bf-story-banner ~ .bf-text + .bf-text {
+    padding-top: calc(209 * var(--u));
+  }
+
+  /* 110 of gap, then the section's own 59. */
+  .bf-area + .bf-text {
+    padding-top: calc(169 * var(--u));
+  }
+}
+
+/* Copy with its own line breaks sets its width by its longest line. */
+@media (min-width: 1200px) {
+  .bf-text .bf-body:has(.bf-br),
+  .bf-area__intro:has(.bf-br) {
+    max-width: none;
+  }
+}
