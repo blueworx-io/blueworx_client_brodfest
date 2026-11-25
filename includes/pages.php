@@ -731,21 +731,27 @@ function brodfest_move_blocks( $pairs, $wanted ) {
 /**
  * Tells WordPress about every post a switch moved, if that is still to be done:
  * straight after the switch, or, when the request ended first, on a later one.
- * Runs under the lock.
+ * Runs under the lock. If another plugin ends the request while being told, it is
+ * not told again for five minutes (see brodfest_sync_if_needed()).
  *
  * @return void
  */
 function brodfest_tell_of_move() {
 	$untold = array_filter( array_map( 'intval', explode( ',', (string) get_option( BRODFEST_UNTOLD_OPTION, '' ) ) ) );
 
+	if ( ! $untold ) {
+		return;
+	}
+
+	set_transient( 'brodfest_tell_retry', 1, 5 * MINUTE_IN_SECONDS );
+
 	foreach ( array_chunk( $untold, 2 ) as $pair ) {
 		brodfest_announce_move( $pair[0], $pair[1] ?? 0 );
 		brodfest_announce_move( $pair[1] ?? 0, $pair[0] );
 	}
 
-	if ( $untold ) {
-		update_option( BRODFEST_UNTOLD_OPTION, '' );
-	}
+	update_option( BRODFEST_UNTOLD_OPTION, '' );
+	delete_transient( 'brodfest_tell_retry' );
 }
 
 /**
@@ -901,12 +907,31 @@ add_action( 'add_option_' . BRODFEST_SETTINGS_OPTION, 'brodfest_sync_on_settings
  * The same swap, caught on the next request if the setting was changed some
  * other way (the command line, an import) or an earlier try did not finish (or
  * was cut off before WordPress was told of it). A try that failed, or that ended
- * its request, is not repeated for five minutes.
+ * its request, is not repeated for five minutes, but clearing up after a switch
+ * that was made does not wait for that.
  *
  * @return void
  */
 function brodfest_sync_if_needed() {
-	if ( ( get_option( BRODFEST_SYNCED_OPTION ) === brodfest_wanted_site() && ! get_option( BRODFEST_UNTOLD_OPTION ) ) || false !== get_transient( 'brodfest_sync_retry' ) ) {
+	global $wpdb;
+
+	if ( get_option( BRODFEST_SYNCED_OPTION ) === brodfest_wanted_site() && ! get_option( BRODFEST_UNTOLD_OPTION ) ) {
+		return;
+	}
+
+	if ( false !== get_transient( 'brodfest_sync_retry' ) ) {
+		// Straight from the database: what is cached may be from before the switch.
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+		$untold = $wpdb->get_var( $wpdb->prepare( "SELECT option_value FROM {$wpdb->options} WHERE option_name = %s", BRODFEST_UNTOLD_OPTION ) );
+
+		if ( $untold && false === get_transient( 'brodfest_tell_retry' ) && brodfest_sync_lock() ) {
+			try {
+				brodfest_tell_of_move();
+			} finally {
+				brodfest_sync_unlock();
+			}
+		}
+
 		return;
 	}
 

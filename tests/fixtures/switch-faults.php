@@ -151,8 +151,9 @@ add_filter(
 );
 
 if ( brodfest_fault( 'noRetry' ) ) {
-	// The retry delay has not passed.
+	// Neither retry delay has passed: nothing is tried, so the test can look.
 	add_filter( 'pre_transient_brodfest_sync_retry', '__return_true' );
+	add_filter( 'pre_transient_brodfest_tell_retry', '__return_true' );
 }
 
 if ( brodfest_fault( 'rewriteOnSave' ) ) {

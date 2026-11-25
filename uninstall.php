@@ -22,4 +22,5 @@ delete_option( 'brodfest_switch_untold' );
 delete_option( 'brodfest_sync_lock' );
 delete_option( 'brodfest_sync_notice' );
 delete_transient( 'brodfest_sync_retry' );
+delete_transient( 'brodfest_tell_retry' );
 delete_transient( 'brodfest_upgrade_lock' );

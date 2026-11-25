@@ -332,6 +332,47 @@ test('a switch cut off just after it was made is announced by a later request', 
   expect(contents(await admin.stored())).toEqual(contents(before));
 });
 
+test('an automatic switch cut off just after it was made is announced at once, not after the retry delay', async ({ page }) => {
+  const admin = await adminFor(page);
+  const id = (await admin.page('celebrate')).id;
+
+  // A switch that could not run, then the retry of it, which is cut off.
+  await admin.act('lock');
+  await chooseSite(admin, 'invite');
+  await admin.act('unlock');
+  await admin.act('expire');
+  fault({ crashAfterCommit: true });
+  await page.request.get('/').catch(() => {});
+
+  fault({ noteSaves: true });
+  await page.request.get('/');
+  const told = report().saves ?? [];
+  expect(told).toContain(id);
+  expect(new Set(told).size).toBe(told.length);
+  expect((await admin.act('state')).synced).toBe('invite');
+});
+
+test('an autosave whose words are not replaced keeps the site they are for', async ({ page }) => {
+  const admin = await adminFor(page);
+  const celebrate = await admin.page('celebrate');
+  const autosave = async (data) => (await admin.raw('POST', `/wp/v2/pages/${celebrate.id}/autosaves`, data)).body.id;
+
+  await chooseSite(admin, 'invite');
+  const invite = (await admin.page('celebrate')).raw.replace('"title":"CELEBRATE"', '"title":"CELEBRATE PRIVATE"');
+  const id = await autosave({ content: invite, title: 'Celebrate' });
+  await chooseSite(admin, 'save-the-date');
+  expect(await autosave({ title: 'Celebrate, renamed' }), 'WordPress used the same autosave again').toBe(id);
+
+  try {
+    const nonce = await admin.act('restoreNonce', id);
+    const restored = await page.request.get(`/wp-admin/revision.php?revision=${id}&action=restore&_wpnonce=${nonce}`, { maxRedirects: 0 });
+    expect((await admin.page('celebrate')).raw, 'no Invite words on the Save the Date').toBe(celebrate.raw);
+    expect(restored.status()).toBe(409);
+  } finally {
+    await admin.raw('POST', `/wp/v2/pages/${celebrate.id}`, { content: celebrate.raw, title: 'Celebrate' });
+  }
+});
+
 test('two revisions restored in one XML-RPC request are both restored', async ({ page }) => {
   const admin = await adminFor(page);
   const originals = [];

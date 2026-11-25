@@ -196,18 +196,21 @@ function brodfest_tag_revision( $revision_id ) {
 add_action( '_wp_put_post_revision', 'brodfest_tag_revision' );
 
 /**
- * Tags an autosave again when WordPress writes over it: each person has one per
- * page, and it is used again for whichever site the page holds by then.
+ * Tags an autosave again when WordPress writes new words over it: each person has
+ * one per page, and it is used again for whichever site the page holds by then.
+ * When only its title changes, its words are still the site's they were.
  *
- * @param int $revision_id The revision or autosave.
+ * @param int     $post_id The post.
+ * @param WP_Post $after   The post as it is now.
+ * @param WP_Post $before  The post as it was.
  * @return void
  */
-function brodfest_tag_autosave( $revision_id ) {
-	if ( wp_is_post_autosave( $revision_id ) ) {
-		brodfest_tag_revision( $revision_id );
+function brodfest_tag_autosave( $post_id, $after, $before ) {
+	if ( $after->post_content !== $before->post_content && wp_is_post_autosave( $post_id ) ) {
+		brodfest_tag_revision( $post_id );
 	}
 }
-add_action( 'save_post_revision', 'brodfest_tag_autosave' );
+add_action( 'post_updated', 'brodfest_tag_autosave', 10, 3 );
 
 /**
  * Guards the restoring of a revision: takes the swap lock, and refuses one made

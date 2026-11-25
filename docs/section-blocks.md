@@ -89,7 +89,8 @@ What keeps the swap safe (`includes/pages.php`, `includes/held-pages.php`):
     certain. The hooks run, and the revisions are made, straight after the commit
     (`brodfest_announce_move()`), without writing the page again. Which posts are
     still to be announced is stored in the same transaction, so a request cut off
-    just after the commit is made good by a later one.
+    just after the commit is made good by the next one (without waiting for the
+    five-minute retry).
   - It needs InnoDB tables (WordPress's own default). On any other kind the switch
     is refused with a notice, and nothing changes.
 - **Setup that did not finish is tried again** every five minutes, whether or not a
@@ -101,7 +102,7 @@ What keeps the swap safe (`includes/pages.php`, `includes/held-pages.php`):
   nothing is written. Every revision is tagged with the site it was made for (a
   page is marked with its site before its blocks are written, so the first
   revision is tagged too, and an autosave is tagged again each time WordPress
-  writes over it). A revision for the other site, or one with no tag, is
+  writes new words over it). A revision for the other site, or one with no tag, is
   refused on the revisions screen and over XML-RPC.
 - **Previews.** WordPress Preview draws the unsaved version of the page (the
   page as `get_post()` has it, not `get_queried_object()`, which is stale).
