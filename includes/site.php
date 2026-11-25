@@ -37,14 +37,13 @@ function brodfest_wanted_site() {
  * choosing a site only takes effect once the pages hold its blocks (see
  * brodfest_sync_live_content()). A switch that fails therefore leaves the
  * website, and the public REST API, on the site they were on. Until the pages
- * have been moved for the first time it is the chosen site.
+ * have been moved for the first time it is the Save the Date, which is what
+ * they hold, so choosing the Invite cannot show it early.
  *
  * @return string
  */
 function brodfest_live_site() {
-	$synced = (string) get_option( 'brodfest_synced_site', '' );
-
-	return in_array( $synced, array( BRODFEST_SITE_STD, BRODFEST_SITE_INVITE ), true ) ? $synced : brodfest_wanted_site();
+	return BRODFEST_SITE_INVITE === get_option( 'brodfest_synced_site', '' ) ? BRODFEST_SITE_INVITE : BRODFEST_SITE_STD;
 }
 
 /**

@@ -5,6 +5,12 @@ All notable changes to this project are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.17.2] - 2026-11-25
+
+### Fixed
+
+- Switching between the Save the Date and the Invite now happens in one step. Nobody can read any of the Invite until the whole switch has worked; if it fails or is cut off, the site stays exactly as it was and is tried again. An old editor tab, a restored revision or a reused autosave can no longer put the wrong site's words on a page, and page setup that did not finish after an update is tried again by itself.
+
 ## [0.17.1] - 2026-11-25
 
 ### Fixed
