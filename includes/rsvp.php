@@ -211,7 +211,7 @@ function brodfest_rsvp_return_url() {
 	$id   = isset( $_POST['brodfest_return'] ) ? absint( wp_unslash( $_POST['brodfest_return'] ) ) : 0;
 	$post = $id > 0 ? get_post( $id ) : null;
 
-	if ( $post && 'page' === $post->post_type && 'publish' === $post->post_status && '' === $post->post_password && brodfest_has_visible_block( 'brodfest/rsvp-form', $post->post_content ) ) {
+	if ( $post && 'page' === $post->post_type && 'publish' === $post->post_status && ! post_password_required( $post ) && brodfest_has_visible_block( 'brodfest/rsvp-form', $post->post_content ) ) {
 		return brodfest_page_is_ours( $id ) ? brodfest_page_url( brodfest_page_slug( $id ) ) : (string) get_permalink( $id );
 	}
 

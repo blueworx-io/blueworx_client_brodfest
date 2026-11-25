@@ -121,10 +121,23 @@ add_filter( 'pre_render_block', 'brodfest_skip_hidden_section', 10, 2 );
  * @return bool
  */
 function brodfest_has_visible_block( $name, $content ) {
-	$search = static function ( $blocks ) use ( &$search, $name ) {
+	$seen   = array();
+	$search = static function ( $blocks ) use ( &$search, &$seen, $name ) {
 		foreach ( $blocks as $block ) {
 			if ( brodfest_block_is_hidden( $block ) ) {
 				continue;
+			}
+
+			// A synced pattern is only a reference on the page: look inside it, once.
+			if ( 'core/block' === ( $block['blockName'] ?? '' ) ) {
+				$ref     = (int) ( $block['attrs']['ref'] ?? 0 );
+				$pattern = $ref > 0 && ! isset( $seen[ $ref ] ) ? get_post( $ref ) : null;
+
+				$seen[ $ref ] = true;
+
+				if ( $pattern && 'wp_block' === $pattern->post_type && 'publish' === $pattern->post_status && '' === $pattern->post_password && $search( parse_blocks( $pattern->post_content ) ) ) {
+					return true;
+				}
 			}
 
 			if ( ( $block['blockName'] ?? '' ) === $name || $search( (array) ( $block['innerBlocks'] ?? array() ) ) ) {

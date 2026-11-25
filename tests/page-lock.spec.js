@@ -432,7 +432,61 @@ test('a page that mixes a section with other content keeps the theme template an
     const html = await (await visitor.request.get(made.link)).text();
     expect(html).toContain('Some ordinary words');
     expect(html).not.toContain('bf-skip');
-    expect(html).not.toMatch(/id=['"]brodfest-public-css['"]/);
+    // Its sections still need their styles and controls.
+    expect(html).toMatch(/id=['"]brodfest-public-css['"]/);
+    expect(html).toMatch(/id=['"]brodfest-public-js['"]/);
+
+    // A preview of the page without the paragraph is drawn the way publishing it would be.
+    const draft = await admin.raw('POST', `/wp/v2/pages/${made.id}/autosaves`, { content: layout.content });
+    expect(draft.status).toBe(200);
+    const nonce = /preview_nonce=(\w+)/.exec(draft.body.preview_link)?.[1];
+    expect(nonce).toBeTruthy();
+    const preview = await (await page.request.get(draft.body.preview_link)).text();
+    expect(preview).not.toContain('Some ordinary words');
+    expect(preview).toContain('bf-skip');
+  });
+});
+
+test('a form inside a synced pattern is not cached, and a guest comes back to that page', async ({ page, browser }) => {
+  await withLayoutPage(page, browser, 'brodfest/page-rsvp-save-the-date', {}, async ({ visitor, made, admin, layout }) => {
+    const pattern = await admin.call('POST', '/wp/v2/blocks', { title: 'A pattern for a test', status: 'publish', content: layout.content });
+    try {
+      const put = await admin.raw('POST', `/wp/v2/pages/${made.id}`, { content: `<!-- wp:block {"ref":${pattern.id}} /-->` });
+      expect(put.status).toBe(200);
+      const shown = await visitor.request.get(made.link);
+      expect(shown.headers()['cache-control']).toMatch(/no-cache|no-store/);
+      const html = await shown.text();
+      const nonce = /name="brodfest_rsvp_nonce" value="(\w+)"/.exec(html)[1];
+      const sent = await visitor.request.post('/rsvp/', {
+        form: { brodfest_action: 'brodfest_rsvp', brodfest_rsvp_nonce: nonce, brodfest_return: String(made.id), website: '' },
+        maxRedirects: 0,
+      });
+      expect(sent.headers().location).toContain(new URL(made.link).pathname.replace(/\/$/, '').split('/').pop());
+    } finally {
+      await admin.raw('DELETE', `/wp/v2/blocks/${pattern.id}?force=true`);
+    }
+  });
+});
+
+test('a guest who unlocked a page with a password comes back to it after sending the form', async ({ page, browser }) => {
+  await withLayoutPage(page, browser, 'brodfest/page-rsvp-save-the-date', { password: 'a-test-password' }, async ({ visitor, made }) => {
+    await visitor.request.post('/wp-login.php?action=postpass', { form: { post_password: 'a-test-password' }, headers: { referer: made.link }, maxRedirects: 0 });
+    const html = await (await visitor.request.get(made.link)).text();
+    const nonce = /name="brodfest_rsvp_nonce" value="(\w+)"/.exec(html)[1];
+    const send = (context) => context.request.post('/rsvp/', {
+      form: { brodfest_action: 'brodfest_rsvp', brodfest_rsvp_nonce: nonce, brodfest_return: String(made.id), website: '' },
+      maxRedirects: 0,
+    });
+    const slug = new URL(made.link).pathname.replace(/\/$/, '').split('/').pop();
+    expect((await send(visitor)).headers().location).toContain(slug);
+
+    // Someone who has not unlocked it is not sent there.
+    const stranger = await browser.newContext();
+    try {
+      expect((await send(stranger)).headers().location).not.toContain(slug);
+    } finally {
+      await stranger.close();
+    }
   });
 });
 

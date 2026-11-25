@@ -897,9 +897,13 @@ function brodfest_page_has_sections( $post_id ) {
 		return true;
 	}
 
-	$found = false;
+	// In a WordPress preview the page being drawn holds the unsaved version, and
+	// the template has to be the one publishing it would get.
+	$post    = is_preview() ? get_post() : null;
+	$content = $post instanceof WP_Post && (int) $post->ID === $post_id ? $post->post_content : get_post_field( 'post_content', $post_id );
+	$found   = false;
 
-	foreach ( parse_blocks( (string) get_post_field( 'post_content', $post_id ) ) as $block ) {
+	foreach ( parse_blocks( (string) $content ) as $block ) {
 		$name = (string) ( $block['blockName'] ?? '' );
 
 		if ( '' === $name ) {
@@ -930,6 +934,22 @@ function brodfest_is_section_request() {
 	// A password-protected page keeps WordPress's password form: the blocks are
 	// only drawn, by the plugin's template, once the visitor has unlocked it.
 	return is_singular( 'page' ) && ! post_password_required( get_queried_object_id() ) && brodfest_page_has_sections( get_queried_object_id() );
+}
+
+/**
+ * Whether the current request shows any of this plugin's sections, in this
+ * plugin's template or the theme's: either way they need its styles and scripts.
+ *
+ * @return bool
+ */
+function brodfest_request_needs_assets() {
+	if ( brodfest_is_section_request() ) {
+		return true;
+	}
+
+	$post = is_singular( 'page' ) ? get_post() : null;
+
+	return $post instanceof WP_Post && ! post_password_required( $post ) && false !== strpos( $post->post_content, '<!-- wp:brodfest/' );
 }
 
 /**
