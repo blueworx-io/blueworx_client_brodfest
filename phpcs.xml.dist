@@ -19,6 +19,7 @@
 	<exclude-pattern>*/.claude/*</exclude-pattern>
 	<exclude-pattern>*/assets/blueworx-admin-design.php</exclude-pattern>
 	<exclude-pattern>*/blueworx-page-editor/*</exclude-pattern>
+	<exclude-pattern>*/blueworx-page-lock/*</exclude-pattern>
 
 	<rule ref="WordPress"/>
 

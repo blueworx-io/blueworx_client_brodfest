@@ -57,6 +57,88 @@ function brodfest_register_blocks() {
 add_action( 'init', 'brodfest_register_blocks', 9 );
 
 /**
+ * The blocks the plugin draws around every page itself (not part of a page's
+ * own sections): they cannot be shown or hidden.
+ *
+ * @return string[]
+ */
+function brodfest_global_blocks() {
+	return array( 'brodfest/site-header', 'brodfest/site-footer' );
+}
+
+/**
+ * Gives every section block a "hidden" setting, which a client may change on a
+ * locked page: a hidden section stays on the page, and in its place in the
+ * list, but visitors do not see it.
+ *
+ * @param array $metadata The block's block.json, as an array.
+ * @return array
+ */
+function brodfest_block_visibility_attribute( $metadata ) {
+	$name = (string) ( $metadata['name'] ?? '' );
+
+	if ( 0 === strpos( $name, 'brodfest/' ) && ! in_array( $name, brodfest_global_blocks(), true ) ) {
+		$metadata['attributes']['hidden'] = array(
+			'type'    => 'boolean',
+			'default' => false,
+		);
+	}
+
+	return $metadata;
+}
+add_filter( 'block_type_metadata', 'brodfest_block_visibility_attribute' );
+
+/**
+ * Whether a parsed block is a section that has been hidden.
+ *
+ * @param array $block A block as parse_blocks() gives it.
+ * @return bool
+ */
+function brodfest_block_is_hidden( $block ) {
+	$name = (string) ( $block['blockName'] ?? '' );
+
+	return 0 === strpos( $name, 'brodfest/' ) && ! in_array( $name, brodfest_global_blocks(), true ) && ! empty( $block['attrs']['hidden'] );
+}
+
+/**
+ * Draws nothing for a hidden section (and so nothing inside it).
+ *
+ * @param string|null $pre   What a filter has drawn already, or null.
+ * @param array       $block The block being drawn.
+ * @return string|null
+ */
+function brodfest_skip_hidden_section( $pre, $block ) {
+	return null === $pre && brodfest_block_is_hidden( $block ) ? '' : $pre;
+}
+add_filter( 'pre_render_block', 'brodfest_skip_hidden_section', 10, 2 );
+
+/**
+ * Whether serialised blocks hold a section of this name that visitors will see:
+ * one that is not hidden, and not inside one that is.
+ *
+ * @param string $name    Block name, with the namespace.
+ * @param string $content Serialised blocks.
+ * @return bool
+ */
+function brodfest_has_visible_block( $name, $content ) {
+	$search = static function ( $blocks ) use ( &$search, $name ) {
+		foreach ( $blocks as $block ) {
+			if ( brodfest_block_is_hidden( $block ) ) {
+				continue;
+			}
+
+			if ( ( $block['blockName'] ?? '' ) === $name || $search( (array) ( $block['innerBlocks'] ?? array() ) ) ) {
+				return true;
+			}
+		}
+
+		return false;
+	};
+
+	return $search( parse_blocks( (string) $content ) );
+}
+
+/**
  * Gives the section blocks their own group in the inserter.
  *
  * @param array $categories Block categories.

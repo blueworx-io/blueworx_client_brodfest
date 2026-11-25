@@ -20,8 +20,8 @@ $brodfest_html   = do_blocks( $brodfest_blocks );
 
 brodfest_document_open(
 	array(
-		'opening' => has_block( 'brodfest/opening', $brodfest_blocks ),
-		'close'   => has_block( 'brodfest/rsvp-form', $brodfest_blocks ),
+		'opening' => brodfest_has_visible_block( 'brodfest/opening', $brodfest_blocks ),
+		'close'   => brodfest_has_visible_block( 'brodfest/rsvp-form', $brodfest_blocks ),
 	)
 );
 

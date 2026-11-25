@@ -7,6 +7,9 @@
  *
  * Controls: text (single line or several), a choice, a switch, an image with
  * its alt text (or "decorative"), and a list with a smallest and largest size.
+ * Every section also gets a "Show this section on the site" switch in the block
+ * tab of the right-hand panel; it is the one thing about a section's place on
+ * the page that someone on a locked page may change.
  */
 ( function () {
 	'use strict';
@@ -28,14 +31,20 @@
 		return src.indexOf( cfg.pluginToken ) === 0 ? cfg.pluginUrl + src.slice( cfg.pluginToken.length ).replace( /^\//, '' ) : src;
 	}
 
+	// Whether the section being drawn is hidden: set by the wrapper in register()
+	// just before it draws the block, read by section() in the same pass.
+	var drawingHidden = false;
+
 	/** The frame every section sits in on the editor canvas. Call from edit. */
 	function section( title, hint, children ) {
+		var hidden = drawingHidden;
 		var blockProps = be.useBlockProps( {
-			style: { border: '1px dashed #8c8f94', padding: '16px', background: '#fff', color: '#1d2327' },
+			style: { border: '1px dashed #8c8f94', padding: '16px', background: '#fff', color: '#1d2327', opacity: hidden ? 0.55 : 1 },
 		} );
 		return el(
 			'div',
 			blockProps,
+			hidden ? el( 'p', { style: { margin: '0 0 8px', fontSize: '12px', fontWeight: 700, color: '#b32d2e' } }, __( 'Hidden: visitors do not see this section.', D ) ) : null,
 			el( 'p', { style: { margin: '0 0 4px', fontSize: '12px', fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase' } }, title ),
 			hint ? el( 'p', { style: { margin: '0 0 12px', fontSize: '12px', color: '#646970' } }, hint ) : null,
 			children
@@ -220,8 +229,32 @@
 		Fragment: wp.element.Fragment,
 		InnerBlocks: be.InnerBlocks,
 		register: function ( name, edit, save, extra ) {
+			// The header and footer are drawn around every page by the plugin:
+			// they are not sections of a page, so they have nothing to show or hide.
+			var wrapped = name === 'brodfest/site-header' || name === 'brodfest/site-footer' ? edit : function ( props ) {
+				drawingHidden = !! props.attributes.hidden;
+				return el(
+					wp.element.Fragment,
+					null,
+					el(
+						be.InspectorControls,
+						null,
+						el(
+							c.PanelBody,
+							{ title: __( 'Visibility', D ), initialOpen: true },
+							toggle(
+								__( 'Show this section on the site', D ),
+								! props.attributes.hidden,
+								function ( v ) { props.setAttributes( { hidden: ! v } ); },
+								__( 'Switch off to keep the section on the page without showing it to visitors.', D )
+							)
+						)
+					),
+					edit( props )
+				);
+			};
 			wp.blocks.registerBlockType( name, Object.assign( {
-				edit: edit,
+				edit: wrapped,
 				// Nothing is saved but the attributes: render.php draws the section.
 				save: save || function () { return null; },
 			}, extra || {} ) );

@@ -41,6 +41,8 @@ const ALLOW = [
 	'assets/blueworx-page-editor.js',
 	'assets/fonts',
 	'blueworx-page-editor',
+	// The shared page lock, shipped verbatim (CI compares it with the foundation's).
+	'blueworx-page-lock',
 	// The vendored update checker. Without it the plugin fatals on activation,
 	// since the main file requires it unconditionally.
 	'plugin-update-checker',

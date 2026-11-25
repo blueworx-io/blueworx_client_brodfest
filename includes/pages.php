@@ -137,7 +137,8 @@ function brodfest_register_held_pages() {
 			'show_in_nav_menus' => false,
 			'show_in_rest'      => true,
 			'rest_base'         => 'brodfest-held-pages',
-			'supports'          => array( 'title', 'editor', 'revisions' ),
+			// Custom fields, so the page lock's setting is part of the record in the REST API.
+			'supports'          => array( 'title', 'editor', 'revisions', 'custom-fields' ),
 			'capability_type'   => 'page',
 			'map_meta_cap'      => true,
 			'capabilities'      => array( 'create_posts' => 'do_not_allow' ),
@@ -197,9 +198,15 @@ function brodfest_unfiltered( $write ) {
  * @return bool
  */
 function brodfest_write_post( $post_id, $fields ) {
-	$result = brodfest_unfiltered(
+	// The plugin's own write: the page lock (blueworx-page-lock/) is for people
+	// editing, and would refuse a swap that changes a page's sections.
+	$result = brodfest_without_page_lock(
 		static function () use ( $post_id, $fields ) {
-			return wp_update_post( wp_slash( array_merge( array( 'ID' => $post_id ), $fields ) ), true );
+			return brodfest_unfiltered(
+				static function () use ( $post_id, $fields ) {
+					return wp_update_post( wp_slash( array_merge( array( 'ID' => $post_id ), $fields ) ), true );
+				}
+			);
 		}
 	);
 
@@ -339,9 +346,10 @@ function brodfest_held_title( $slug, $site ) {
  * The blocks to draw for a page on the site this request shows.
  *
  * The page's own content when it holds that site's blocks, otherwise the
- * held-back page's. A page nobody has moved onto blocks yet, or whose
- * held-back page has gone, shows its starting content, so the site is never
- * blank.
+ * held-back page's. Only ever what is saved: nothing is filled in by code when
+ * the page loads. (A page is given its starting blocks once, when it is made or
+ * the plugin updates past the release that moved the pages onto blocks, and a
+ * held-back page that has gone is made again by the next switch.)
  *
  * @param int     $page_id The page.
  * @param WP_Post $post    Optional. The page as WordPress has it loaded: for a
@@ -354,17 +362,15 @@ function brodfest_page_blocks( $page_id, $post = null ) {
 	$site    = brodfest_site();
 	$holds   = (string) get_post_meta( $page_id, BRODFEST_CONTENT_SITE_META, true );
 
-	if ( '' === $holds ) {
-		return brodfest_seed_content( brodfest_page_slug( $page_id ), $site );
-	}
-
-	if ( $holds === $site ) {
+	// A page that holds the site being shown (or has not been marked yet, so
+	// holds nothing but its own words) draws its own content.
+	if ( '' === $holds || $holds === $site ) {
 		return $post instanceof WP_Post && (int) $post->ID === $page_id ? (string) $post->post_content : (string) get_post_field( 'post_content', $page_id );
 	}
 
 	$held_id = brodfest_held_id( $page_id );
 
-	return $held_id > 0 ? (string) get_post_field( 'post_content', $held_id ) : brodfest_seed_content( brodfest_page_slug( $page_id ), $site );
+	return $held_id > 0 ? (string) get_post_field( 'post_content', $held_id ) : '';
 }
 
 /**
