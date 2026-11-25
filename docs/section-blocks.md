@@ -146,7 +146,16 @@ main plugin file. `includes/page-lock.php` is all this plugin adds:
   "Brodfest pages", `includes/patterns.php`): the page's starting content, so a
   new page, or a connected tool, starts from it in one step. A new page has no
   sections yet, so its first layout can be saved once; after that its sections
-  are fixed.
+  are fixed. Only the live site's layouts are offered: the pattern list is open
+  to everyone who can write a post, so the Invite's copy stays out of it until
+  the Invite is live. Any page that holds Brodfest blocks (not only the seven
+  owned pages) is drawn with the plugin's document, styles and scripts
+  (`brodfest_page_has_sections()`).
+- **Known limits of the shared lock** (the copy is not edited here; to be fixed in
+  the foundation): it compares block types and order, not each section, so two
+  sections of one type (Celebration and Dress Code) can be swapped; it ignores
+  markup outside block comments; and its panel needs `core/editor` panel actions
+  that WordPress 6.4 keeps in `core/edit-post`.
 
 A page draws only what is saved in it: nothing is filled in by code when it
 loads. `templates/page.php` is the one document shell (header, the page's

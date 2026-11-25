@@ -46,7 +46,7 @@ add_action( 'after_setup_theme', 'brodfest_ensure_title_tag_support', 99 );
  * @return void
  */
 function brodfest_scope_title_tag_support() {
-	if ( ! $GLOBALS['brodfest_added_title_tag'] || brodfest_is_owned_request() ) {
+	if ( ! $GLOBALS['brodfest_added_title_tag'] || brodfest_is_section_request() ) {
 		return;
 	}
 
@@ -58,13 +58,14 @@ add_action( 'wp', 'brodfest_scope_title_tag_support' );
 /**
  * Takes over rendering for pages this plugin owns.
  *
- * Every owned page is drawn by the one template, from its section blocks.
+ * Every owned page, and any page made of this plugin's section blocks, is
+ * drawn by the one template, from its section blocks.
  *
  * @param string $template Template path WordPress resolved.
  * @return string Template path to use.
  */
 function brodfest_template_include( $template ) {
-	if ( ! is_singular( 'page' ) || '' === brodfest_page_slug( get_queried_object_id() ) ) {
+	if ( ! brodfest_is_section_request() ) {
 		return $template;
 	}
 

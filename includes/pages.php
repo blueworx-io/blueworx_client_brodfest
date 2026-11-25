@@ -874,6 +874,34 @@ function brodfest_page_slug( $post_id ) {
 }
 
 /**
+ * Whether a page is drawn by this plugin: one of the owned pages, or any page
+ * made from the plugin's section blocks (a new page started from a whole-page
+ * layout, see includes/patterns.php), which needs the same document, styles
+ * and scripts to look and work as the owned pages do.
+ *
+ * @param int $post_id Page ID.
+ * @return bool
+ */
+function brodfest_page_has_sections( $post_id ) {
+	$post_id = (int) $post_id;
+
+	if ( $post_id <= 0 ) {
+		return false;
+	}
+
+	return brodfest_page_is_ours( $post_id ) || false !== strpos( (string) get_post_field( 'post_content', $post_id ), '<!-- wp:brodfest/' );
+}
+
+/**
+ * Whether the current request draws a page with this plugin's sections.
+ *
+ * @return bool
+ */
+function brodfest_is_section_request() {
+	return is_singular( 'page' ) && brodfest_page_has_sections( get_queried_object_id() );
+}
+
+/**
  * Whether the current request is one of this plugin's pages.
  *
  * @return bool

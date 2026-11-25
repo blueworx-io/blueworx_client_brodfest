@@ -235,15 +235,20 @@ test('a client opens the editor with only the Brodfest sections, no code editor 
   });
 });
 
-test('every page type has a whole-page layout to start from', async ({ page }) => {
+const ourLayouts = async (admin) => (await admin.call('GET', '/wp/v2/block-patterns/patterns')).filter((p) => p.name.startsWith('brodfest/page-'));
+
+test('every page type of the live site has a whole-page layout, and the Invite layouts stay private until it is live', async ({ page }) => {
   const admin = await restFor(page);
-  const patterns = await admin.call('GET', '/wp/v2/block-patterns/patterns');
-  const ours = patterns.filter((p) => p.name.startsWith('brodfest/page-'));
+  const ours = await ourLayouts(admin);
   const names = ours.map((p) => p.name);
 
-  for (const slug of ['home', 'celebrate', 'can-sakhara-story', 'accommodation', 'recommendations', 'enquiries', 'rsvp']) {
+  for (const slug of ['home', 'celebrate', 'accommodation', 'enquiries', 'rsvp']) {
     expect(names.some((n) => n.startsWith(`brodfest/page-${slug}-`)), `${slug} has a layout`).toBe(true);
   }
+  // Nothing of the Invite's is in the pattern list, which anyone who can write a post can read.
+  expect(names.filter((n) => n.endsWith('-invite'))).toEqual([]);
+  expect(names.some((n) => /can-sakhara-story|recommendations/.test(n))).toBe(false);
+  expect(JSON.stringify(ours)).not.toContain('Lorem ipsum');
   for (const pattern of ours) {
     // Section blocks and nothing else, with the words already in them.
     expect(pattern.content.replace(/<!--[\s\S]*?-->/g, '').trim(), pattern.name).toBe('');
@@ -251,6 +256,43 @@ test('every page type has a whole-page layout to start from', async ({ page }) =
     expect(pattern.content, pattern.name).not.toMatch(/<!-- wp:(?!brodfest\/)/);
     expect(pattern.post_types, pattern.name).toContain('page');
     expect(pattern.block_types, pattern.name).toContain('core/post-content');
+  }
+});
+
+test('once the Invite is live, every page type has a layout for it', async ({ page }) => {
+  const admin = await restFor(page);
+  await page.goto('/wp-admin/admin.php?page=brodfest');
+  await page.getByRole('radio', { name: 'Invite' }).check();
+  await page.getByRole('button', { name: 'Save changes' }).click();
+  await expect(page.getByText('Everything is saved')).toBeVisible();
+  try {
+    const names = (await ourLayouts(admin)).map((p) => p.name);
+    for (const slug of ['home', 'celebrate', 'can-sakhara-story', 'accommodation', 'recommendations', 'enquiries', 'rsvp']) {
+      expect(names.some((n) => n.startsWith(`brodfest/page-${slug}-`)), `${slug} has a layout`).toBe(true);
+    }
+  } finally {
+    await page.goto('/wp-admin/admin.php?page=brodfest');
+    await page.getByRole('radio', { name: 'Save the Date' }).check();
+    await page.getByRole('button', { name: 'Save changes' }).click();
+    await expect(page.getByText('Everything is saved')).toBeVisible();
+  }
+});
+
+test('a page made from the Home layout is drawn with the Brodfest styles and scripts', async ({ page, browser }) => {
+  const admin = await restFor(page);
+  const layout = (await ourLayouts(admin)).find((p) => p.name === 'brodfest/page-home-save-the-date');
+  const made = await admin.raw('POST', '/wp/v2/pages', { title: 'A second home from a layout', status: 'publish', content: layout.content });
+  expect(made.status).toBe(201);
+  const visitor = await browser.newContext();
+  try {
+    const html = await (await visitor.request.get(made.body.link)).text();
+    expect(html).toMatch(/id=['"]brodfest-public-css['"]/);
+    expect(html).toMatch(/id=['"]brodfest-public-js['"]/);
+    expect(html).toContain('data-bf-opening');
+    expect(html).toContain('bf-hero');
+  } finally {
+    await visitor.close();
+    await admin.raw('DELETE', `/wp/v2/pages/${made.body.id}?force=true`);
   }
 });
 
@@ -333,4 +375,22 @@ test('a section the client hid shows again when switched back on', async ({ page
   }
   await page.goto('/celebrate/');
   await expect(page.locator('h1')).toHaveText('CELEBRATION');
+});
+
+test('the calendar block inside the Home lettering is locked in the editor like every other section', async ({ page, browser }) => {
+  const admin = await restFor(page);
+  const home = await admin.page('home');
+
+  await withClient(browser, admin, async (_client, clientPage) => {
+    await clientPage.goto(`/wp-admin/post.php?post=${home.id}&action=edit`);
+    await clientPage.waitForFunction(() => window.wp?.data?.select('core/block-editor')?.getBlocks().length > 0);
+    const read = () => clientPage.evaluate(() => {
+      const select = window.wp.data.select('core/block-editor');
+      const lettering = select.getBlocks().find((b) => b.name === 'brodfest/home-lettering');
+      return { inner: lettering.innerBlocks.length, lock: select.getTemplateLock(lettering.clientId) };
+    });
+    // The inner list takes the page's lock once the section has drawn.
+    await expect.poll(async () => (await read()).lock, { timeout: 15000 }).toBe('all');
+    expect((await read()).inner).toBe(1);
+  });
 });

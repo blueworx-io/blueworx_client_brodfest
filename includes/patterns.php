@@ -6,8 +6,8 @@
  *
  * A layout is a page's starting content (includes/seed.php) exactly as the
  * live pages were given it: section blocks only, with today's words, images
- * and links already in them. There is one for each site a page belongs to,
- * since the Save the Date's and the Invite's pages differ.
+ * and links already in them. Only the live site's are offered: the Invite's
+ * copy is private until the Invite is live.
  *
  * @package Brodfest
  */
@@ -27,8 +27,14 @@ function brodfest_register_page_layouts() {
 		array( 'label' => __( 'Brodfest pages', 'blueworx-client-brodfest' ) )
 	);
 
+	// Only the live site's layouts. A layout carries a page's words, and the
+	// pattern list is open to everyone who can write a post, so the Invite's
+	// stay out of it until the Invite is live (the held-back pages are private
+	// for the same reason). Switching the live site changes which are offered.
+	$live = brodfest_live_site();
+
 	foreach ( brodfest_pages() as $slug => $page ) {
-		foreach ( $page['sites'] as $site ) {
+		foreach ( array_intersect( $page['sites'], array( $live ) ) as $site ) {
 			$content = brodfest_seed_content( $slug, $site );
 
 			if ( '' === $content ) {
