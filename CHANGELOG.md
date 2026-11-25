@@ -15,6 +15,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- A page made only of Brodfest sections (for example from a layout) is drawn like the others; a page that mixes them with other content, or has a password, keeps the theme's own page. The RSVP form returns a guest, with the thank-you or error message, to the page that showed it, and any page with the form is kept out of the page cache.
 - A page now draws only the words saved in it. Nothing is filled in by code when it loads: a page, or held-back page, that is empty shows empty.
 
 ## [0.16.0] - 2026-11-24

@@ -187,7 +187,8 @@ function brodfest_rsvp_rate_limited() {
  * @return void
  */
 function brodfest_rsvp_no_cache() {
-	if ( brodfest_is_owned_request() && 'rsvp' === brodfest_page_slug( get_queried_object_id() ) ) {
+	// Every page that shows the form, not only the RSVP page.
+	if ( is_singular( 'page' ) && brodfest_has_visible_block( 'brodfest/rsvp-form', (string) get_post_field( 'post_content', get_queried_object_id() ) ) ) {
 		if ( ! defined( 'DONOTCACHEPAGE' ) ) {
 			define( 'DONOTCACHEPAGE', true );
 		}
@@ -195,6 +196,27 @@ function brodfest_rsvp_no_cache() {
 	}
 }
 add_action( 'template_redirect', 'brodfest_rsvp_no_cache', 1 );
+
+/**
+ * Where a guest goes back to after sending the form: the page that showed it
+ * (the form says which), when that is a published page that still has the form,
+ * otherwise the RSVP page. Only picks the address of a page; nothing is trusted
+ * beyond that.
+ *
+ * @return string
+ */
+function brodfest_rsvp_return_url() {
+	// Only picks which page to go back to; the nonce is checked by the caller before anything is kept.
+	// phpcs:ignore WordPress.Security.NonceVerification.Missing
+	$id   = isset( $_POST['brodfest_return'] ) ? absint( wp_unslash( $_POST['brodfest_return'] ) ) : 0;
+	$post = $id > 0 ? get_post( $id ) : null;
+
+	if ( $post && 'page' === $post->post_type && 'publish' === $post->post_status && '' === $post->post_password && brodfest_has_visible_block( 'brodfest/rsvp-form', $post->post_content ) ) {
+		return brodfest_page_is_ours( $id ) ? brodfest_page_url( brodfest_page_slug( $id ) ) : (string) get_permalink( $id );
+	}
+
+	return brodfest_page_url( 'rsvp' );
+}
 
 /**
  * Handles the RSVP form: checks it, saves it, emails the site, sends the
@@ -213,7 +235,7 @@ function brodfest_handle_rsvp() {
 		return;
 	}
 
-	$back = brodfest_page_url( 'rsvp' );
+	$back = brodfest_rsvp_return_url();
 
 	if ( ! isset( $_POST['brodfest_rsvp_nonce'] ) || ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['brodfest_rsvp_nonce'] ) ), BRODFEST_RSVP_ACTION ) ) {
 		wp_safe_redirect( add_query_arg( 'rsvp', 'expired', $back ) );

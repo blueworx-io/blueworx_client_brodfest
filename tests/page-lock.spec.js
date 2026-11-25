@@ -38,6 +38,11 @@ async function restFor(page, credentials) {
 // Runs a test body with a client login (an Editor, as Mark's is) that exists
 // for the length of the test only.
 async function withClient(browser, admin, body) {
+  // A client left behind by a run that was stopped half way would block this one.
+  const left = await admin.raw('GET', `/wp/v2/users?search=${CLIENT.user}&context=edit`);
+  for (const old of left.body ?? []) {
+    if (old.username === CLIENT.user) await admin.raw('DELETE', `/wp/v2/users/${old.id}?force=true&reassign=1`);
+  }
   const made = await admin.call('POST', '/wp/v2/users', {
     username: CLIENT.user,
     email: 'brodfest-test-client@example.com',
@@ -392,5 +397,69 @@ test('the calendar block inside the Home lettering is locked in the editor like 
     // The inner list takes the page's lock once the section has drawn.
     await expect.poll(async () => (await read()).lock, { timeout: 15000 }).toBe('all');
     expect((await read()).inner).toBe(1);
+  });
+});
+
+// A throwaway published page, made from a layout, removed afterwards.
+async function withLayoutPage(page, browser, layoutName, extra, body) {
+  const admin = await restFor(page);
+  const layout = (await ourLayouts(admin)).find((p) => p.name === layoutName);
+  expect(layout, layoutName).toBeTruthy();
+  const made = await admin.raw('POST', '/wp/v2/pages', { title: 'A layout page for a test', status: 'publish', content: layout.content, ...extra });
+  expect(made.status).toBe(201);
+  const visitor = await browser.newContext();
+  try {
+    await body({ visitor, made: made.body, admin, layout });
+  } finally {
+    await visitor.close();
+    await admin.raw('DELETE', `/wp/v2/pages/${made.body.id}?force=true`);
+  }
+}
+
+test('a password-protected page made from a layout asks for the password and shows no sections', async ({ page, browser }) => {
+  await withLayoutPage(page, browser, 'brodfest/page-celebrate-save-the-date', { password: 'a-test-password' }, async ({ visitor, made }) => {
+    const html = await (await visitor.request.get(made.link)).text();
+    expect(html).toContain('post_password');
+    expect(html).not.toContain('CELEBRATION');
+    expect(html).not.toContain('bf-text');
+  });
+});
+
+test('a page that mixes a section with other content keeps the theme template and its content filters', async ({ page, browser }) => {
+  await withLayoutPage(page, browser, 'brodfest/page-enquiries-save-the-date', {}, async ({ visitor, made, admin, layout }) => {
+    const mixed = await admin.raw('POST', `/wp/v2/pages/${made.id}`, { content: `<!-- wp:paragraph --><p>Some ordinary words</p><!-- /wp:paragraph -->${layout.content}` });
+    expect(mixed.status).toBe(200);
+    const html = await (await visitor.request.get(made.link)).text();
+    expect(html).toContain('Some ordinary words');
+    expect(html).not.toContain('bf-skip');
+    expect(html).not.toMatch(/id=['"]brodfest-public-css['"]/);
+  });
+});
+
+test('a page that shows the RSVP form is never cached, and sends a guest back to that page', async ({ page, browser }) => {
+  await withLayoutPage(page, browser, 'brodfest/page-rsvp-save-the-date', {}, async ({ visitor, made }) => {
+    const shown = await visitor.request.get(made.link);
+    expect(shown.headers()['cache-control']).toMatch(/no-cache|no-store/);
+    const html = await shown.text();
+    expect(html).toContain(`name="brodfest_return" value="${made.id}"`);
+    const nonce = /name="brodfest_rsvp_nonce" value="(\w+)"/.exec(html)[1];
+
+    // An empty reply is refused, and the message is shown on the page it came from.
+    const sent = await visitor.request.post('/rsvp/', {
+      form: { brodfest_action: 'brodfest_rsvp', brodfest_rsvp_nonce: nonce, brodfest_return: String(made.id), website: '' },
+      maxRedirects: 0,
+    });
+    expect(sent.status()).toBe(302);
+    const back = sent.headers().location;
+    expect(back).toContain(new URL(made.link).pathname.replace(/\/$/, '').split('/').pop());
+    expect(back).toContain('rsvp=error');
+    expect(back).not.toContain('/rsvp/');
+
+    // A made-up page is ignored: the guest goes to the RSVP page.
+    const stray = await visitor.request.post('/rsvp/', {
+      form: { brodfest_action: 'brodfest_rsvp', brodfest_rsvp_nonce: nonce, brodfest_return: '1', website: '' },
+      maxRedirects: 0,
+    });
+    expect(stray.headers().location).toContain('/rsvp/');
   });
 });

@@ -39,6 +39,8 @@ $brodfest_status = isset( $_GET['rsvp'] ) ? sanitize_key( wp_unslash( $_GET['rsv
 
 		<form class="bf-form" method="post" action="<?php echo esc_url( brodfest_page_url( 'rsvp' ) ); ?>" data-bf-rsvp>
 			<input type="hidden" name="brodfest_action" value="<?php echo esc_attr( BRODFEST_RSVP_ACTION ); ?>" />
+			<?php // The page that shows the form, so the guest comes back to it with the message. ?>
+			<input type="hidden" name="brodfest_return" value="<?php echo (int) get_queried_object_id(); ?>" />
 			<?php wp_nonce_field( BRODFEST_RSVP_ACTION, 'brodfest_rsvp_nonce' ); ?>
 			<p class="bf-form__trap" aria-hidden="true">
 				<label>Leave this empty <input type="text" name="website" tabindex="-1" autocomplete="off" /></label>
