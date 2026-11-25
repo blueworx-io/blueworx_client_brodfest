@@ -58,6 +58,37 @@ function brodfest_watch( $when ) {
 	}
 }
 
+/** Whether a switch's transaction is open: between its start and its end. */
+function brodfest_in_switch( $query ) {
+	static $open = false;
+
+	if ( preg_match( '/^\s*START TRANSACTION/i', $query ) ) {
+		$open = true;
+	} elseif ( preg_match( '/^\s*(COMMIT|ROLLBACK)/i', $query ) ) {
+		$open = false;
+	}
+
+	return $open;
+}
+
+add_filter( 'query', static function ( $query ) {
+	brodfest_in_switch( $query );
+
+	return $query;
+}, 1 );
+
+// What a page cache or an SEO plugin is told.
+add_action(
+	'save_post',
+	static function ( $post_id, $post ) {
+		if ( brodfest_fault( 'noteSaves' ) && in_array( $post->post_type, array( 'page', 'brodfest_held_page' ), true ) ) {
+			brodfest_report( 'saves', (int) $post_id );
+		}
+	},
+	10,
+	2
+);
+
 add_filter(
 	'query',
 	static function ( $query ) {
@@ -80,6 +111,27 @@ add_filter(
 		if ( brodfest_fault( 'switchedWhileWaiting' ) && ! $waited && false !== strpos( $query, 'brodfest_sync_lock' ) && preg_match( '/^\s*INSERT/i', $query ) ) {
 			$waited = true;
 			$wpdb->query( $wpdb->prepare( "UPDATE {$wpdb->postmeta} SET meta_value = meta_value + 1 WHERE meta_key = '_brodfest_swap_gen' AND post_id = %d", brodfest_fault( 'switchedWhileWaiting' ) ) );
+		}
+
+		// An autosave written over, for the other site, while this request waits for the lock.
+		$replaced = brodfest_fault( 'autosaveReplaced' );
+
+		if ( $replaced && ! $waited && false !== strpos( $query, 'brodfest_sync_lock' ) && preg_match( '/^\s*INSERT/i', $query ) ) {
+			$waited = true;
+			$wpdb->query( $wpdb->prepare( "UPDATE {$wpdb->posts} SET post_content = %s WHERE ID = %d", $replaced['content'], $replaced['id'] ) );
+			$wpdb->query( $wpdb->prepare( "UPDATE {$wpdb->postmeta} SET meta_value = %s WHERE meta_key = '_brodfest_content_site' AND post_id = %d", $replaced['site'], $replaced['id'] ) );
+		}
+
+		// Somebody takes the lock over just as a slow switch checks it still has it.
+		if ( brodfest_fault( 'lockTakenOver' ) && brodfest_in_switch( $query ) && false !== strpos( $query, 'brodfest_sync_lock' ) && preg_match( '/^\s*SELECT/i', $query ) ) {
+			brodfest_report( 'lockRead', $query );
+			$wpdb->query( "UPDATE {$wpdb->options} SET option_value = '1:somebody-else' WHERE option_name = 'brodfest_sync_lock'" );
+		}
+
+		// The request ends the moment the switch is committed, before anything else is done.
+		if ( brodfest_fault( 'crashAfterCommit' ) && preg_match( '/^\s*COMMIT/i', $query ) ) {
+			$wpdb->query( $query );
+			exit;
 		}
 
 		$hit = brodfest_fault( 'onPostWrite' );

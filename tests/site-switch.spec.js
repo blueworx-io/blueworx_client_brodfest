@@ -238,6 +238,126 @@ test('restoring a revision holds the lock, and waits its turn behind a switch', 
   }
 });
 
+test('a restore uses the revision as it is once the lock is held', async ({ page }) => {
+  const admin = await adminFor(page);
+  const celebrate = await admin.page('celebrate');
+  const fresh = celebrate.raw.replace('"title":"CELEBRATION"', '"title":"CELEBRATION RESTORED"');
+
+  // An autosave of the Invite's words, left from when the Invite was live.
+  await chooseSite(admin, 'invite');
+  const invite = (await admin.page('celebrate')).raw.replace('"title":"CELEBRATE"', '"title":"CELEBRATE PRIVATE"');
+  const { id } = (await admin.raw('POST', `/wp/v2/pages/${celebrate.id}/autosaves`, { content: invite, title: 'Celebrate' })).body;
+  await chooseSite(admin, 'save-the-date');
+
+  // It is written over for the Save the Date while the restore waits for the lock.
+  const nonce = await admin.act('restoreNonce', id);
+  fault({ autosaveReplaced: { id, content: fresh, site: 'save-the-date' } });
+  try {
+    await page.request.get(`/wp-admin/revision.php?revision=${id}&action=restore&_wpnonce=${nonce}`, { maxRedirects: 0 });
+    fault(null);
+    const now = (await admin.page('celebrate')).raw;
+    expect(now, 'no Invite words on the Save the Date').not.toContain('CELEBRATE PRIVATE');
+    expect(now).toBe(fresh);
+  } finally {
+    fault(null);
+    await admin.raw('POST', `/wp/v2/pages/${celebrate.id}`, { content: celebrate.raw });
+  }
+});
+
+test('a switch that has lost its lock is not committed', async ({ page }) => {
+  const admin = await adminFor(page);
+  const before = await admin.stored();
+  fault({ lockTakenOver: true });
+  await chooseSite(admin, 'invite');
+  const seen = report();
+  fault({ noRetry: true });
+  expect(await admin.stored()).toEqual(before);
+  // MySQL shows a transaction an old copy of the row unless it is asked for like this.
+  expect(seen.lockRead).toHaveLength(1);
+  expect(seen.lockRead[0]).toContain('FOR UPDATE');
+});
+
+test('a restore WordPress would refuse does not wait for the lock or take it', async ({ page, browser }) => {
+  const admin = await adminFor(page);
+  const celebrate = await admin.page('celebrate');
+  await admin.raw('POST', `/wp/v2/pages/${celebrate.id}`, { content: celebrate.raw.replace('"title":"CELEBRATION"', '"title":"CELEBRATION AGAIN"') });
+  await admin.raw('POST', `/wp/v2/pages/${celebrate.id}`, { content: celebrate.raw });
+  const [revision] = (await admin.raw('GET', `/wp/v2/pages/${celebrate.id}/revisions?per_page=1`)).body;
+  const path = `/wp-admin/revision.php?revision=${revision.id}&action=restore`;
+  const login = { user: 'brodfest-test-reader', pass: 'R3ader-test-pass-5127!' };
+  const old = (await admin.raw('GET', `/wp/v2/users?search=${login.user}&context=edit`)).body;
+  for (const one of old) await admin.raw('DELETE', `/wp/v2/users/${one.id}?force=true&reassign=1`);
+  const made = (await admin.raw('POST', '/wp/v2/users', { username: login.user, email: 'brodfest-test-reader@example.com', password: login.pass, roles: ['author'] })).body;
+  const context = await browser.newContext({ baseURL: test.info().project.use.baseURL });
+
+  try {
+    await admin.act('lock');
+    // No nonce: WordPress's own refusal, not ours.
+    expect((await page.request.get(path, { maxRedirects: 0 })).status()).toBe(403);
+    // Not allowed to edit the page: sent away by WordPress.
+    const reader = await context.newPage();
+    await loginQuietly(reader, test.info().project.use.baseURL, login);
+    expect((await reader.request.get(path, { maxRedirects: 0 })).status()).toBe(302);
+  } finally {
+    await admin.act('unlock');
+    await context.close();
+    await admin.raw('DELETE', `/wp/v2/users/${made.id}?force=true&reassign=1`);
+  }
+});
+
+test('a switch cut off just after it was made is announced by a later request', async ({ page }) => {
+  const admin = await adminFor(page);
+  const before = await admin.stored();
+  const ids = [];
+  for (const slug of ['home', 'celebrate', 'recommendations']) ids.push((await admin.page(slug)).id);
+  for (const title of ['Home', 'Celebrate', 'Ibiza Recommendations']) ids.push((await admin.held(title)).id);
+
+  fault({ crashAfterCommit: true });
+  await admin.raw('POST', '/brodfest-test/v1/do', { what: 'site', value: 'invite' });
+  fault({ noRetry: true });
+  expect((await admin.act('state')).synced, 'the switch itself is done').toBe('invite');
+  await admin.act('unlock');
+
+  // Any later request tells WordPress, and so every cache, what changed, once.
+  fault({ noteSaves: true });
+  await page.request.get('/');
+  const told = report().saves ?? [];
+  expect(told).toEqual(expect.arrayContaining(ids));
+  expect(new Set(told).size).toBe(told.length);
+  await page.request.get('/celebrate/');
+  expect(report().saves).toEqual(told);
+
+  fault(null);
+  await chooseSite(admin, 'save-the-date');
+  expect(contents(await admin.stored())).toEqual(contents(before));
+});
+
+test('two revisions restored in one XML-RPC request are both restored', async ({ page }) => {
+  const admin = await adminFor(page);
+  const originals = [];
+  const restores = [];
+  for (const slug of ['celebrate', 'enquiries']) {
+    const found = await admin.page(slug);
+    originals.push({ slug, ...found });
+    await admin.raw('POST', `/wp/v2/pages/${found.id}`, { content: `${found.raw}<!-- wp:brodfest/text-section {"title":"EXTRA"} /-->` });
+    const [revision] = (await admin.raw('GET', `/wp/v2/pages/${found.id}/revisions?per_page=1`)).body;
+    await admin.raw('POST', `/wp/v2/pages/${found.id}`, { content: found.raw });
+    restores.push(revision.id);
+  }
+  const value = (v) => (typeof v === 'number' ? `<value><int>${v}</int></value>` : `<value><string>${v}</string></value>`);
+  const call = (id) =>
+    `<value><struct><member><name>methodName</name><value><string>wp.restoreRevision</string></value></member><member><name>params</name><value><array><data>${[1, process.env.WP_ADMIN_USER || 'admin', process.env.WP_ADMIN_PASS || 'admin', id].map(value).join('')}</data></array></value></member></struct></value>`;
+  const body = `<?xml version="1.0"?><methodCall><methodName>system.multicall</methodName><params><param><value><array><data>${restores.map(call).join('')}</data></array></value></param></params></methodCall>`;
+
+  try {
+    await page.request.post('/xmlrpc.php', { headers: { 'Content-Type': 'text/xml' }, data: body });
+    for (const { slug } of originals) expect((await admin.page(slug)).raw, slug).toContain('"title":"EXTRA"');
+    expect((await admin.act('state')).lock).toBeNull();
+  } finally {
+    for (const { id, raw } of originals) await admin.raw('POST', `/wp/v2/pages/${id}`, { content: raw });
+  }
+});
+
 test('an autosave WordPress uses again is tagged with the site it is now for', async ({ page }) => {
   const admin = await adminFor(page);
   const celebrate = await admin.page('celebrate');

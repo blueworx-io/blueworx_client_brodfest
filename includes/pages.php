@@ -39,6 +39,9 @@ const BRODFEST_CONTENT_SITE_META = '_brodfest_content_site';
 /** Option: the site whose blocks the pages held when the swap last ran. */
 const BRODFEST_SYNCED_OPTION = 'brodfest_synced_site';
 
+/** Option: the posts a switch has moved that WordPress has not been told about yet. */
+const BRODFEST_UNTOLD_OPTION = 'brodfest_switch_untold';
+
 /** Option row that is the lock while a swap runs: only one request can insert it. */
 const BRODFEST_LOCK_OPTION = 'brodfest_sync_lock';
 
@@ -400,7 +403,7 @@ function brodfest_held_id( $page_id ) {
  * @return void
  */
 function brodfest_forget_cached() {
-	foreach ( array( 'alloptions', 'notoptions', BRODFEST_SETTINGS_OPTION, BRODFEST_SYNCED_OPTION, 'brodfest_page_ids' ) as $option ) {
+	foreach ( array( 'alloptions', 'notoptions', BRODFEST_SETTINGS_OPTION, BRODFEST_SYNCED_OPTION, BRODFEST_UNTOLD_OPTION, 'brodfest_page_ids' ) as $option ) {
 		wp_cache_delete( $option, 'options' );
 	}
 
@@ -616,15 +619,9 @@ function brodfest_put_meta( $post_id, $key, $value ) {
 function brodfest_move_blocks( $pairs, $wanted ) {
 	global $wpdb;
 
-	$before = array();
-
-	foreach ( $pairs as $pair ) {
-		$before[] = clone get_post( $pair['page'] );
-		$before[] = clone get_post( $pair['held'] );
-	}
-
-	// So that the row is there to change.
+	// So that the rows are there to change.
 	add_option( BRODFEST_SYNCED_OPTION, '' );
+	add_option( BRODFEST_UNTOLD_OPTION, '' );
 
 	brodfest_in_transaction(
 		static function () use ( $wpdb, $pairs, $wanted ) {
@@ -672,8 +669,17 @@ function brodfest_move_blocks( $pairs, $wanted ) {
 				}
 			}
 
-			if ( false === $wpdb->update( $wpdb->options, array( 'option_value' => $wanted ), array( 'option_name' => BRODFEST_SYNCED_OPTION ) ) ) {
-				return false;
+			// Which posts WordPress is still to be told about, page and held-back page
+			// in turn, in case the request ends before it can be.
+			$options = array(
+				BRODFEST_SYNCED_OPTION => $wanted,
+				BRODFEST_UNTOLD_OPTION => implode( ',', array_keys( $posts ) ),
+			);
+
+			foreach ( $options as $name => $value ) {
+				if ( false === $wpdb->update( $wpdb->options, array( 'option_value' => $value ), array( 'option_name' => $name ) ) ) {
+					return false;
+				}
 			}
 
 			// Read it all back: what is stored has to be what was meant.
@@ -693,12 +699,16 @@ function brodfest_move_blocks( $pairs, $wanted ) {
 				}
 			}
 
-			// And this has to be the live site, and still our turn.
-			$option = static function ( $name ) use ( $wpdb ) {
-				return (string) $wpdb->get_var( $wpdb->prepare( "SELECT option_value FROM {$wpdb->options} WHERE option_name = %s", $name ) );
-			};
+			foreach ( $options as $name => $value ) {
+				if ( $wpdb->get_var( $wpdb->prepare( "SELECT option_value FROM {$wpdb->options} WHERE option_name = %s", $name ) ) !== $value ) {
+					return false;
+				}
+			}
 
-			return $wanted === $option( BRODFEST_SYNCED_OPTION ) && brodfest_lock_held() === $option( BRODFEST_LOCK_OPTION );
+			// And it has to be our turn still. FOR UPDATE reads the lock as it is
+			// now, not as it was when the transaction began, and keeps it that way
+			// until the commit.
+			return $wpdb->get_var( $wpdb->prepare( "SELECT option_value FROM {$wpdb->options} WHERE option_name = %s FOR UPDATE", BRODFEST_LOCK_OPTION ) ) === brodfest_lock_held();
 		}
 	);
 
@@ -711,7 +721,7 @@ function brodfest_move_blocks( $pairs, $wanted ) {
 		return false;
 	}
 
-	array_map( 'brodfest_announce_move', $before );
+	brodfest_tell_of_move();
 
 	return true;
 }
@@ -719,17 +729,45 @@ function brodfest_move_blocks( $pairs, $wanted ) {
 // phpcs:enable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.SlowDBQuery.slow_db_query_meta_key, WordPress.DB.SlowDBQuery.slow_db_query_meta_value
 
 /**
+ * Tells WordPress about every post a switch moved, if that is still to be done:
+ * straight after the switch, or, when the request ended first, on a later one.
+ * Runs under the lock.
+ *
+ * @return void
+ */
+function brodfest_tell_of_move() {
+	$untold = array_filter( array_map( 'intval', explode( ',', (string) get_option( BRODFEST_UNTOLD_OPTION, '' ) ) ) );
+
+	foreach ( array_chunk( $untold, 2 ) as $pair ) {
+		brodfest_announce_move( $pair[0], $pair[1] ?? 0 );
+		brodfest_announce_move( $pair[1] ?? 0, $pair[0] );
+	}
+
+	if ( $untold ) {
+		update_option( BRODFEST_UNTOLD_OPTION, '' );
+	}
+}
+
+/**
  * Tells WordPress, and any plugin listening (a page cache, an SEO plugin), that a
  * page has changed, the way wp_publish_post() does, and keeps a revision of it.
  * The page is not written again, so nothing can alter the words that were moved.
  *
- * @param WP_Post $before The post as it was.
+ * @param int $post_id The post.
+ * @param int $other   The post it swapped blocks with, which now has its old ones.
  * @return void
  */
-function brodfest_announce_move( $before ) {
-	clean_post_cache( $before->ID );
+function brodfest_announce_move( $post_id, $other ) {
+	clean_post_cache( $post_id );
 
-	$post = get_post( $before->ID );
+	$post = get_post( $post_id );
+
+	if ( ! $post ) {
+		return;
+	}
+
+	$before               = clone $post;
+	$before->post_content = (string) get_post_field( 'post_content', $other, 'raw' );
 
 	// phpcs:disable WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound, WordPress.NamingConventions.PrefixAllGlobals.DynamicHooknameFound -- WordPress's own hooks for a post that has changed.
 	brodfest_unfiltered(
@@ -792,6 +830,9 @@ function brodfest_sync_locked() {
 	$ids    = brodfest_page_ids();
 	$pairs  = array();
 	$notice = array();
+
+	// An earlier switch may have been cut off just after it was made.
+	brodfest_tell_of_move();
 
 	// What the administrator is told is about this run only.
 	delete_option( BRODFEST_NOTICE_OPTION );
@@ -858,18 +899,22 @@ add_action( 'add_option_' . BRODFEST_SETTINGS_OPTION, 'brodfest_sync_on_settings
 
 /**
  * The same swap, caught on the next request if the setting was changed some
- * other way (the command line, an import) or an earlier try did not finish.
- * A try that failed is not repeated for five minutes.
+ * other way (the command line, an import) or an earlier try did not finish (or
+ * was cut off before WordPress was told of it). A try that failed, or that ended
+ * its request, is not repeated for five minutes.
  *
  * @return void
  */
 function brodfest_sync_if_needed() {
-	if ( get_option( BRODFEST_SYNCED_OPTION ) === brodfest_wanted_site() || false !== get_transient( 'brodfest_sync_retry' ) ) {
+	if ( ( get_option( BRODFEST_SYNCED_OPTION ) === brodfest_wanted_site() && ! get_option( BRODFEST_UNTOLD_OPTION ) ) || false !== get_transient( 'brodfest_sync_retry' ) ) {
 		return;
 	}
 
-	if ( ! brodfest_sync_live_content() ) {
-		set_transient( 'brodfest_sync_retry', 1, 5 * MINUTE_IN_SECONDS );
+	// First, so that a try that ends its request does not end every one after it.
+	set_transient( 'brodfest_sync_retry', 1, 5 * MINUTE_IN_SECONDS );
+
+	if ( brodfest_sync_live_content() ) {
+		delete_transient( 'brodfest_sync_retry' );
 	}
 }
 add_action( 'init', 'brodfest_sync_if_needed', 30 );

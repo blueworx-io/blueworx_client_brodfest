@@ -87,7 +87,9 @@ What keeps the swap safe (`includes/pages.php`, `includes/held-pages.php`):
   - The rows are written directly, not with `wp_update_post()`: that would put the
     new blocks in caches, and run other plugins' save hooks, before the switch is
     certain. The hooks run, and the revisions are made, straight after the commit
-    (`brodfest_announce_move()`), without writing the page again.
+    (`brodfest_announce_move()`), without writing the page again. Which posts are
+    still to be announced is stored in the same transaction, so a request cut off
+    just after the commit is made good by a later one.
   - It needs InnoDB tables (WordPress's own default). On any other kind the switch
     is refused with a notice, and nothing changes.
 - **Setup that did not finish is tried again** every five minutes, whether or not a

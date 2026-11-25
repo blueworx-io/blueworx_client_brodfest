@@ -218,15 +218,17 @@ add_action( 'save_post_revision', 'brodfest_tag_autosave' );
  * blocks are written.
  *
  * The lock is kept until the request ends, so a switch cannot come between this
- * check and WordPress writing the revision.
+ * check and WordPress writing the revision. A request WordPress is going to turn
+ * away itself does not take it.
  *
- * @param int $revision_id The revision.
+ * @param int  $revision_id The revision.
+ * @param bool $allowed     Whether WordPress will let the request through to a restore.
  * @return void
  */
-function brodfest_guard_restore( $revision_id ) {
+function brodfest_guard_restore( $revision_id, $allowed = true ) {
 	$parent = (int) wp_get_post_parent_id( $revision_id );
 
-	if ( $parent <= 0 || ! brodfest_is_swappable( $parent ) ) {
+	if ( $parent <= 0 || ! brodfest_is_swappable( $parent ) || ! current_user_can( 'edit_post', $parent ) ) {
 		return;
 	}
 
@@ -242,9 +244,15 @@ function brodfest_guard_restore( $revision_id ) {
 		);
 	};
 
-	if ( ! brodfest_sync_lock( 5 ) ) {
+	// A request that holds it already is restoring several.
+	if ( $allowed && '' === brodfest_lock_held() && ! brodfest_sync_lock( 5 ) ) {
 		$refuse( __( 'The live site is being switched right now, so the revision was not restored. Wait a moment, then try again.', 'blueworx-client-brodfest' ) );
 	}
+
+	// An autosave may have been written over while this waited: the tag and the
+	// words have to be read together, now.
+	wp_cache_delete( $revision_id, 'posts' );
+	wp_cache_delete( $revision_id, 'post_meta' );
 
 	if ( get_post_meta( $parent, BRODFEST_CONTENT_SITE_META, true ) !== get_post_meta( $revision_id, BRODFEST_CONTENT_SITE_META, true ) ) {
 		$refuse( __( 'That revision cannot be restored here: it is from the other site (the live site has been switched since), or from before revisions were tagged with their site. Restoring it could put the wrong blocks on this page. Open the page it belongs to, or the held-back page, to restore it there.', 'blueworx-client-brodfest' ) );
@@ -257,12 +265,16 @@ function brodfest_guard_restore( $revision_id ) {
  * @return void
  */
 function brodfest_guard_screen_restore() {
-	// Only reading which revision is being asked for; WordPress checks the nonce and the rights.
-	// phpcs:disable WordPress.Security.NonceVerification.Recommended
-	if ( isset( $_GET['action'], $_GET['revision'] ) && 'restore' === sanitize_key( wp_unslash( $_GET['action'] ) ) ) {
-		brodfest_guard_restore( absint( wp_unslash( $_GET['revision'] ) ) );
+	// phpcs:disable WordPress.Security.NonceVerification.Recommended -- Verified below.
+	if ( ! isset( $_GET['action'], $_GET['revision'] ) || 'restore' !== sanitize_key( wp_unslash( $_GET['action'] ) ) ) {
+		return;
 	}
+
+	$revision_id = absint( wp_unslash( $_GET['revision'] ) );
+	$nonce       = isset( $_GET['_wpnonce'] ) ? sanitize_text_field( wp_unslash( $_GET['_wpnonce'] ) ) : '';
 	// phpcs:enable WordPress.Security.NonceVerification.Recommended
+
+	brodfest_guard_restore( $revision_id, (bool) wp_verify_nonce( $nonce, 'restore-post_' . $revision_id ) );
 }
 add_action( 'load-revision.php', 'brodfest_guard_screen_restore' );
 
