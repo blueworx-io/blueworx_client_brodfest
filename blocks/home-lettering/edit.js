@@ -33,7 +33,7 @@
 					multiline: true,
 					help: E.__( 'A new line here is a line break on a computer screen.' ),
 				} ),
-				el( E.InnerBlocks, { allowedBlocks: [ 'brodfest/add-to-calendar' ], template: [], templateLock: false } )
+				el( E.InnerBlocks, { allowedBlocks: [ 'brodfest/add-to-calendar' ], template: [] } )
 			)
 		);
 	}

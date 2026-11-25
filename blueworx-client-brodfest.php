@@ -3,7 +3,7 @@
  * Plugin Name:       BlueWorx Clients | Brodfest
  * Plugin URI:        https://github.com/blueworx-io/blueworx_client_brodfest
  * Description:       The Brodfest website, as a self-contained WordPress plugin on the BlueWorx Enhance theme.
- * Version:           0.16.0
+ * Version:           0.17.0
  * Requires at least: 6.4
  * Requires PHP:      8.1
  * Author:            BlueWorx
@@ -21,7 +21,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'BRODFEST_VERSION', '0.16.0' );
+define( 'BRODFEST_VERSION', '0.17.0' );
 define( 'BRODFEST_SLUG', 'blueworx-client-brodfest' );
 define( 'BRODFEST_FILE', __FILE__ );
 define( 'BRODFEST_DIR', plugin_dir_path( __FILE__ ) );
@@ -70,12 +70,21 @@ $brodfest_update_checker->getVcsApi()->enableReleaseAssets();
 // own files, because it registers itself on plugins_loaded at priority 0.
 require_once BRODFEST_DIR . 'blueworx-page-editor/blueworx-page-editor.php';
 
+// The BlueWorx page lock: every page is locked from the moment it exists. Also
+// vendored from bluegroup_core_foundation (its page-lock/ folder) and
+// hash-compared against it on every pull request — never edited here. It starts
+// itself on after_setup_theme; this plugin only tells it what it covers (see
+// includes/page-lock.php).
+require_once BRODFEST_DIR . 'blueworx-page-lock/blueworx-page-lock.php';
+
 require_once BRODFEST_DIR . 'includes/auto-updates.php';
 require_once BRODFEST_DIR . 'includes/site.php';
 require_once BRODFEST_DIR . 'includes/settings.php';
 require_once BRODFEST_DIR . 'includes/pages.php';
 require_once BRODFEST_DIR . 'includes/held-pages.php';
 require_once BRODFEST_DIR . 'includes/blocks.php';
+require_once BRODFEST_DIR . 'includes/page-lock.php';
+require_once BRODFEST_DIR . 'includes/patterns.php';
 require_once BRODFEST_DIR . 'includes/seed.php';
 require_once BRODFEST_DIR . 'includes/content.php';
 require_once BRODFEST_DIR . 'includes/render.php';

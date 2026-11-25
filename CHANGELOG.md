@@ -5,6 +5,18 @@ All notable changes to this project are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.17.0] - 2026-11-25
+
+### Added
+
+- Every page is now locked by BlueWorx's shared page lock. Logged in as a client, you can change words, images, links and list items, and show or hide a section, but you cannot add, move, remove or unlock one; a save through the website's API (as a connected tool makes) that tries to change the sections is refused. In the editor a client sees only the Brodfest sections, no code editor and no add-block button, and the page structure open. The held-back Invite pages are locked the same way, and the seven pages that already exist are locked on the first visit after the update.
+- A "Show this section on the site" switch on every section, in the block tab of the editor. A hidden section stays on the page but visitors do not see it.
+- A whole-page layout for each page type (Home, Celebrate, Can Sakhara Story, Accommodation, Ibiza Recommendations, Enquiries, RSVP), under "Brodfest pages" in the pattern list, so a new page starts from one with its words already in it. Only the live site's layouts are offered, so the Invite's words stay private until it is live. A page made from a layout looks and works like the others.
+
+### Changed
+
+- A page now draws only the words saved in it. Nothing is filled in by code when it loads: a page, or held-back page, that is empty shows empty.
+
 ## [0.16.0] - 2026-11-24
 
 ### Changed

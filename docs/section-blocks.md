@@ -114,9 +114,55 @@ Figma pixels (`--u`), which the theme does not have either; mapping them onto
 `--space-*` is still to decide. `node ../bluegroup_core_foundation/scripts/check-section-styles.mjs`
 passes.
 
+## The page lock
+
+Every owned page, and every held-back page, is locked by the foundation's shared
+page lock, copied whole into `blueworx-page-lock/` (never edited here: CI compares
+it with the foundation's `page-lock/`) and loaded by one `require_once` in the
+main plugin file. `includes/page-lock.php` is all this plugin adds:
+
+- **What it covers.** The lock covers pages. This plugin adds the held-back
+  pages (`blueworx_page_lock_post_types`), and names `brodfest` as the only
+  block namespace a client is offered (`blueworx_page_lock_section_namespaces`),
+  so another plugin's blocks never appear on a locked page.
+- **What a client can do.** Change words, images, links and list items, and show
+  or hide a section (every section has a "Show this section on the site" switch
+  in the block tab; it saves a `hidden` attribute, and a hidden section draws
+  nothing, with everything inside it). A client cannot add, move, remove or
+  unlock a section: the server refuses a save that changes the page's sections
+  (403, `blueworx_page_locked`), whether it comes from the editor, the REST
+  API or a connected tool. In the editor they get no code editor, no add-block
+  button, and the structure panel open.
+- **Pages made before the lock existed** are locked once, on the first request
+  after an update (`brodfest_lock_owned_pages()`); a page that already has a lock
+  setting, locked or not, is left alone, so an unlocked page stays unlocked.
+  Pages made afterwards are locked by the lock itself, as they are created.
+- **The plugin's own writes** (the starting blocks, and the swap between the
+  Save the Date and the Invite) change a page's sections, and run for whoever
+  makes the request, including a signed-out visitor whose request retries a
+  switch. `brodfest_write_post()` stands the lock aside for those writes only
+  (`brodfest_without_page_lock()`); nobody's editor or REST save does.
+- **Layouts.** Each page type has a whole-page layout (a block pattern, category
+  "Brodfest pages", `includes/patterns.php`): the page's starting content, so a
+  new page, or a connected tool, starts from it in one step. A new page has no
+  sections yet, so its first layout can be saved once; after that its sections
+  are fixed. Only the live site's layouts are offered: the pattern list is open
+  to everyone who can write a post, so the Invite's copy stays out of it until
+  the Invite is live. Any page that holds Brodfest blocks (not only the seven
+  owned pages) is drawn with the plugin's document, styles and scripts
+  (`brodfest_page_has_sections()`).
+- **Known limits of the shared lock** (the copy is not edited here; to be fixed in
+  the foundation): it compares block types and order, not each section, so two
+  sections of one type (Celebration and Dress Code) can be swapped; it ignores
+  markup outside block comments; and its panel needs `core/editor` panel actions
+  that WordPress 6.4 keeps in `core/edit-post`.
+
+A page draws only what is saved in it: nothing is filled in by code when it
+loads. `templates/page.php` is the one document shell (header, the page's
+blocks, footer), not a page's own template.
+
 ## Left for later
 
 - The header's RSVP button words and the Save the Date's two menu names are set under Brodfest › Site › Header words (the blocks take them as attributes through the `brodfest_global_attributes` filter). The footer has none to set. Invite menu names are the page titles.
-- The page lock (task 03) has to treat the held-back pages as locked too.
 - Add to Calendar stays off the page until `brodfest_show_calendar()` is turned
   on, as agreed on 9 Nov.

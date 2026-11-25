@@ -21,7 +21,7 @@ const BRODFEST_FONTS_KIT = 'vjw6kra';
  * @return void
  */
 function brodfest_enqueue_assets() {
-	if ( ! brodfest_is_owned_request() ) {
+	if ( ! brodfest_is_section_request() ) {
 		return;
 	}
 
@@ -73,7 +73,7 @@ add_action( 'wp_enqueue_scripts', 'brodfest_enqueue_assets', 20 );
  * @return void
  */
 function brodfest_sweep_foreign_assets() {
-	if ( ! brodfest_is_owned_request() ) {
+	if ( ! brodfest_is_section_request() ) {
 		return;
 	}
 
