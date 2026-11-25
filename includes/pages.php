@@ -949,7 +949,7 @@ function brodfest_request_needs_assets() {
 
 	$post = is_singular( 'page' ) ? get_post() : null;
 
-	return $post instanceof WP_Post && ! post_password_required( $post ) && false !== strpos( $post->post_content, '<!-- wp:brodfest/' );
+	return $post instanceof WP_Post && ! post_password_required( $post ) && brodfest_has_visible_block( 'brodfest/', $post->post_content );
 }
 
 /**

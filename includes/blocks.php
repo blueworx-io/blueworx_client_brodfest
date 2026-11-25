@@ -116,7 +116,7 @@ add_filter( 'pre_render_block', 'brodfest_skip_hidden_section', 10, 2 );
  * Whether serialised blocks hold a section of this name that visitors will see:
  * one that is not hidden, and not inside one that is.
  *
- * @param string $name    Block name, with the namespace.
+ * @param string $name    Block name, with the namespace, or 'brodfest/' for any of ours.
  * @param string $content Serialised blocks.
  * @return bool
  */
@@ -140,7 +140,9 @@ function brodfest_has_visible_block( $name, $content ) {
 				}
 			}
 
-			if ( ( $block['blockName'] ?? '' ) === $name || $search( (array) ( $block['innerBlocks'] ?? array() ) ) ) {
+			$found = (string) ( $block['blockName'] ?? '' );
+
+			if ( $found === $name || ( 'brodfest/' === $name && 0 === strpos( $found, $name ) ) || $search( (array) ( $block['innerBlocks'] ?? array() ) ) ) {
 				return true;
 			}
 		}

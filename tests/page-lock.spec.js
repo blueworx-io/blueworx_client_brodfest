@@ -9,7 +9,7 @@ import { loginQuietly, skipIntro } from './helpers/wp.js';
 
 const LOCK_META = '_blueworx_page_lock';
 const PAGES = ['home', 'celebrate', 'accommodation', 'enquiries', 'rsvp'];
-const CLIENT = { user: 'brodfest-test-client', pass: 'Cl13nt-test-pass-9731!' };
+const CLIENT = { user: `brodfest-test-client-${Date.now()}`, pass: 'Cl13nt-test-pass-9731!' };
 
 // A REST helper for whoever is signed in on this page: the nonce rides along.
 async function restFor(page, credentials) {
@@ -38,14 +38,9 @@ async function restFor(page, credentials) {
 // Runs a test body with a client login (an Editor, as Mark's is) that exists
 // for the length of the test only.
 async function withClient(browser, admin, body) {
-  // A client left behind by a run that was stopped half way would block this one.
-  const left = await admin.raw('GET', `/wp/v2/users?search=${CLIENT.user}&context=edit`);
-  for (const old of left.body ?? []) {
-    if (old.username === CLIENT.user) await admin.raw('DELETE', `/wp/v2/users/${old.id}?force=true&reassign=1`);
-  }
   const made = await admin.call('POST', '/wp/v2/users', {
     username: CLIENT.user,
-    email: 'brodfest-test-client@example.com',
+    email: `${CLIENT.user}@example.com`,
     password: CLIENT.pass,
     roles: ['editor'],
   });
@@ -456,6 +451,9 @@ test('a form inside a synced pattern is not cached, and a guest comes back to th
       const shown = await visitor.request.get(made.link);
       expect(shown.headers()['cache-control']).toMatch(/no-cache|no-store/);
       const html = await shown.text();
+      // Without these its spam trap shows and its partner fields never open.
+      expect(html).toMatch(/id=['"]brodfest-public-css['"]/);
+      expect(html).toMatch(/id=['"]brodfest-public-js['"]/);
       const nonce = /name="brodfest_rsvp_nonce" value="(\w+)"/.exec(html)[1];
       const sent = await visitor.request.post('/rsvp/', {
         form: { brodfest_action: 'brodfest_rsvp', brodfest_rsvp_nonce: nonce, brodfest_return: String(made.id), website: '' },
@@ -470,7 +468,10 @@ test('a form inside a synced pattern is not cached, and a guest comes back to th
 
 test('a guest who unlocked a page with a password comes back to it after sending the form', async ({ page, browser }) => {
   await withLayoutPage(page, browser, 'brodfest/page-rsvp-save-the-date', { password: 'a-test-password' }, async ({ visitor, made }) => {
-    await visitor.request.post('/wp-login.php?action=postpass', { form: { post_password: 'a-test-password' }, headers: { referer: made.link }, maxRedirects: 0 });
+    // The theme moves the sign-in address, so use the one the page gives.
+    const asks = await (await visitor.request.get(made.link)).text();
+    const action = /<form action="([^"]*postpass[^"]*)"/.exec(asks)[1].replaceAll('&#038;', '&').replaceAll('&amp;', '&');
+    await visitor.request.post(action, { form: { post_password: 'a-test-password' }, headers: { referer: made.link }, maxRedirects: 0 });
     const html = await (await visitor.request.get(made.link)).text();
     const nonce = /name="brodfest_rsvp_nonce" value="(\w+)"/.exec(html)[1];
     const send = (context) => context.request.post('/rsvp/', {

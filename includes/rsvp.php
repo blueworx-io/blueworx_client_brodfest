@@ -188,7 +188,7 @@ function brodfest_rsvp_rate_limited() {
  */
 function brodfest_rsvp_no_cache() {
 	// Every page that shows the form, not only the RSVP page.
-	if ( is_singular( 'page' ) && brodfest_has_visible_block( 'brodfest/rsvp-form', (string) get_post_field( 'post_content', get_queried_object_id() ) ) ) {
+	if ( is_singular( 'page' ) && brodfest_has_visible_block( 'brodfest/rsvp-form', brodfest_page_blocks( get_queried_object_id(), get_post() ) ) ) {
 		if ( ! defined( 'DONOTCACHEPAGE' ) ) {
 			define( 'DONOTCACHEPAGE', true );
 		}
