@@ -915,15 +915,18 @@ add_action( 'add_option_' . BRODFEST_SETTINGS_OPTION, 'brodfest_sync_on_settings
 function brodfest_sync_if_needed() {
 	global $wpdb;
 
-	if ( get_option( BRODFEST_SYNCED_OPTION ) === brodfest_wanted_site() && ! get_option( BRODFEST_UNTOLD_OPTION ) ) {
+	// Straight from the database, on every request: what is cached may be from
+	// before a switch, and would then hide that its caches are still to be cleared.
+	// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+	$stored = $wpdb->get_results( $wpdb->prepare( "SELECT option_name, option_value FROM {$wpdb->options} WHERE option_name IN ( %s, %s )", BRODFEST_SYNCED_OPTION, BRODFEST_UNTOLD_OPTION ), OBJECT_K );
+	$synced = $stored[ BRODFEST_SYNCED_OPTION ]->option_value ?? '';
+	$untold = $stored[ BRODFEST_UNTOLD_OPTION ]->option_value ?? '';
+
+	if ( brodfest_wanted_site() === $synced && ! $untold ) {
 		return;
 	}
 
 	if ( false !== get_transient( 'brodfest_sync_retry' ) ) {
-		// Straight from the database: what is cached may be from before the switch.
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
-		$untold = $wpdb->get_var( $wpdb->prepare( "SELECT option_value FROM {$wpdb->options} WHERE option_name = %s", BRODFEST_UNTOLD_OPTION ) );
-
 		if ( $untold && false === get_transient( 'brodfest_tell_retry' ) && brodfest_sync_lock() ) {
 			try {
 				brodfest_tell_of_move();

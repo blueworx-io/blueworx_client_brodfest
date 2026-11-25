@@ -101,8 +101,8 @@ What keeps the swap safe (`includes/pages.php`, `includes/held-pages.php`):
   save holds the lock, a count that no longer matches is refused (409) and
   nothing is written. Every revision is tagged with the site it was made for (a
   page is marked with its site before its blocks are written, so the first
-  revision is tagged too, and an autosave is tagged again each time WordPress
-  writes new words over it). A revision for the other site, or one with no tag, is
+  revision is tagged too, and an autosave is tagged again each time new
+  words are written over it). A revision for the other site, or one with no tag, is
   refused on the revisions screen and over XML-RPC.
 - **Previews.** WordPress Preview draws the unsaved version of the page (the
   page as `get_post()` has it, not `get_queried_object()`, which is stale).

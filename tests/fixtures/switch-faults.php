@@ -170,6 +170,31 @@ if ( brodfest_fault( 'rewriteOnSave' ) ) {
 	);
 }
 
+if ( brodfest_fault( 'rewriteAutosaves' ) ) {
+	// WordPress tidies old HTML as it saves.
+	add_filter(
+		'content_save_pre',
+		static function ( $content ) {
+			return $content . "\n";
+		}
+	);
+}
+
+if ( brodfest_fault( 'staleCleanup' ) ) {
+	// A cache that has the new live site, but not that there is clearing up to do.
+	add_action(
+		'init',
+		static function () {
+			wp_load_alloptions();
+			$all = wp_cache_get( 'alloptions', 'options' );
+
+			$all['brodfest_switch_untold'] = '';
+			wp_cache_set( 'alloptions', $all, 'options' );
+		},
+		29
+	);
+}
+
 add_action(
 	'wp_restore_post_revision',
 	static function () {

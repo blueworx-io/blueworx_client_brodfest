@@ -352,7 +352,20 @@ test('an automatic switch cut off just after it was made is announced at once, n
   expect((await admin.act('state')).synced).toBe('invite');
 });
 
-test('an autosave whose words are not replaced keeps the site they are for', async ({ page }) => {
+test('clearing up after a switch does not trust a cache from before it', async ({ page }) => {
+  const admin = await adminFor(page);
+  const { id } = await admin.page('celebrate');
+
+  fault({ noteSaves: true, crashAfterCommit: true });
+  await admin.raw('POST', '/brodfest-test/v1/do', { what: 'site', value: 'invite' });
+  fault({ noRetry: true });
+  await admin.act('unlock');
+  fault({ noteSaves: true, staleCleanup: true });
+  await page.request.get('/');
+  expect(report().saves ?? []).toContain(id);
+});
+
+for (const tidied of [false, true]) test(`an autosave whose words are not replaced keeps the site they are for${tidied ? ', though WordPress tidies them' : ''}`, async ({ page }) => {
   const admin = await adminFor(page);
   const celebrate = await admin.page('celebrate');
   const autosave = async (data) => (await admin.raw('POST', `/wp/v2/pages/${celebrate.id}/autosaves`, data)).body.id;
@@ -361,9 +374,11 @@ test('an autosave whose words are not replaced keeps the site they are for', asy
   const invite = (await admin.page('celebrate')).raw.replace('"title":"CELEBRATE"', '"title":"CELEBRATE PRIVATE"');
   const id = await autosave({ content: invite, title: 'Celebrate' });
   await chooseSite(admin, 'save-the-date');
-  expect(await autosave({ title: 'Celebrate, renamed' }), 'WordPress used the same autosave again').toBe(id);
 
   try {
+    if (tidied) fault({ rewriteAutosaves: true });
+    expect(await autosave({ title: 'Celebrate, renamed' }), 'WordPress used the same autosave again').toBe(id);
+    fault(null);
     const nonce = await admin.act('restoreNonce', id);
     const restored = await page.request.get(`/wp-admin/revision.php?revision=${id}&action=restore&_wpnonce=${nonce}`, { maxRedirects: 0 });
     expect((await admin.page('celebrate')).raw, 'no Invite words on the Save the Date').toBe(celebrate.raw);
@@ -373,10 +388,19 @@ test('an autosave whose words are not replaced keeps the site they are for', asy
   }
 });
 
-test('two revisions restored in one XML-RPC request are both restored', async ({ page }) => {
+for (const refused of [false, true]) test(refused ? 'a revision refused in an XML-RPC request does not stop the rest' : 'two revisions restored in one XML-RPC request are both restored', async ({ page }) => {
   const admin = await adminFor(page);
   const originals = [];
   const restores = [];
+
+  if (refused) {
+    // One of the Invite's, first in the request.
+    await chooseSite(admin, 'invite');
+    const { id } = await admin.page('celebrate');
+    restores.push((await admin.raw('GET', `/wp/v2/pages/${id}/revisions?per_page=1`)).body[0].id);
+    await chooseSite(admin, 'save-the-date');
+  }
+
   for (const slug of ['celebrate', 'enquiries']) {
     const found = await admin.page(slug);
     originals.push({ slug, ...found });
@@ -391,7 +415,9 @@ test('two revisions restored in one XML-RPC request are both restored', async ({
   const body = `<?xml version="1.0"?><methodCall><methodName>system.multicall</methodName><params><param><value><array><data>${restores.map(call).join('')}</data></array></value></param></params></methodCall>`;
 
   try {
-    await page.request.post('/xmlrpc.php', { headers: { 'Content-Type': 'text/xml' }, data: body });
+    const response = await (await page.request.post('/xmlrpc.php', { headers: { 'Content-Type': 'text/xml' }, data: body })).text();
+    expect((response.match(/<int>409<\/int>/g) ?? []).length).toBe(refused ? 1 : 0);
+    expect((response.match(/<boolean>1<\/boolean>/g) ?? []).length).toBe(2);
     for (const { slug } of originals) expect((await admin.page(slug)).raw, slug).toContain('"title":"EXTRA"');
     expect((await admin.act('state')).lock).toBeNull();
   } finally {
