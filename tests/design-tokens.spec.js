@@ -153,3 +153,40 @@ test('the open menu is mostly the page colour, so the video only tints it', asyn
   // The page colour at 80%, over whatever plays behind.
   expect(style.bg).toMatch(/^(color\(srgb .* \/ 0\.8\)|rgba\(11, 6, 3, 0\.8\))$/);
 });
+
+// Brodfest's own text sizes are named in the plugin, not the shared theme
+// (Luke, 26 Nov 2026). Each is worked out with the scale of the part of the
+// page it is used in, so the header, video and home block keep their sizes.
+const SIZE_NAMES = [13, 18, 20, 22, 23, 25, 26, 27, 30, 34, 35, 37, 48, 50];
+
+async function sizeIn(page, selector, name) {
+  return page.locator(selector).first().evaluate((el, n) => {
+    const probe = document.createElement('span');
+    probe.style.fontSize = `var(${n})`;
+    el.appendChild(probe);
+    const size = getComputedStyle(probe).fontSize;
+    probe.remove();
+    return size;
+  }, name);
+}
+
+test('every Brodfest text size is named on the page', async ({ page }) => {
+  await page.goto('/');
+  const missing = await page.evaluate((names) => {
+    const root = getComputedStyle(document.documentElement);
+    return names.filter((n) => root.getPropertyValue(`--text-${n}`).trim() === '');
+  }, SIZE_NAMES);
+  expect(missing).toEqual([]);
+});
+
+test('the text sizes follow the scale of the part of the page they are in', async ({ page }) => {
+  await page.goto('/');
+  expect(await sizeIn(page, 'body', '--text-20')).toBe('15px');
+  expect(await sizeIn(page, '.bf-home', '--text-20')).toBe('12px');
+  expect(await sizeIn(page, 'body', '--text-13')).toBe('13px');
+
+  await page.setViewportSize({ width: 800, height: 1000 });
+  expect(await sizeIn(page, 'body', '--text-20')).toBe('20px');
+  expect(await sizeIn(page, '.bf-header', '--text-20')).toBe('15px');
+  expect(await sizeIn(page, '.bf-hero', '--text-20')).toBe('15px');
+});

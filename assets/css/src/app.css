@@ -93,6 +93,31 @@
   }
 }
 
+/* Brodfest's own text sizes, named here rather than in the shared theme,
+   since they belong to this design alone (Luke, 26 Nov 2026). A name that
+   uses --u is worked out where it is declared, so it is declared again on
+   each part of the page that sets its own --u; otherwise the header, video
+   and home block would take the page's scale instead of their own. */
+:root,
+.bf-header,
+.bf-hero,
+.bf-home {
+  --text-13: 13px;
+  --text-18: calc(18 * var(--u));
+  --text-20: calc(20 * var(--u));
+  --text-22: calc(22 * var(--u));
+  --text-23: calc(23 * var(--u));
+  --text-25: calc(25 * var(--u));
+  --text-26: calc(26 * var(--u));
+  --text-27: calc(27 * var(--u));
+  --text-30: calc(30 * var(--u));
+  --text-34: calc(34 * var(--u));
+  --text-35: calc(35 * var(--u));
+  --text-37: calc(37 * var(--u));
+  --text-48: calc(48 * var(--u));
+  --text-50: calc(50 * var(--u));
+}
+
 @layer base {
   /* Only in our own document: a theme page that holds a section keeps its own. */
   html:has(> body.brodfest) {

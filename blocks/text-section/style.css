@@ -1,9 +1,9 @@
 /*
  * The text section.
  *
- * Every font and size is one of the theme's named styles (--font-*, --text-*),
- * with today's value behind it until the theme has the name; colours are the
- * theme's, through the --bf-* names in assets/css/src/app.css.
+ * Every font is one of the theme's named styles (--font-*) and every size one of
+ * Brodfest's own (--text-*), each with today's value behind it as a fallback.
+ * The sizes and the --bf-* colour names are in assets/css/src/app.css.
  */
 
 /* ---- Text pages --------------------------------------------------------- */
