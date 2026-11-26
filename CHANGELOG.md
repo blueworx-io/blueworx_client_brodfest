@@ -5,6 +5,12 @@ All notable changes to this project are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.17.5] - 2026-11-26
+
+### Changed
+
+- Release of the rules update (the shared page lock, the named text sizes and the lock's later fixes) to brodfest.net. Guests see no difference: every page, the RSVP form, the guest list export and Add to Calendar work as before.
+
 ## [0.17.4] - 2026-11-26
 
 ### Changed
