@@ -5,6 +5,12 @@ All notable changes to this project are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.17.4] - 2026-11-26
+
+### Changed
+
+- The page lock is updated to the latest shared version (1.0.1). It also refuses extra markup added outside a section and sections swapped round, and it shows its panel on WordPress 6.4.
+
 ## [0.17.3] - 2026-11-26
 
 ### Changed
