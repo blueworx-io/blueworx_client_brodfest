@@ -5,6 +5,12 @@ All notable changes to this project are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.17.3] - 2026-11-26
+
+### Changed
+
+- Brodfest's 14 text sizes now have names of their own in the plugin, so every section uses a named size instead of a number typed in. Nothing on the page looks different.
+
 ## [0.17.2] - 2026-11-25
 
 ### Fixed
