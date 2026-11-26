@@ -49,16 +49,6 @@ function brodfest_gen( $post_id ) {
 }
 
 /**
- * Counts one more swap.
- *
- * @param int $post_id Page or held-back page.
- * @return void
- */
-function brodfest_bump_gen( $post_id ) {
-	update_post_meta( (int) $post_id, BRODFEST_GEN_META, brodfest_gen( $post_id ) + 1 );
-}
-
-/**
  * Whether a post is one of the owned pages or a held-back page.
  *
  * @param int $post_id Post.
@@ -99,9 +89,9 @@ add_action( 'rest_api_init', 'brodfest_register_gen_field' );
  * switched.
  *
  * Holding the lock keeps the save from overlapping a switch (a switch waits for
- * it, and a save waits, briefly, for a switch), and the swap count is checked
- * only once the lock is held, so a count that changes while the request waits
- * cannot slip through. After a switch the page holds the other site's blocks,
+ * it, and a save waits, briefly, for a switch), and the swap count is read afresh
+ * and checked only once the lock is held, so a count that changes while the
+ * request waits cannot slip through. After a switch the page holds the other site's blocks,
  * and the old tab would overwrite them. The editor sends the swap count it
  * opened with (see blocks/_shared/guard.js); a client that sends none takes the
  * lock but is not checked.
@@ -206,29 +196,118 @@ function brodfest_tag_revision( $revision_id ) {
 add_action( '_wp_put_post_revision', 'brodfest_tag_revision' );
 
 /**
- * Refuses to restore a revision made when the page held the other site's
- * blocks, and one with no tag: it was made before the plugin kept track of which
- * site a revision is for, so it cannot be known to be safe. Every revision made
- * since is tagged, the first one (the starting blocks) included, because a page
- * is marked with its site before its blocks are written.
+ * The words an autosave is being saved with, before WordPress tidies them.
+ *
+ * @param int         $post_id The autosave.
+ * @param string|null $set     Set them when given.
+ * @return string|null Null when there are none.
+ */
+function brodfest_autosave_words( $post_id, $set = null ) {
+	static $words = array();
+
+	if ( null !== $set ) {
+		$words[ $post_id ] = $set;
+	}
+
+	return $words[ $post_id ] ?? null;
+}
+
+/**
+ * Notes the words a revision is being saved with.
+ *
+ * @param array $data        Post data about to be saved.
+ * @param array $postarr     The same, as it was given and tidied.
+ * @param array $unsanitized The same, as it was given.
+ * @return array
+ */
+function brodfest_note_autosave_words( $data, $postarr = array(), $unsanitized = array() ) {
+	if ( 'revision' === ( $data['post_type'] ?? '' ) && ! empty( $postarr['ID'] ) ) {
+		brodfest_autosave_words( (int) $postarr['ID'], wp_unslash( (string) ( $unsanitized['post_content'] ?? '' ) ) );
+	}
+
+	return $data;
+}
+add_filter( 'wp_insert_post_data', 'brodfest_note_autosave_words', 10, 3 );
+
+/**
+ * Tags an autosave again when new words are written over it: each person has
+ * one per page, and it is used again for whichever site the page holds by then.
+ * When only its title changes, its words are still the site's they were, even if
+ * WordPress tidies them as it saves.
+ *
+ * @param int     $post_id The post.
+ * @param WP_Post $after   The post as it is now.
+ * @param WP_Post $before  The post as it was.
+ * @return void
+ */
+function brodfest_tag_autosave( $post_id, $after, $before ) {
+	if ( $after->post_content !== $before->post_content && brodfest_autosave_words( $post_id ) !== $before->post_content && wp_is_post_autosave( $post_id ) ) {
+		brodfest_tag_revision( $post_id );
+	}
+}
+add_action( 'post_updated', 'brodfest_tag_autosave', 10, 3 );
+
+/**
+ * Guards the restoring of a revision: takes the swap lock, and refuses one made
+ * when the page held the other site's blocks, and one with no tag: it was made
+ * before the plugin kept track of which site a revision is for, so it cannot be
+ * known to be safe. Every revision made since is tagged, the first one (the
+ * starting blocks) included, because a page is marked with its site before its
+ * blocks are written.
+ *
+ * The lock is kept for the restore, so a switch cannot come between this check
+ * and WordPress writing the revision. A request WordPress is going to turn away
+ * itself does not take it.
+ *
+ * @param int  $revision_id The revision.
+ * @param bool $allowed     Whether WordPress will let the request through to a restore.
+ * @return string Why it is refused; '' when it is not.
+ */
+function brodfest_guard_restore( $revision_id, $allowed = true ) {
+	$parent = (int) wp_get_post_parent_id( $revision_id );
+
+	if ( $parent <= 0 || ! brodfest_is_swappable( $parent ) || ! current_user_can( 'edit_post', $parent ) ) {
+		return '';
+	}
+
+	if ( $allowed && ! brodfest_sync_lock( 5 ) ) {
+		return __( 'The live site is being switched right now, so the revision was not restored. Wait a moment, then try again.', 'blueworx-client-brodfest' );
+	}
+
+	// An autosave may have been written over while this waited: the tag and the
+	// words have to be read together, now.
+	wp_cache_delete( $revision_id, 'posts' );
+	wp_cache_delete( $revision_id, 'post_meta' );
+
+	if ( get_post_meta( $parent, BRODFEST_CONTENT_SITE_META, true ) !== get_post_meta( $revision_id, BRODFEST_CONTENT_SITE_META, true ) ) {
+		brodfest_sync_unlock();
+
+		return __( 'That revision cannot be restored here: it is from the other site (the live site has been switched since), or from before revisions were tagged with their site. Restoring it could put the wrong blocks on this page. Open the page it belongs to, or the held-back page, to restore it there.', 'blueworx-client-brodfest' );
+	}
+
+	return '';
+}
+
+/**
+ * Guards a restore from the revisions screen.
  *
  * @return void
  */
-function brodfest_refuse_other_site_revision() {
-	// Only reading which revision is being asked for; WordPress checks the nonce and the rights.
-	// phpcs:disable WordPress.Security.NonceVerification.Recommended
+function brodfest_guard_screen_restore() {
+	// phpcs:disable WordPress.Security.NonceVerification.Recommended -- Verified below.
 	if ( ! isset( $_GET['action'], $_GET['revision'] ) || 'restore' !== sanitize_key( wp_unslash( $_GET['action'] ) ) ) {
 		return;
 	}
 
 	$revision_id = absint( wp_unslash( $_GET['revision'] ) );
+	$nonce       = isset( $_GET['_wpnonce'] ) ? sanitize_text_field( wp_unslash( $_GET['_wpnonce'] ) ) : '';
 	// phpcs:enable WordPress.Security.NonceVerification.Recommended
-	$parent = (int) wp_get_post_parent_id( $revision_id );
-	$tag    = (string) get_post_meta( $revision_id, BRODFEST_CONTENT_SITE_META, true );
 
-	if ( $parent > 0 && brodfest_is_swappable( $parent ) && (string) get_post_meta( $parent, BRODFEST_CONTENT_SITE_META, true ) !== $tag ) {
+	$refused = brodfest_guard_restore( $revision_id, (bool) wp_verify_nonce( $nonce, 'restore-post_' . $revision_id ) );
+
+	if ( '' !== $refused ) {
 		wp_die(
-			esc_html__( 'That revision cannot be restored here: it is from the other site (the live site has been switched since), or from before revisions were tagged with their site. Restoring it could put the wrong blocks on this page. Open the page it belongs to, or the held-back page, to restore it there.', 'blueworx-client-brodfest' ),
+			esc_html( $refused ),
 			'',
 			array(
 				'response'  => 409,
@@ -237,7 +316,55 @@ function brodfest_refuse_other_site_revision() {
 		);
 	}
 }
-add_action( 'load-revision.php', 'brodfest_refuse_other_site_revision' );
+add_action( 'load-revision.php', 'brodfest_guard_screen_restore' );
+
+/**
+ * Guards a restore asked for over XML-RPC. One that is refused is an error for
+ * that call only: a request can hold several, and the rest still run.
+ *
+ * @param array $args The call's arguments; the fourth is the revision.
+ * @return mixed What WordPress returns, or the error.
+ */
+function brodfest_xmlrpc_restore( $args ) {
+	global $wp_xmlrpc_server;
+
+	if ( is_array( $args ) && isset( $args[1], $args[2], $args[3] ) ) {
+		// WordPress signs in with the arguments escaped, so the same is done here.
+		$login = array( (string) $args[1], (string) $args[2] );
+		$wp_xmlrpc_server->escape( $login );
+
+		if ( ! $wp_xmlrpc_server->login( $login[0], $login[1] ) ) {
+			return $wp_xmlrpc_server->error;
+		}
+
+		$refused = brodfest_guard_restore( (int) $args[3] );
+
+		if ( '' !== $refused ) {
+			return new IXR_Error( 409, $refused );
+		}
+	}
+
+	try {
+		return $wp_xmlrpc_server->wp_restoreRevision( $args );
+	} finally {
+		brodfest_sync_unlock();
+	}
+}
+
+/**
+ * Puts the guard in front of WordPress's own restore.
+ *
+ * @param array $methods XML-RPC methods.
+ * @return array
+ */
+function brodfest_guard_xmlrpc_methods( $methods ) {
+	if ( isset( $methods['wp.restoreRevision'] ) ) {
+		$methods['wp.restoreRevision'] = 'brodfest_xmlrpc_restore';
+	}
+
+	return $methods;
+}
+add_filter( 'xmlrpc_methods', 'brodfest_guard_xmlrpc_methods' );
 
 /**
  * Tells an administrator when a switch did not finish, or had to make a
@@ -270,13 +397,11 @@ function brodfest_sync_notice() {
 		);
 	}
 
-	if ( ! empty( $notice['unrestored'] ) ) {
+	if ( ! empty( $notice['stopped'] ) ) {
 		wp_admin_notice(
-			sprintf(
-				/* translators: %s: page names. */
-				esc_html__( 'These pages could not be put back as they were after the failed switch: %s. Nothing is lost: both versions of each are kept under Pages › Held-back pages, titled “Recovery copy”. Copy the blocks you want from there into the page.', 'blueworx-client-brodfest' ),
-				esc_html( implode( ', ', array_map( $name, (array) $notice['unrestored'] ) ) )
-			),
+			'tables' === $notice['stopped']
+				? esc_html__( 'The live site could not be switched: this website’s database tables are not InnoDB, so the switch could not be made safely in one step. Nothing was changed. Ask your host to convert them.', 'blueworx-client-brodfest' )
+				: esc_html__( 'The live site could not be switched: the pages could not be saved. Nothing was changed, and the website is still on the site it was on. The switch will be tried again shortly.', 'blueworx-client-brodfest' ),
 			array(
 				'type'               => 'error',
 				'additional_classes' => array( 'inline' ),

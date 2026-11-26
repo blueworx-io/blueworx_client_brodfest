@@ -3,7 +3,7 @@
  * Plugin Name:       BlueWorx Clients | Brodfest
  * Plugin URI:        https://github.com/blueworx-io/blueworx_client_brodfest
  * Description:       The Brodfest website, as a self-contained WordPress plugin on the BlueWorx Enhance theme.
- * Version:           0.17.1
+ * Version:           0.17.2
  * Requires at least: 6.4
  * Requires PHP:      8.1
  * Author:            BlueWorx
@@ -21,7 +21,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'BRODFEST_VERSION', '0.17.1' );
+define( 'BRODFEST_VERSION', '0.17.2' );
 define( 'BRODFEST_SLUG', 'blueworx-client-brodfest' );
 define( 'BRODFEST_FILE', __FILE__ );
 define( 'BRODFEST_DIR', plugin_dir_path( __FILE__ ) );
@@ -102,8 +102,12 @@ require_once BRODFEST_DIR . 'includes/calendar.php';
  * @return void
  */
 function brodfest_activate() {
-	brodfest_install_pages();
-	update_option( 'brodfest_version', BRODFEST_VERSION );
+	// Not recorded until the pages are set up, so an unfinished setup is picked up
+	// by brodfest_maybe_upgrade().
+	if ( brodfest_install_pages() ) {
+		update_option( 'brodfest_version', BRODFEST_VERSION );
+	}
+
 	flush_rewrite_rules();
 }
 register_activation_hook( __FILE__, 'brodfest_activate' );
@@ -113,7 +117,8 @@ register_activation_hook( __FILE__, 'brodfest_activate' );
  *
  * Updates arrive through the update checker, which does not fire the
  * activation hook — so a page added in a later version would otherwise never
- * exist on a live site. Leaves the front-page setting alone.
+ * exist on a live site. Leaves the front-page setting alone. A setup that does
+ * not finish is not recorded, and is tried again after five minutes.
  *
  * @return void
  */
@@ -129,7 +134,12 @@ function brodfest_maybe_upgrade() {
 	}
 
 	set_transient( 'brodfest_upgrade_lock', 1, MINUTE_IN_SECONDS );
-	brodfest_install_pages( false );
+
+	if ( ! brodfest_install_pages( false ) ) {
+		set_transient( 'brodfest_upgrade_lock', 1, 5 * MINUTE_IN_SECONDS );
+		return;
+	}
+
 	update_option( 'brodfest_version', BRODFEST_VERSION );
 	delete_transient( 'brodfest_upgrade_lock' );
 }

@@ -39,6 +39,9 @@ const BRODFEST_CONTENT_SITE_META = '_brodfest_content_site';
 /** Option: the site whose blocks the pages held when the swap last ran. */
 const BRODFEST_SYNCED_OPTION = 'brodfest_synced_site';
 
+/** Option: the posts a switch has moved that WordPress has not been told about yet. */
+const BRODFEST_UNTOLD_OPTION = 'brodfest_switch_untold';
+
 /** Option row that is the lock while a swap runs: only one request can insert it. */
 const BRODFEST_LOCK_OPTION = 'brodfest_sync_lock';
 
@@ -277,9 +280,10 @@ function brodfest_insert_held( $fields ) {
  * page that already has blocks of its own is left exactly as it is; a held-back
  * page someone deleted is made again from the starting content.
  *
- * The page is only marked as seeded once its blocks are stored, so a failed
- * write is tried again on the next run. The marker goes first, so the revision
- * that writing the blocks makes is tagged with the site it is for.
+ * The marker goes first, so the revision that writing the blocks makes is tagged
+ * with the site it is for. The link to its held-back page goes last, so a page
+ * with no link was never finished (the write failed, or the request stopped) and
+ * is tried again on the next run.
  *
  * @param string $slug    Owned-page slug.
  * @param int    $page_id The page.
@@ -294,7 +298,7 @@ function brodfest_seed_page( $slug, $page_id ) {
 
 	$holds = (string) get_post_meta( $page_id, BRODFEST_CONTENT_SITE_META, true );
 
-	if ( '' === $holds ) {
+	if ( '' === $holds || ( BRODFEST_SITE_STD === $holds && 0 === (int) get_post_meta( $page_id, BRODFEST_HOLD_META, true ) ) ) {
 		$holds = BRODFEST_SITE_STD;
 		update_post_meta( $page_id, BRODFEST_CONTENT_SITE_META, $holds );
 
@@ -392,6 +396,29 @@ function brodfest_held_id( $page_id ) {
 // phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 
 /**
+ * Forgets what this request read before it held the lock: the settings, and
+ * the pages and held-back pages. Somebody else's switch may have finished while
+ * it waited, and WordPress keeps what it read for the rest of the request.
+ *
+ * @return void
+ */
+function brodfest_forget_cached() {
+	foreach ( array( 'alloptions', 'notoptions', BRODFEST_SETTINGS_OPTION, BRODFEST_SYNCED_OPTION, BRODFEST_UNTOLD_OPTION, 'brodfest_page_ids' ) as $option ) {
+		wp_cache_delete( $option, 'options' );
+	}
+
+	$forget = static function ( $post_id ) {
+		wp_cache_delete( $post_id, 'posts' );
+		wp_cache_delete( $post_id, 'post_meta' );
+	};
+
+	foreach ( brodfest_page_ids() as $page_id ) {
+		$forget( $page_id );
+		$forget( (int) get_post_meta( $page_id, BRODFEST_HOLD_META, true ) );
+	}
+}
+
+/**
  * The lock this request holds ("time:token"), or '' when it holds none.
  *
  * @param string|null $set Set it when given.
@@ -434,6 +461,7 @@ function brodfest_sync_lock( $wait = 0 ) {
 		if ( 1 === $result ) {
 			brodfest_lock_held( $mine );
 			register_shutdown_function( 'brodfest_sync_unlock' );
+			brodfest_forget_cached();
 
 			return true;
 		}
@@ -455,7 +483,8 @@ function brodfest_sync_lock( $wait = 0 ) {
 }
 
 /**
- * Lets go of the lock, if this request holds it. Safe to call twice.
+ * Lets go of the lock, if this request holds it, dropping a switch it did not
+ * finish. Safe to call twice.
  *
  * @return void
  */
@@ -468,6 +497,11 @@ function brodfest_sync_unlock() {
 		return;
 	}
 
+	if ( brodfest_transaction_open() ) {
+		$wpdb->query( 'ROLLBACK' );
+		brodfest_transaction_open( false );
+	}
+
 	$wpdb->query( $wpdb->prepare( "DELETE FROM {$wpdb->options} WHERE option_name = %s AND option_value = %s", BRODFEST_LOCK_OPTION, $mine ) );
 	wp_cache_delete( BRODFEST_LOCK_OPTION, 'options' );
 	brodfest_lock_held( '' );
@@ -476,129 +510,285 @@ function brodfest_sync_unlock() {
 // phpcs:enable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 
 /**
- * Swaps one page's blocks with its held-back page's, checking each write.
+ * Whether a transaction of ours is open, for undoing it if the request stops.
  *
- * Before anything is written, both versions are kept as "Recovery copy" posts
- * among the held-back pages. They are deleted once the whole switch is done (or
- * the pages are confirmed put back), and kept, and reported, if a page cannot be
- * put back.
- *
- * @param string $slug     Owned-page slug.
- * @param int    $page_id  The page.
- * @param int    $held_id  Its held-back page.
- * @param string $holds    The site the page holds now.
- * @param string $live     The site it should hold.
- * @param bool   $restored Set to false if the swap failed and the page could
- *                         not be put back as it was.
- * @return array|false What it did, for undoing it (see brodfest_unswap_page()), or false.
+ * @param bool|null $set Set it when given.
+ * @return bool
  */
-function brodfest_swap_page( $slug, $page_id, $held_id, $holds, $live, &$restored = true ) {
-	$restored = true;
-	$title    = brodfest_pages()[ $slug ]['title'] ?? $slug;
-	$undo     = array(
-		'slug'         => $slug,
-		'page_id'      => $page_id,
-		'held_id'      => $held_id,
-		'holds'        => $holds,
-		'live'         => $live,
-		'page_content' => (string) get_post_field( 'post_content', $page_id, 'raw' ),
-		'held_content' => (string) get_post_field( 'post_content', $held_id, 'raw' ),
-		'held_title'   => (string) get_post_field( 'post_title', $held_id, 'raw' ),
-		'recovery'     => array(),
-	);
+function brodfest_transaction_open( $set = null ) {
+	static $open = false;
 
-	// A copy of each version that survives a failed write, in the held-back pages.
-	foreach ( array( 'page_content', 'held_content' ) as $key ) {
-		$copy = brodfest_insert_held(
-			array(
-				/* translators: 1: page name, 2: which version (the page's or the held-back page's), 3: date and time. */
-				'post_title'   => sprintf( __( 'Recovery copy: %1$s, %2$s, before the switch on %3$s', 'blueworx-client-brodfest' ), $title, 'page_content' === $key ? __( 'the page', 'blueworx-client-brodfest' ) : __( 'the held-back page', 'blueworx-client-brodfest' ), gmdate( 'Y-m-d H:i' ) ),
-				'post_content' => $undo[ $key ],
-			)
-		);
-
-		if ( $copy <= 0 ) {
-			brodfest_discard_recovery( $undo );
-
-			return false;
-		}
-
-		$undo['recovery'][] = $copy;
+	if ( null !== $set ) {
+		$open = $set;
 	}
 
-	// The markers go first, so the revisions the writes make are tagged with
-	// the site their content is for.
-	update_post_meta( $page_id, BRODFEST_CONTENT_SITE_META, $live );
-	update_post_meta( $held_id, BRODFEST_CONTENT_SITE_META, $holds );
+	return $open;
+}
 
-	$page_ok = brodfest_write_post( $page_id, array( 'post_content' => $undo['held_content'] ) );
-	$held_ok = $page_ok && brodfest_write_post(
-		$held_id,
-		array(
-			'post_title'   => brodfest_held_title( $slug, $holds ),
-			'post_content' => $undo['page_content'],
-		)
-	);
+// Everything in a switch is written straight to the database, in one
+// transaction. WordPress's own functions would fill its caches with the new
+// blocks, and run other plugins' save hooks, before the switch is certain. Every
+// cache involved is cleared afterwards, and the hooks are run then.
+// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.SlowDBQuery.slow_db_query_meta_key, WordPress.DB.SlowDBQuery.slow_db_query_meta_value
 
-	if ( ! $held_ok ) {
-		$restored = brodfest_unswap_page( $undo, $page_ok );
+/**
+ * Whether the database can undo a half-done switch: every table a switch writes
+ * to has to be one that takes part in transactions.
+ *
+ * @return bool
+ */
+function brodfest_can_switch_at_once() {
+	global $wpdb;
 
-		if ( $restored ) {
-			brodfest_discard_recovery( $undo );
-		}
+	$engines = $wpdb->get_col( $wpdb->prepare( 'SELECT ENGINE FROM information_schema.TABLES WHERE TABLE_SCHEMA = %s AND TABLE_NAME IN ( %s, %s, %s )', $wpdb->dbname, $wpdb->posts, $wpdb->postmeta, $wpdb->options ) );
 
+	return 3 === count( $engines ) && array( 'innodb' ) === array_values( array_unique( array_map( 'strtolower', array_map( 'strval', $engines ) ) ) );
+}
+
+/**
+ * Runs writes that other connections see all at once, or not at all: until the
+ * commit they see none of them, and if anything fails, or the request dies,
+ * the database drops them all.
+ *
+ * @param callable $write Does the writes, and returns whether they are all right.
+ * @return bool Whether they were committed.
+ */
+function brodfest_in_transaction( $write ) {
+	global $wpdb;
+
+	if ( false === $wpdb->query( 'START TRANSACTION' ) ) {
 		return false;
 	}
 
-	brodfest_bump_gen( $page_id );
-	brodfest_bump_gen( $held_id );
+	// A connection that drops takes the transaction with it. Reconnecting would
+	// carry on outside it, one visible write at a time.
+	$retries                 = $wpdb->reconnect_retries ?? 5;
+	$wpdb->reconnect_retries = 0;
+	$done                    = false;
 
-	return $undo;
+	brodfest_transaction_open( true );
+
+	try {
+		$done = $write() && false !== $wpdb->query( 'COMMIT' );
+	} finally {
+		if ( ! $done ) {
+			$wpdb->query( 'ROLLBACK' );
+		}
+
+		brodfest_transaction_open( false );
+		$wpdb->reconnect_retries = $retries;
+	}
+
+	return $done;
 }
 
 /**
- * Deletes the recovery copies made for a swap.
+ * Sets one post meta value, so that there is exactly one row of it.
  *
- * @param array $undo From brodfest_swap_page().
+ * @param int    $post_id The post.
+ * @param string $key     Meta key.
+ * @param string $value   Value.
+ * @return bool Whether it was written.
+ */
+function brodfest_put_meta( $post_id, $key, $value ) {
+	global $wpdb;
+
+	$row = array(
+		'post_id'  => $post_id,
+		'meta_key' => $key,
+	);
+
+	return false !== $wpdb->delete( $wpdb->postmeta, $row ) && false !== $wpdb->insert( $wpdb->postmeta, array_merge( $row, array( 'meta_value' => $value ) ) );
+}
+
+/**
+ * Swaps the pages' blocks with their held-back pages', and makes the site they
+ * are for the live one, in one step.
+ *
+ * Visitors, the REST API, feeds and search read the published pages, so none of
+ * the new site's blocks can be read before the commit, and all of them can
+ * after it. What was written is read back, inside the transaction, and must match
+ * exactly, or nothing is committed. There is nothing to put back after a
+ * failure, and so no copy to keep.
+ *
+ * @param array  $pairs  Each page to move, by slug: 'page' and 'held' ids, and
+ *                       'holds', the site the page holds now.
+ * @param string $wanted The site to make live.
+ * @return bool Whether it was done.
+ */
+function brodfest_move_blocks( $pairs, $wanted ) {
+	global $wpdb;
+
+	// So that the rows are there to change.
+	add_option( BRODFEST_SYNCED_OPTION, '' );
+	add_option( BRODFEST_UNTOLD_OPTION, '' );
+
+	brodfest_in_transaction(
+		static function () use ( $wpdb, $pairs, $wanted ) {
+			$posts = array();
+			$meta  = array();
+
+			foreach ( $pairs as $slug => $pair ) {
+				$rows = $wpdb->get_results( $wpdb->prepare( "SELECT ID, post_title, post_content FROM {$wpdb->posts} WHERE ID IN ( %d, %d ) FOR UPDATE", $pair['page'], $pair['held'] ), OBJECT_K );
+
+				// Both have to be there, and the page not moved by anyone since.
+				if ( ! isset( $rows[ $pair['page'] ], $rows[ $pair['held'] ] ) || array( $pair['holds'] ) !== $wpdb->get_col( $wpdb->prepare( "SELECT meta_value FROM {$wpdb->postmeta} WHERE post_id = %d AND meta_key = %s", $pair['page'], BRODFEST_CONTENT_SITE_META ) ) ) {
+					return false;
+				}
+
+				$posts[ $pair['page'] ] = array( 'post_content' => $rows[ $pair['held'] ]->post_content );
+				$posts[ $pair['held'] ] = array(
+					'post_content' => $rows[ $pair['page'] ]->post_content,
+					'post_title'   => brodfest_held_title( $slug, $pair['holds'] ),
+				);
+
+				$meta[ $pair['page'] ] = array(
+					BRODFEST_CONTENT_SITE_META => $wanted,
+					BRODFEST_GEN_META          => (string) ( brodfest_gen( $pair['page'] ) + 1 ),
+				);
+				$meta[ $pair['held'] ] = array(
+					BRODFEST_CONTENT_SITE_META => $pair['holds'],
+					BRODFEST_GEN_META          => (string) ( brodfest_gen( $pair['held'] ) + 1 ),
+				);
+			}
+
+			$now = array(
+				'post_modified'     => current_time( 'mysql' ),
+				'post_modified_gmt' => current_time( 'mysql', true ),
+			);
+
+			foreach ( $posts as $id => $fields ) {
+				if ( false === $wpdb->update( $wpdb->posts, array_merge( $fields, $now ), array( 'ID' => $id ) ) ) {
+					return false;
+				}
+
+				foreach ( $meta[ $id ] as $key => $value ) {
+					if ( ! brodfest_put_meta( $id, $key, $value ) ) {
+						return false;
+					}
+				}
+			}
+
+			// Which posts WordPress is still to be told about, page and held-back page
+			// in turn, in case the request ends before it can be.
+			$options = array(
+				BRODFEST_SYNCED_OPTION => $wanted,
+				BRODFEST_UNTOLD_OPTION => implode( ',', array_keys( $posts ) ),
+			);
+
+			foreach ( $options as $name => $value ) {
+				if ( false === $wpdb->update( $wpdb->options, array( 'option_value' => $value ), array( 'option_name' => $name ) ) ) {
+					return false;
+				}
+			}
+
+			// Read it all back: what is stored has to be what was meant.
+			foreach ( $posts as $id => $fields ) {
+				$row = $wpdb->get_row( $wpdb->prepare( "SELECT post_title, post_content FROM {$wpdb->posts} WHERE ID = %d", $id ), ARRAY_A );
+
+				foreach ( $fields as $field => $value ) {
+					if ( ! isset( $row[ $field ] ) || (string) $row[ $field ] !== (string) $value ) {
+						return false;
+					}
+				}
+
+				foreach ( $meta[ $id ] as $key => $value ) {
+					if ( array( $value ) !== $wpdb->get_col( $wpdb->prepare( "SELECT meta_value FROM {$wpdb->postmeta} WHERE post_id = %d AND meta_key = %s", $id, $key ) ) ) {
+						return false;
+					}
+				}
+			}
+
+			foreach ( $options as $name => $value ) {
+				if ( $wpdb->get_var( $wpdb->prepare( "SELECT option_value FROM {$wpdb->options} WHERE option_name = %s", $name ) ) !== $value ) {
+					return false;
+				}
+			}
+
+			// And it has to be our turn still. FOR UPDATE reads the lock as it is
+			// now, not as it was when the transaction began, and keeps it that way
+			// until the commit.
+			return $wpdb->get_var( $wpdb->prepare( "SELECT option_value FROM {$wpdb->options} WHERE option_name = %s FOR UPDATE", BRODFEST_LOCK_OPTION ) ) === brodfest_lock_held();
+		}
+	);
+
+	// Whatever the commit reported, what is stored now says whether it was done.
+	brodfest_forget_cached();
+
+	$first = reset( $pairs );
+
+	if ( get_post_meta( $first['page'], BRODFEST_CONTENT_SITE_META, true ) !== $wanted ) {
+		return false;
+	}
+
+	brodfest_tell_of_move();
+
+	return true;
+}
+
+// phpcs:enable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.SlowDBQuery.slow_db_query_meta_key, WordPress.DB.SlowDBQuery.slow_db_query_meta_value
+
+/**
+ * Tells WordPress about every post a switch moved, if that is still to be done:
+ * straight after the switch, or, when the request ended first, on a later one.
+ * Runs under the lock. If another plugin ends the request while being told, it is
+ * not told again for five minutes (see brodfest_sync_if_needed()).
+ *
  * @return void
  */
-function brodfest_discard_recovery( $undo ) {
-	foreach ( (array) $undo['recovery'] as $copy ) {
-		wp_delete_post( (int) $copy, true );
+function brodfest_tell_of_move() {
+	$untold = array_filter( array_map( 'intval', explode( ',', (string) get_option( BRODFEST_UNTOLD_OPTION, '' ) ) ) );
+
+	if ( ! $untold ) {
+		return;
 	}
+
+	set_transient( 'brodfest_tell_retry', 1, 5 * MINUTE_IN_SECONDS );
+
+	foreach ( array_chunk( $untold, 2 ) as $pair ) {
+		brodfest_announce_move( $pair[0], $pair[1] ?? 0 );
+		brodfest_announce_move( $pair[1] ?? 0, $pair[0] );
+	}
+
+	update_option( BRODFEST_UNTOLD_OPTION, '' );
+	delete_transient( 'brodfest_tell_retry' );
 }
 
 /**
- * Puts a page and its held-back page back as they were before a swap, and says
- * whether what is stored now is exactly that.
+ * Tells WordPress, and any plugin listening (a page cache, an SEO plugin), that a
+ * page has changed, the way wp_publish_post() does, and keeps a revision of it.
+ * The page is not written again, so nothing can alter the words that were moved.
  *
- * @param array $undo       From brodfest_swap_page().
- * @param bool  $page_moved Whether the page's content was already replaced.
- * @return bool Whether everything went back.
+ * @param int $post_id The post.
+ * @param int $other   The post it swapped blocks with, which now has its old ones.
+ * @return void
  */
-function brodfest_unswap_page( $undo, $page_moved = true ) {
-	update_post_meta( $undo['page_id'], BRODFEST_CONTENT_SITE_META, $undo['holds'] );
-	update_post_meta( $undo['held_id'], BRODFEST_CONTENT_SITE_META, $undo['live'] );
+function brodfest_announce_move( $post_id, $other ) {
+	clean_post_cache( $post_id );
 
-	$ok = true;
+	$post = get_post( $post_id );
 
-	if ( $page_moved ) {
-		$ok = brodfest_write_post( $undo['page_id'], array( 'post_content' => $undo['page_content'] ) );
-		brodfest_bump_gen( $undo['page_id'] );
+	if ( ! $post ) {
+		return;
 	}
 
-	// The held-back page is only ever written after the page, so a failed
-	// swap has changed it at most once, and this puts that right.
-	$ok = brodfest_write_post(
-		$undo['held_id'],
-		array(
-			'post_title'   => $undo['held_title'],
-			'post_content' => $undo['held_content'],
-		)
-	) && $ok;
-	brodfest_bump_gen( $undo['held_id'] );
+	$before               = clone $post;
+	$before->post_content = (string) get_post_field( 'post_content', $other, 'raw' );
 
-	return $ok;
+	// phpcs:disable WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound, WordPress.NamingConventions.PrefixAllGlobals.DynamicHooknameFound -- WordPress's own hooks for a post that has changed.
+	brodfest_unfiltered(
+		static function () use ( $post, $before ) {
+			wp_transition_post_status( $post->post_status, $post->post_status, $post );
+			do_action( "edit_post_{$post->post_type}", $post->ID, $post );
+			do_action( 'edit_post', $post->ID, $post );
+			do_action( 'post_updated', $post->ID, $post, $before );
+			do_action( "save_post_{$post->post_type}", $post->ID, $post, true );
+			do_action( 'save_post', $post->ID, $post, true );
+			do_action( 'wp_insert_post', $post->ID, $post, true );
+			wp_after_insert_post( $post, true, $before );
+		}
+	);
+	// phpcs:enable WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound, WordPress.NamingConventions.PrefixAllGlobals.DynamicHooknameFound
 }
 
 /**
@@ -607,15 +797,11 @@ function brodfest_unswap_page( $undo, $page_moved = true ) {
  * hold. Also the one place pages are given their starting blocks, so seeding
  * and swapping can never overlap.
  *
- * The site visitors see (brodfest_live_site()) only changes once this has
- * finished, so a switch that fails leaves the website, and the public REST
- * API, on the site they were on.
- *
  * All or nothing: every page's held-back copy must exist first (a missing one
- * is made again from the starting content and the administrator is told), and
- * if any write fails the pages already swapped are put back and the switch is
- * left unfinished, to be tried again. Both versions of each page are kept as
- * recovery copies until the switch is done or the pages are confirmed put back.
+ * is made again from the starting content and the administrator is told), then
+ * every page is swapped, and the live site changed, in one step
+ * (brodfest_move_blocks()). A switch that fails, or is cut off, leaves the
+ * website, and the public REST API, exactly as they were, and is tried again.
  *
  * Idempotent: a page that already holds the wanted site's blocks is left alone,
  * so running it twice never swaps back. Until a site is switched to the
@@ -648,8 +834,11 @@ function brodfest_sync_live_content() {
 function brodfest_sync_locked() {
 	$wanted = brodfest_wanted_site();
 	$ids    = brodfest_page_ids();
-	$done   = array();
+	$pairs  = array();
 	$notice = array();
+
+	// An earlier switch may have been cut off just after it was made.
+	brodfest_tell_of_move();
 
 	// What the administrator is told is about this run only.
 	delete_option( BRODFEST_NOTICE_OPTION );
@@ -661,7 +850,7 @@ function brodfest_sync_locked() {
 
 	// Every page has to have its blocks and its held-back copy before anything moves.
 	foreach ( $ids as $slug => $page_id ) {
-		if ( '' !== (string) get_post_meta( $page_id, BRODFEST_CONTENT_SITE_META, true ) && 0 === brodfest_held_id( $page_id ) ) {
+		if ( (int) get_post_meta( $page_id, BRODFEST_HOLD_META, true ) > 0 && 0 === brodfest_held_id( $page_id ) ) {
 			$notice['recreated'][] = $slug;
 		}
 
@@ -675,53 +864,30 @@ function brodfest_sync_locked() {
 	}
 
 	foreach ( $ids as $slug => $page_id ) {
-		$holds   = (string) get_post_meta( $page_id, BRODFEST_CONTENT_SITE_META, true );
-		$held_id = brodfest_held_id( $page_id );
+		$holds = (string) get_post_meta( $page_id, BRODFEST_CONTENT_SITE_META, true );
 
-		if ( '' === $holds || $holds === $wanted ) {
-			continue;
+		if ( $holds !== $wanted ) {
+			$pairs[ $slug ] = array(
+				'page'  => $page_id,
+				'held'  => brodfest_held_id( $page_id ),
+				'holds' => $holds,
+			);
 		}
-
-		$restored = true;
-		$swap     = $held_id > 0 ? brodfest_swap_page( $slug, $page_id, $held_id, $holds, $wanted, $restored ) : false;
-
-		if ( $swap ) {
-			$done[] = $swap;
-			continue;
-		}
-
-		$notice['failed'] = $slug;
-
-		if ( ! $restored ) {
-			$notice['unrestored'][] = $slug;
-		}
-
-		// Put back the pages already swapped, newest first; keep the recovery
-		// copies of any that cannot be confirmed put back.
-		foreach ( array_reverse( $done ) as $undo ) {
-			if ( brodfest_unswap_page( $undo ) ) {
-				brodfest_discard_recovery( $undo );
-			} else {
-				$notice['unrestored'][] = $undo['slug'];
-			}
-		}
-
-		update_option( BRODFEST_NOTICE_OPTION, $notice, false );
-
-		return false;
 	}
 
-	foreach ( $done as $undo ) {
-		brodfest_discard_recovery( $undo );
+	if ( array() === $pairs ) {
+		update_option( BRODFEST_SYNCED_OPTION, $wanted );
+	} elseif ( ! brodfest_can_switch_at_once() ) {
+		$notice['stopped'] = 'tables';
+	} elseif ( ! brodfest_move_blocks( $pairs, $wanted ) ) {
+		$notice['stopped'] = 'write';
 	}
 
 	if ( ! empty( $notice ) ) {
 		update_option( BRODFEST_NOTICE_OPTION, $notice, false );
 	}
 
-	update_option( BRODFEST_SYNCED_OPTION, $wanted );
-
-	return true;
+	return empty( $notice['stopped'] );
 }
 
 /**
@@ -739,18 +905,44 @@ add_action( 'add_option_' . BRODFEST_SETTINGS_OPTION, 'brodfest_sync_on_settings
 
 /**
  * The same swap, caught on the next request if the setting was changed some
- * other way (the command line, an import) or an earlier try did not finish.
- * A try that failed is not repeated for five minutes.
+ * other way (the command line, an import) or an earlier try did not finish (or
+ * was cut off before WordPress was told of it). A try that failed, or that ended
+ * its request, is not repeated for five minutes, but clearing up after a switch
+ * that was made does not wait for that.
  *
  * @return void
  */
 function brodfest_sync_if_needed() {
-	if ( get_option( BRODFEST_SYNCED_OPTION ) === brodfest_wanted_site() || false !== get_transient( 'brodfest_sync_retry' ) ) {
+	global $wpdb;
+
+	// Straight from the database, on every request: what is cached may be from
+	// before a switch, and would then hide that its caches are still to be cleared.
+	// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+	$stored = $wpdb->get_results( $wpdb->prepare( "SELECT option_name, option_value FROM {$wpdb->options} WHERE option_name IN ( %s, %s )", BRODFEST_SYNCED_OPTION, BRODFEST_UNTOLD_OPTION ), OBJECT_K );
+	$synced = $stored[ BRODFEST_SYNCED_OPTION ]->option_value ?? '';
+	$untold = $stored[ BRODFEST_UNTOLD_OPTION ]->option_value ?? '';
+
+	if ( brodfest_wanted_site() === $synced && ! $untold ) {
 		return;
 	}
 
-	if ( ! brodfest_sync_live_content() ) {
-		set_transient( 'brodfest_sync_retry', 1, 5 * MINUTE_IN_SECONDS );
+	if ( false !== get_transient( 'brodfest_sync_retry' ) ) {
+		if ( $untold && false === get_transient( 'brodfest_tell_retry' ) && brodfest_sync_lock() ) {
+			try {
+				brodfest_tell_of_move();
+			} finally {
+				brodfest_sync_unlock();
+			}
+		}
+
+		return;
+	}
+
+	// First, so that a try that ends its request does not end every one after it.
+	set_transient( 'brodfest_sync_retry', 1, 5 * MINUTE_IN_SECONDS );
+
+	if ( brodfest_sync_live_content() ) {
+		delete_transient( 'brodfest_sync_retry' );
 	}
 }
 add_action( 'init', 'brodfest_sync_if_needed', 30 );
@@ -767,7 +959,8 @@ add_action( 'init', 'brodfest_sync_if_needed', 30 );
  * @param bool $set_front_page Whether to point the site's front page at Home.
  *                             True on activation; false when an update merely
  *                             adds a page.
- * @return void
+ * @return bool Whether every page is set up. (A switch of the live site that is
+ *              still to be done does not count: that is retried by itself.)
  */
 function brodfest_install_pages( $set_front_page = true ) {
 	$ids = (array) get_option( 'brodfest_page_ids', array() );
@@ -812,6 +1005,16 @@ function brodfest_install_pages( $set_front_page = true ) {
 	if ( ! brodfest_sync_live_content() ) {
 		set_transient( 'brodfest_sync_retry', 1, 5 * MINUTE_IN_SECONDS );
 	}
+
+	$ids = brodfest_page_ids();
+
+	foreach ( array_keys( brodfest_pages() ) as $slug ) {
+		if ( ! isset( $ids[ $slug ] ) || 0 === brodfest_held_id( $ids[ $slug ] ) ) {
+			return false;
+		}
+	}
+
+	return true;
 }
 
 /**

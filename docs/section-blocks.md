@@ -65,30 +65,45 @@ What keeps the swap safe (`includes/pages.php`, `includes/held-pages.php`):
 - **One lock for everything that writes blocks.** The lock is a single INSERT
   into the options table: of two requests at once, only one gets it (a lock
   older than two minutes is taken over; each request releases only its own).
-  Giving pages their starting blocks, swapping, and every editor save to a page
-  or held-back page all take it, so none of them can overlap.
+  Giving pages their starting blocks, swapping, every editor save to a page or
+  held-back page, and every restored revision all take it, so none of them can
+  overlap. A request that gets the lock forgets what it read before
+  (`brodfest_forget_cached()`), since a switch may have finished while it waited.
 - **The website changes site only when the pages have.** The site visitors see is
   the site the pages were last moved onto (`brodfest_live_site()`), not the one
-  just chosen (`brodfest_wanted_site()`). A switch that fails leaves the website
-  and the public REST API on the site they were on.
-- **All or nothing, with a safety copy.** Every page has its blocks and held-back
-  copy first (a deleted held-back page is made again from the starting content,
-  and an administrator notice says so; a page whose starting blocks fail to save
-  is not marked as seeded, and is tried again). Before a page is swapped, both
-  versions are copied to "Recovery copy" posts among the held-back pages. Each
-  write is read back and must match exactly. If any fails, the pages already
-  swapped are put back and the switch stays unfinished; the recovery copies are
-  deleted once the put-back is confirmed, and kept (with a notice naming the
-  pages) if it is not. A retry follows after five minutes. Moves are made with
-  HTML filtering switched off, so a signed-out visitor's request cannot rewrite
-  text such as an ampersand.
+  just chosen (`brodfest_wanted_site()`). Until the pages have first been set up
+  it is the Save the Date, which is what they hold. A switch that fails leaves the
+  website and the public REST API on the site they were on.
+- **All or nothing, in one step.** Every page has its blocks and held-back copy
+  first (a deleted held-back page is made again from the starting content, and an
+  administrator notice says so). Then every page's blocks, its markers, its swap
+  count and the live site are changed in **one database transaction**
+  (`brodfest_move_blocks()`), and read back inside it; anything that does not match
+  exactly, or fails, drops the lot. Other requests see nothing of it until it is
+  committed, and all of it after, so the Invite cannot be read early, whether the
+  switch fails or the request dies half way. Nothing is ever half done, so there is
+  nothing to put back and no recovery copy to keep. A retry follows after five
+  minutes, and a notice tells an administrator.
+  - The rows are written directly, not with `wp_update_post()`: that would put the
+    new blocks in caches, and run other plugins' save hooks, before the switch is
+    certain. The hooks run, and the revisions are made, straight after the commit
+    (`brodfest_announce_move()`), without writing the page again. Which posts are
+    still to be announced is stored in the same transaction, so a request cut off
+    just after the commit is made good by the next one (without waiting for the
+    five-minute retry).
+  - It needs InnoDB tables (WordPress's own default). On any other kind the switch
+    is refused with a notice, and nothing changes.
+- **Setup that did not finish is tried again** every five minutes, whether or not a
+  switch is wanted: the plugin's version is only recorded once every page has its
+  blocks and its held-back page.
 - **No saving over the wrong site.** Each page counts its swaps. The block
   editor sends the count it opened with (`blocks/_shared/guard.js`); once the
   save holds the lock, a count that no longer matches is refused (409) and
   nothing is written. Every revision is tagged with the site it was made for (a
   page is marked with its site before its blocks are written, so the first
-  revision is tagged too). A revision for the other site, or one with no tag, is
-  refused on the revisions screen.
+  revision is tagged too, and an autosave is tagged again each time new
+  words are written over it). A revision for the other site, or one with no tag, is
+  refused on the revisions screen and over XML-RPC.
 - **Previews.** WordPress Preview draws the unsaved version of the page (the
   page as `get_post()` has it, not `get_queried_object()`, which is stale).
 
@@ -140,8 +155,9 @@ main plugin file. `includes/page-lock.php` is all this plugin adds:
 - **The plugin's own writes** (the starting blocks, and the swap between the
   Save the Date and the Invite) change a page's sections, and run for whoever
   makes the request, including a signed-out visitor whose request retries a
-  switch. `brodfest_write_post()` stands the lock aside for those writes only
-  (`brodfest_without_page_lock()`); nobody's editor or REST save does.
+  switch. `brodfest_write_post()` stands the lock aside for the starting blocks
+  (`brodfest_without_page_lock()`), and a switch writes straight to the database;
+  nobody's editor or REST save does either.
 - **Layouts.** Each page type has a whole-page layout (a block pattern, category
   "Brodfest pages", `includes/patterns.php`): the page's starting content, so a
   new page, or a connected tool, starts from it in one step. A new page has no
