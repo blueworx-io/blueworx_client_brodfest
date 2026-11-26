@@ -148,9 +148,10 @@ main plugin file. `includes/page-lock.php` is all this plugin adds:
   sections yet, so its first layout can be saved once; after that its sections
   are fixed. Only the live site's layouts are offered: the pattern list is open
   to everyone who can write a post, so the Invite's copy stays out of it until
-  the Invite is live. Any page that holds Brodfest blocks (not only the seven
+  the Invite is live. Any page made only of Brodfest blocks (not only the seven
   owned pages) is drawn with the plugin's document, styles and scripts
-  (`brodfest_page_has_sections()`).
+  (`brodfest_page_has_sections()`); a page that mixes them with other content,
+  or is password-protected, keeps WordPress's own template.
 - **Known limits of the shared lock** (the copy is not edited here; to be fixed in
   the foundation): it compares block types and order, not each section, so two
   sections of one type (Celebration and Dress Code) can be swapped; it ignores

@@ -875,9 +875,13 @@ function brodfest_page_slug( $post_id ) {
 
 /**
  * Whether a page is drawn by this plugin: one of the owned pages, or any page
- * made from the plugin's section blocks (a new page started from a whole-page
- * layout, see includes/patterns.php), which needs the same document, styles
- * and scripts to look and work as the owned pages do.
+ * made only of the plugin's section blocks (a new page started from a
+ * whole-page layout, see includes/patterns.php), which needs the same
+ * document, styles and scripts to look and work as the owned pages do.
+ *
+ * A page that mixes section blocks with anything else (a paragraph, a
+ * shortcode, another plugin's block) stays with the theme's own template, so
+ * WordPress's usual content filters still run on it.
  *
  * @param int $post_id Page ID.
  * @return bool
@@ -889,7 +893,36 @@ function brodfest_page_has_sections( $post_id ) {
 		return false;
 	}
 
-	return brodfest_page_is_ours( $post_id ) || false !== strpos( (string) get_post_field( 'post_content', $post_id ), '<!-- wp:brodfest/' );
+	if ( brodfest_page_is_ours( $post_id ) ) {
+		return true;
+	}
+
+	// In a WordPress preview the page being drawn holds the unsaved version, and
+	// the template has to be the one publishing it would get.
+	$post    = is_preview() ? get_post() : null;
+	$content = $post instanceof WP_Post && (int) $post->ID === $post_id ? $post->post_content : get_post_field( 'post_content', $post_id );
+	$found   = false;
+
+	foreach ( parse_blocks( (string) $content ) as $block ) {
+		$name = (string) ( $block['blockName'] ?? '' );
+
+		if ( '' === $name ) {
+			// Whitespace between blocks is nothing; any other text is content.
+			if ( '' !== trim( (string) ( $block['innerHTML'] ?? '' ) ) ) {
+				return false;
+			}
+
+			continue;
+		}
+
+		if ( 0 !== strpos( $name, 'brodfest/' ) ) {
+			return false;
+		}
+
+		$found = true;
+	}
+
+	return $found;
 }
 
 /**
@@ -898,7 +931,25 @@ function brodfest_page_has_sections( $post_id ) {
  * @return bool
  */
 function brodfest_is_section_request() {
-	return is_singular( 'page' ) && brodfest_page_has_sections( get_queried_object_id() );
+	// A password-protected page keeps WordPress's password form: the blocks are
+	// only drawn, by the plugin's template, once the visitor has unlocked it.
+	return is_singular( 'page' ) && ! post_password_required( get_queried_object_id() ) && brodfest_page_has_sections( get_queried_object_id() );
+}
+
+/**
+ * Whether the current request shows any of this plugin's sections, in this
+ * plugin's template or the theme's: either way they need its styles and scripts.
+ *
+ * @return bool
+ */
+function brodfest_request_needs_assets() {
+	if ( brodfest_is_section_request() ) {
+		return true;
+	}
+
+	$post = is_singular( 'page' ) ? get_post() : null;
+
+	return $post instanceof WP_Post && ! post_password_required( $post ) && brodfest_has_visible_block( 'brodfest/', $post->post_content );
 }
 
 /**

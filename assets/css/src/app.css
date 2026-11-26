@@ -94,7 +94,8 @@
 }
 
 @layer base {
-  html {
+  /* Only in our own document: a theme page that holds a section keeps its own. */
+  html:has(> body.brodfest) {
     background: var(--bf-bg);
     scroll-padding-top: var(--header-h);
   }

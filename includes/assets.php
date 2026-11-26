@@ -13,7 +13,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 const BRODFEST_FONTS_KIT = 'vjw6kra';
 
 /**
- * Enqueues the built stylesheet and bundle on owned pages only.
+ * Enqueues the built stylesheet and bundle on pages that show our sections only.
  *
  * Both are committed build output (npm run build), so a plain checkout and the
  * release zip render without a Node step.
@@ -21,7 +21,7 @@ const BRODFEST_FONTS_KIT = 'vjw6kra';
  * @return void
  */
 function brodfest_enqueue_assets() {
-	if ( ! brodfest_is_section_request() ) {
+	if ( ! brodfest_request_needs_assets() ) {
 		return;
 	}
 

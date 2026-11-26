@@ -5,6 +5,15 @@ All notable changes to this project are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.17.1] - 2026-11-25
+
+### Fixed
+
+- A page with a password, made from a Brodfest layout, now asks for the password before it shows anything.
+- A page that mixes Brodfest sections with other content keeps the theme's own page, so things like shortcodes work on it, and the sections on it keep their styles and controls. A WordPress preview shows the page the way publishing it will.
+- The RSVP form returns a guest to the page they sent it from, with the thank-you or error message, and no page with the form is cached. Both also work for a form inside a synced pattern.
+- The editor loads the newest calendar block controls instead of an old saved copy.
+
 ## [0.17.0] - 2026-11-25
 
 ### Added
